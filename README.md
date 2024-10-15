@@ -36,3 +36,4 @@
 The script compiles the code that needs compiling, adds the required source files to MATLAB search path by adding a `StartupNIT.m` file in the MATLAB user home folder and by editing the default user `Startup.m` file and performs the required install tests. If all software requirements are satisfied the process should seamlessly finish without errors.
 
 ## License
+This toolbox is under the GNU General Public License version 3 and its details can be read in COPYING.rtf.
