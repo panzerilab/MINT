@@ -1,60 +1,96 @@
 function [PID_values, PID_naive, PID_shuff_all] = PID(inputs, varargin)
-%%% *function [PID_v_uncorrected, PID_v, p_distr, q_distr, pind_distr, shuff_v] = PID(X, Y,varargin)*
+%%% PID - Calculate Partial Information Decomposition (PID) and related information-theoretic quantities
 %%%
-%%% ### Description
-%%% This function computes the partial information decomposition of X1 and
-%%% X2 about Y
+%%% This function calculates the atoms partial information decomposition 
+%%% (PID) and other related measures based on the provided inputs, outputs,
+%%% and optional parameters.
 %%%
-%%% ### Inputs:
-%%% - *X*: must be a cell array of *nSources X nDimensions X nTrials* elements representing the sources signal.
-%%%        nSources is the number of sources (at least two), nDimensions is the number of dimensions of each source,
-%%%        and nTrials is the number of trials. The number of dimensions can be different for each source,
-%%%        but the number of trials must be the same between sources and also respect to the target.
-%%% - *Y*: must be an array of *nDimensions X nTrials* elements representing the target signal
-%%% 
-%%% - *opts*: options used to calculate PID (see further notes).
+%%% Inputs:
+%%%   - inputs: A cell array containing the input time series data. Each cell represents a time series, where:
+%%%             - inputs{1}: First time series (A) with dimensions
+%%%                          nDims X nTimepoints X nTrials
+%%%             - inputs{2}: Second time series (B) with dimensions
+%%%                          nDims X nTimepoints X nTrials
+%%%   - outputs: A cell array of strings specifying which entropies to compute.
+%%%              Possible outputs include:
+%%%               - 'Syn'    : the synergistic component of the source neurons about the target(2 sources case)
+%%%               - 'Red'    : the redundant component of the source neurons about the target(2 sources case)
+%%%               - 'Unq1'   : the unique component of the first source neuron about the target(2 sources case)
+%%%               - 'Unq2'   : the unique component of the second source neuron about the target(2 sources case)
+%%%               - 'Unq'    : the sum of the unique components of the source neurons about the target(2 sources case)
+%%%               - 'PID_atoms'  : All the PID atoms (n sources case) (default)
+%%%               - 'Joint'  : The sum of all the PID atoms, equal to the joint information of the sources about the target (n sources case)
+%%%               - 'Union'  : The sum of the atoms 'Red', 'Unq' (2 sources case)
+%%%               - 'q_dist' : The probability distributionused to calculate the PID terms.
 %%%
-%%% ### Outputs:
-%%% - *PID_v*: double array of the corrected information atoms, in the order
-%%%   [Shared Information, Unique Information X1, Unique Information X2, Complementary Information].
-%%% - *PID_v_uncorrected*: double array of the uncorrected information atoms, in the same
-%%%   order as PID_v.
-%%% - *p_distr*: The probability distribution of the joint system formed by Y and X.
-%%% - *q_distr*: The probability distributionused to calculate the PID terms.
-%%% - *pind_distr*: The probability distribution assuming conditional independence of the sources X1 and X2 in respect to Y.
-%%% - *shuff_v*: array of size opts.shuff X 4 elements, each row corresponding
-%%%   to a single bootstrap iteration and the columns in the same order as PID_v.
+%%%   - varargin: Optional arguments, passed as a structure. Fields may include:
+%%%              - redundancy_measure: name of the measure of the redundancy between sources 
+%%%                                Possible values include:
+%%%                                'I_BROJA'                    :(default)
+%%%                                only available for two sources, which
+%%%                                defines redundancy as the result of a
+%%%                                constrained optimization problem (Bertschinger et al., 2014; Makkeh et al., 2018)
+%%%                                'I_MMI'                      : minimal
+%%%                                 mutual information (MMI) defines the 
+%%%                                 redundancy as the smallest single
+%%%                                 information between a source and the
+%%%                                 target (Barret, 2015)
+%%%                                'I_min'                      : redundancy measure proposed by (Williams and Beer, 2010)
+%%%                                
+%%%                                Users can also define their own custom bias correction method
+%%%                                (see help for correction.m)
 %%%
-%%% ### Further notes:
-%%% The *opts* structure can have the following fields:
+%%%              - bias:           Specifies the bias correction method to be used.
+%%%                                Possible values include:
+%%%                                'naive'                      :(default) - No correction applied.
+%%%                                'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
+%%%                                'ShuffSub'                   :Shuffle Substraction (need to specify shuff as number of shufflings).
+%%%                                'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
+
+%%%                                Users can also define their own custom bias correction method
+%%%                                (see help for correction.m)
 %%%
-%%% | Field name and default value        | Description                                                                                           | Possible values
-%%% |-------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-%%% | opts.bias = `'naive'`               | bias correction method                                                                                | 'naive', 'qe' or 'le'                                                                                                                                        |
-%%% | opts.bin_methodX = `'eqpop'`        | binning method for the X signal                                                                       | 'none', 'eqpop', 'eqspace', 'ceqspace', 'gseqspace'                                                                                                          |
-%%% | opts.bin_methodY = `'none'`         | binning method for the Y signal                                                                       | 'none', 'eqpop', 'eqspace', 'ceqspace', 'gseqspace'                                                                                                          |
-%%% | opts.bin_nbinsX = 3                 | number of bins to reduce the  dimensionality of X                                                          | int > 1                                                                                                                                                      |
-%%% | opts.bin_nbinsY = N/A               | number of bins to reduce the dimensionality of Y                                                      | int > 1                                                                                                                                                      |
-%%% | opts.shuff = 0                       | number of shuffle operations to perform for significance testing                                    | int >= 0                                                                                                                                                     |
-%%% | opts.shuff_variables = N/A           | list of variables to be bootstrapped, specified as a cell array of strings.                           | cell array containing one (or more) strings (`"X1"`, `"X2"` or `"Y"`)                                                                                        |
-%%% | opts.shuff_type = N/A                | type of bootstrapping to be applied for each variable                                                 | cell array of same size of opts.shuff_variables, each element contains the shuffling type (either 'all', 'X1conditioned', 'X2conditioned', or 'Yconditioned') |
-%%% | opts.old_output = 0                 | flag to indicate if the output will follow the old output from the NIT toolbox (1 if yes)             | int 0 or 1                                                                                                                                                   |
-%%% | opts.xtrp = 5                       | how many iterations repetitions of the extrapolation procedure should be performed.                   | int > 0                                                                                                                                                      |
-%%% | opts.redundancy_measure = 'I_BROJA' | name of the measure of the redundancy between sources                                                 | 'I_BROJA', 'I_min' or 'I_MMI'                                                                                                                                |
-%%% | opts.function = @pidBROJA           | function handle of the redundancy measure between sources, not necessary if redundancy_measure is set | any function handle that accepts a probability distribution as input                                                                                         |
-%%% | opts.parallel = 0                   | indicates if the extrapolation and bootstrap procedures run in parallel (1 if yes)                    | int 0 or 1                                                                                                                                                   |
+%%%              - bin_method:     Cell array specifying the binning method.
+%%%                                It can have one or two entries:
+%%%                                If one entry is provided, it will be applied to both A and B.
+%%%                                Possible values include:
+%%%                                'eqpop'     : Equal population binning.
+%%%                                'eqspace'   : Equal space binning.
+%%%                                'threshold' : Binning based on a specified threshold.
+%%%                                Users can also define their own custom binning method
+%%%                                (see help for binning.m).
+%%%                                Default is {'none'}.
 %%%
-%%% Bias
-%%% - 'naive' (no bias correction)
-%%% - 'le' (linear extrapolation)
-%%% - 'qe'(quadratic exrapolation)
+%%%              - n_bins:         Specifies the number of bins to use for binning.
+%%%                                It can be a single integer or a cell array with one or two entries.
+%%%                                If one entry is provided, it will be used for both A and B.
+%%%                                This integer defines how the continuous values will be
+%%%                                discretized into bins for analysis.
+%%%                                Default number of bins is {3}.
 %%%
-%%% Binning methods
-%%% - 'none' (no binning)
-%%% - 'eqpop' (evenly populated binning)
-%%% - 'eqspace' (evenly spaced binning)
-%%% - 'ceqspace' (centered evenly spaced binning)
-%%% - 'gseqspace' (gaussian evenly spaced binning)
+%%%              - suppressWarnings: Boolean (true/false) to suppress warning messages.
+%%%                                  Default is false, meaning warnings will be shown.
+%%% Outputs:
+%%%   - PID_values: A cell array containing the computed MI values as specified in the outputs argument.
+%%%   - PID_naive: A cell array containing the naive MI estimates.
+%%%   - PID_shuff_all: A value indicating the all results of the shuffling procedure (0 if not performed).
+%%%
+%%% EXAMPLE
+%%% Suppose we have two groups of neurons X1 and X2
+%%% and a group of neurons Y.
+%%% (Structure of X1, X2, Y is nNeurons x nTrials)
+%%%
+%%% We can structure our inputs as follows:
+%%% Thus, the total input for A and B would be:
+%%% A = {X1; X2}; 
+%%% B = Y;  % 
+%%%
+%%% To compute the synergy and redundancy between the sources (A) about the target (B), the function can be called as:
+%%% PID_values = PID({A, B}, {'Syn', 'Red', opts);
+%%%
+%%% Here, 'opts' represents additional options you may want to include, such as
+%%% specifying the bias correction method, number of bins (n_bins), and other parameters as needed.
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
