@@ -86,7 +86,7 @@ function [PID_values, PID_naive, PID_shuff_all] = PID(inputs, varargin)
 %%% B = Y;  % 
 %%%
 %%% To compute the synergy and redundancy between the sources (A) about the target (B), the function can be called as:
-%%% PID_values = PID({A, B}, {'Syn', 'Red', opts);
+%%% PID_values = PID({A, B}, {'Syn', 'Red'}, opts);
 %%%
 %%% Here, 'opts' represents additional options you may want to include, such as
 %%% specifying the bias correction method, number of bins (n_bins), and other parameters as needed.
