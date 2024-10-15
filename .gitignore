@@ -1,0 +1,147 @@
+# PyCharm files
+.idea
+# Object files produced by Matlab
+*.mexw32
+*.mexw64
+*.mexmaci
+*.mexmaci64
+*.mexa32
+*.mexa64
+resources
+
+# Data for simulations
+**/*.mat
+
+# Precompiled files by glpkmex
+!extern/glpkmex-master/*.mex*
+!extern/glpkmex-master/win32/*.mex*
+!extern/glpkmex-master/win64/*.mex*
+# Python cache files
+*__pycache__
+# Python interface files
+src/PID/PIDPyInterface/ComputePID.pyc
+src/PID/PIDPyInterface/ComputePID.py
+# Temporary matlab files
+*.m~
+# Autosave files
+*.asv
+# Temporary files created by NIT (e.g. documentation files)
+TMP_*
+# User-specific configuration files
+config/make_GLMnet.m
+config/make_MI.m
+config/make_MI.m
+config/startup_svmlib.m
+config/startup_glmnet.m
+config/startup_pid.m
+config/startup_uml.m
+config/startup_MI.m
+config/startup_tools.m
+config/startup_PID.m
+src/PID/tools/python.m
+src/PID/tools/multiple_II_from_txt.m
+src/PID/IIPyInterface/ComputeII.py
+extern/glmnet_matlab/make_GLMnet.m
+# Test scripts directory
+example_scripts
+# MacOS Desktop Services Store files
+.DS_Store
+# Libsvm object files
+extern/libsvm-3.24/svm-predict
+extern/libsvm-3.24/svm-scale
+extern/libsvm-3.24/svm-train
+extern/libsvm-3.24/matlab/Makefile
+# C/C++ object files
+*.o
+**/*.obj
+src/tools/analyticalMI.prj
+src/tools/codegen/lib/analyticalMI/analyticalMI.c
+src/tools/codegen/lib/analyticalMI/analyticalMI.h
+src/tools/codegen/lib/analyticalMI/analyticalMI_data.c
+src/tools/codegen/lib/analyticalMI/analyticalMI_data.h
+src/tools/codegen/lib/analyticalMI/analyticalMI_emxAPI.c
+src/tools/codegen/lib/analyticalMI/analyticalMI_emxAPI.h
+src/tools/codegen/lib/analyticalMI/analyticalMI_emxutil.c
+src/tools/codegen/lib/analyticalMI/analyticalMI_emxutil.h
+src/tools/codegen/lib/analyticalMI/analyticalMI_initialize.c
+src/tools/codegen/lib/analyticalMI/analyticalMI_initialize.h
+src/tools/codegen/lib/analyticalMI/analyticalMI_ref.rsp
+src/tools/codegen/lib/analyticalMI/analyticalMI_rtw.mk
+src/tools/codegen/lib/analyticalMI/analyticalMI_rtwutil.c
+src/tools/codegen/lib/analyticalMI/analyticalMI_rtwutil.h
+src/tools/codegen/lib/analyticalMI/analyticalMI_terminate.c
+src/tools/codegen/lib/analyticalMI/analyticalMI_terminate.h
+src/tools/codegen/lib/analyticalMI/analyticalMI_types.h
+src/tools/codegen/lib/analyticalMI/buildInfo.mat
+src/tools/codegen/lib/analyticalMI/codedescriptor.dmr
+src/tools/codegen/lib/analyticalMI/codeInfo.mat
+src/tools/codegen/lib/analyticalMI/colon.c
+src/tools/codegen/lib/analyticalMI/colon.h
+src/tools/codegen/lib/analyticalMI/compileInfo.mat
+src/tools/codegen/lib/analyticalMI/examples/main.c
+src/tools/codegen/lib/analyticalMI/examples/main.h
+src/tools/codegen/lib/analyticalMI/gcGuiReport.mat
+src/tools/codegen/lib/analyticalMI/html/report.mldatx
+src/tools/codegen/lib/analyticalMI/interface/_coder_analyticalMI_api.c
+src/tools/codegen/lib/analyticalMI/interface/_coder_analyticalMI_api.h
+src/tools/codegen/lib/analyticalMI/interface/_coder_analyticalMI_info.c
+src/tools/codegen/lib/analyticalMI/interface/_coder_analyticalMI_info.h
+src/tools/codegen/lib/analyticalMI/interface/_coder_analyticalMI_mex.c
+src/tools/codegen/lib/analyticalMI/interface/_coder_analyticalMI_mex.h
+src/tools/codegen/lib/analyticalMI/minOrMax.c
+src/tools/codegen/lib/analyticalMI/minOrMax.h
+src/tools/codegen/lib/analyticalMI/permn.c
+src/tools/codegen/lib/analyticalMI/permn.h
+src/tools/codegen/lib/analyticalMI/probsCalculation.c
+src/tools/codegen/lib/analyticalMI/probsCalculation.h
+src/tools/codegen/lib/analyticalMI/rt_nonfinite.c
+src/tools/codegen/lib/analyticalMI/rt_nonfinite.h
+src/tools/codegen/lib/analyticalMI/rtGetInf.c
+src/tools/codegen/lib/analyticalMI/rtGetInf.h
+src/tools/codegen/lib/analyticalMI/rtGetNaN.c
+src/tools/codegen/lib/analyticalMI/rtGetNaN.h
+src/tools/codegen/lib/analyticalMI/rtw_proj.tmw
+src/tools/codegen/lib/analyticalMI/rtwtypes.h
+src/tools/codegen/mex/analyticalMI/cfiGuiReport.mat
+src/tools/codegen/mex/analyticalMI/html/report.mldatx
+src/tools/codegen/mex/analyticalMI/analyticalMI.cpp
+src/tools/codegen/mex/analyticalMI/analyticalMI.h
+src/tools/codegen/mex/analyticalMI/analyticalMI_data.cpp
+src/tools/codegen/mex/analyticalMI/analyticalMI_data.h
+src/tools/codegen/mex/analyticalMI/analyticalMI_initialize.cpp
+src/tools/codegen/mex/analyticalMI/analyticalMI_initialize.h
+src/tools/codegen/mex/analyticalMI/analyticalMI_mex.sh
+src/tools/codegen/mex/analyticalMI/analyticalMI_mexutil.cpp
+src/tools/codegen/mex/analyticalMI/analyticalMI_mexutil.h
+src/tools/codegen/mex/analyticalMI/analyticalMI_terminate.cpp
+src/tools/codegen/mex/analyticalMI/analyticalMI_terminate.h
+src/tools/codegen/mex/analyticalMI/analyticalMI_types.h
+src/tools/codegen/mex/analyticalMI/build.ninja
+src/tools/codegen/mex/analyticalMI/build/maci64/.ninja_deps
+src/tools/codegen/mex/analyticalMI/build/maci64/.ninja_log
+src/tools/codegen/mex/analyticalMI/build/maci64/buildLog.log
+src/tools/codegen/mex/analyticalMI/buildInfo.mat
+src/tools/codegen/mex/analyticalMI/coder_array.h
+src/tools/codegen/mex/analyticalMI/eml_int_forloop_overflow_check.cpp
+src/tools/codegen/mex/analyticalMI/eml_int_forloop_overflow_check.h
+src/tools/codegen/mex/analyticalMI/find.cpp
+src/tools/codegen/mex/analyticalMI/find.h
+src/tools/codegen/mex/analyticalMI/gcGuiReport.mat
+src/tools/codegen/mex/analyticalMI/interface/_coder_analyticalMI_api.cpp
+src/tools/codegen/mex/analyticalMI/interface/_coder_analyticalMI_api.h
+src/tools/codegen/mex/analyticalMI/interface/_coder_analyticalMI_info.cpp
+src/tools/codegen/mex/analyticalMI/interface/_coder_analyticalMI_info.h
+src/tools/codegen/mex/analyticalMI/interface/_coder_analyticalMI_mex.cpp
+src/tools/codegen/mex/analyticalMI/interface/_coder_analyticalMI_mex.h
+src/tools/codegen/mex/analyticalMI/log2.cpp
+src/tools/codegen/mex/analyticalMI/log2.h
+src/tools/codegen/mex/analyticalMI/prod.cpp
+src/tools/codegen/mex/analyticalMI/prod.h
+src/tools/codegen/mex/analyticalMI/rt_nonfinite.cpp
+src/tools/codegen/mex/analyticalMI/rt_nonfinite.h
+src/tools/codegen/mex/analyticalMI/rtwtypes.h
+src/tools/codegen/mex/analyticalMI/sum.cpp
+src/tools/codegen/mex/analyticalMI/sum.h
+
+
+.vscode/launch.json
