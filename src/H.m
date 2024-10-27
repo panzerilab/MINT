@@ -1,83 +1,106 @@
 function [entropies, entropies_naive, entropies_nullDist, prob_dists] = H(inputs, varargin)
-%%% *function [entropies, entropies_naive, shuff_all] = H(inputs, outputs, opts)*
-%%%
-%%% The TE function computes Transfer Entropy (TE) values from time series data.
-%%% Transfer entropy from a process A to another process B is the amount of uncertainty
-%%% reduced in future values of B by knowing the past values of A given past values of B.
-%%%
-%%% Inputs:
-%%%   - inputs: A cell array containing the input data A and B. Each cell represents data, where:
-%%%             - inputs{1}: First data input (A) with dimensions
-%%%                          nDims [X nTimepoints] X nTrials (can be 2 or 3 dimensional)
-%%%             - inputs{2}: Second data input (B) with dimensions
-%%%                          nDims [X nTimepoints] X nTrials
-%%%
-%%%             Note: The first dimension (nDims) can accommodate multiple neurons
-%%%             concatenated together, allowing for analysis across multiple
-%%%             neuronal datasets.
-%%%
-%%%   - outputs: A cell array of strings specifying which entropies to compute.
-%%%              Possible outputs include:
-%%%              - 'H(A)'        : Entropy of A.
-%%%              - 'H(A|B)'      : Conditional entropy of A given B.
-%%%              - 'Hlin(A)'     : Linear entropy of A.
-%%%              - 'Hind(A)'     : Induced entropy of A.
-%%%              - 'Hind(A|B)'   : Induced conditional entropy of A given B.
-%%%              - 'Chi(A)'      : Chi entropy of A.
-%%%              - 'Hsh(A)'      : Shuffled entropy of A.
-%%%              - 'Hsh(A|B)'    : Shuffled conditional entropy of A given B.
-%%%
-%%%   - varargin: Optional arguments, passed as a structure. Fields may include:
-%%%              - bias:           Specifies the bias correction method to be used.
-%%%                                Possible values include:
-%%%                                'naive'                      :(default) - No correction applied.
-%%%                                'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
-%%%                                'ShuffSub'                   :Shuffle Substraction (need to specify shuff as number of shufflings).
-%%%                                'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
-%%%                                'pt'                         :Panzeri-Treves bias correction.
-%%%                                'bub'                        :
-%%%                                Users can also define their own custom bias correction method
-%%%                                (see help for correction.m).
-%%%
-%%%              - bin_method:     Cell array specifying the binning method.
-%%%                                It can have one or two entries:
-%%%                                If one entry is provided, it will be applied to both A and B.
-%%%                                Possible values include:
-%%%                                'none'      : (default) - No binning applied.
-%%%                                'eqpop'     : Equal population binning.
-%%%                                'eqspace'   : Equal space binning.
-%%%                                'threshold' : Binning based on a specified threshold.
-%%%                                Users can also define their own custom binning method
-%%%                                (see help for binning.m).
-%%%
-%%%              - n_bins:         Specifies the number of bins to use for binning.
-%%%                                It can be a single integer or a cell array with one or two entries.
-%%%                                If one entry is provided, it will be used for both A and B.
-%%%                                This integer defines how the continuous values will be
-%%%                                discretized into bins for analysis.
-%%%                                Default number of bins is {3}.
-%%%
-%%%              - suppressWarnings: Boolean (true/false) to suppress warning messages.
-%%%                                  Default is false, meaning warnings will be shown.
-%%%
-%%%
-%%% Outputs:
-%%%   - entropies: A cell array containing the computed entropy values as specified in the outputs argument.
-%%%   - entropies_naive: A cell array containing the naive entropy estimates.
-%%%   - shuff_all: A value indicating the results of the shuffling procedure (0 if not performed).
-%%%
-%%% Note:
-%%% Input A and B can represent multiple neurons concatenated along the first dimension.
-%%% This means that each neuron can contribute its activity data, allowing the analysis
-%%% of interactions between different neurons and their influence on other time series.
-%%%
-%%% Example:
-%%%   To compute the Entropy from two neural populations X1 and X2,
-%%%   the function can be called as follows:
-%%%   inputs = {X1, X2};
-%%%   outputs = {'H(A)', 'H(A|B)'};
-%%%   [entropies, entropies_naive, shuff_all] = H(inputs, outputs, opts);
+% *function [entropies, entropies_naive, entropies_nullDist, prob_dists] = H(inputs, outputs, opts)*
+% H - Calculate Entropy (H) and related information-theoretic quantities
+%
+% This function calculates entropy (H) and other related measures based on the 
+% provided inputs, outputs, and optional parameters.
+%
+% Inputs:
+%   - inputs: A cell array containing the data:
+%             - inputs{1}: First input data (A) with dimensions
+%                          nDims X (nTimepoints X) nTrials
+%             - inputs{2}: Second input data (B) with dimensions
+%                          nDims X (nTimepoints X) nTrials
+%             -> In cases where the input is provided as a time series, the outputs 
+%                will be computed for each time point, resulting in outputs that are 
+%                also represented as time series
+%
+%   - outputs: A cell array of strings specifying which entropies to compute.
+%               - 'H(A)'        : Entropy of A.
+%               - 'H(A|B)'      : Conditional entropy of A given B.
+%               - 'Hlin(A)'     : Linear entropy of A.
+%               - 'Hind(A)'     : Independent entropy of A.
+%               - 'Hind(A|B)'   : Independent conditional entropy of A given B.
+%               - 'Chi(A)'      : Chi entropy of A.
+%               - 'Hsh(A)'      : Shuffled entropy of A.
+%               - 'Hsh(A|B)'    : Shuffled conditional entropy of A given B.
+%
+%   - varargin: Optional arguments, passed as a structure. Fields may include:
+%              - bias:             Specifies the bias correction method to be used.
+%                                  'naive'                      :(default) - No correction applied.
+%                                  'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
+%                                  'ShuffSub'                   :Shuffle Substraction (need to specify shuff as number of shufflings).
+%                                  'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
+%                                  'pt'                         :Panzeri-Treves bias correction (Panzeri and Treves 1996).
+%                                  'bub'                        :best upper bound(Paninsky, 2003)
+%                                  Users can also define their own custom bias correction method
+%                                  (type 'help correction' for more information)
+%  
+%              - bin_method:       Cell array specifying the binning method to be applied.
+%                                  'none'      : (default) - No binning applied.
+%                                  'eqpop'     : Equal population binning.
+%                                  'eqspace'   : Equal space binning.
+%                                  'userEdges' : Binning based on a specified edged.
+%                                  Users can also define their own custom binning method
+%                                  If one entry is provided, it will be applied to both A and B.
+%                                  (type 'help binning' for more information).
+%  
+%              - n_bins:           Specifies the number of bins to use for binning.
+%                                  It can be a single integer or a cell array with one or two entries.
+%                                  Default number of bins is {3}.
+%
+%              - computeNulldist:  If set to true, generates a null distribution
+%                                  based on the specified inputs and core function.
+%                                  When this option is enabled, the following can be specified:
+%                                   - `n_samples`: The number of null samples to generate (default: 100).
+%                                   - 'shuffling': Additional shuffling options to determine the variables to be 
+%                                      shuffled during the computation of the null distribution (default: {'A'}).
+%                                      (type 'help shuffle' for more information).
+% 
+%              - suppressWarnings:  Boolean (true/false) to suppress warning messages.
+%                                   Default is false, meaning warnings will be shown.
+%
+%              - NaN_handling:     Specifies how NaN values should be handled in the data.
+%                                  Options include:
+%                                  'removeTrial' : Removes trials containing NaN in any variable 
+%                                                  from all input data.
+%                                  'setToZero'   : Sets NaN values to zero.
+%                                  'error'       : (default) Throws an error if NaN values are detected.
+%
+% Outputs:
+%   - entropies: A cell array containing the computed entropy values as specified in the outputs argument.
+%   - entropies_naive: A cell array containing the naive entropy estimates.
+%   - entropies_nullDist: Results of the null distribution computation (0 if not performed).
+%   - prob_dists: A cell array containing the estimated probability distributions used in entropy calculations.
+%
+% EXAMPLE
+% Suppose we have two time series of groups of neurons X1 and X2
+% and two time series of groups of neurons Y1 and Y2.
+% (Structure of X1, X2, Y1, Y2 is nNeurons x nTrials)
+%
+% We can structure our inputs as follows:
+% X = cat(1, X1, X2);  % Concatenates X1 and X2 along the first dimension (neurons)
+% Y = cat(1, Y1, Y2);  % Concatenates Y1 and Y2 along the first dimension (neurons)
+%
+% To compute the conditioned Entropy and the Shuffled Entropy of X (X|Y), the function can be called as:
+% [entropies, entropies_naive] = H({X, Y}, {'H(A)', 'H(A|B)'}, opts);
+%
+% Here, 'opts' represents additional options you may want to include (see varargin options).
 
+% Copyright (C) 2024 Gabriel Matias Lorenz, Nicola Marie Engel
+% This file is part of MINT. 
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+% 
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 1: Check Inputs, Check OutputList, Fill missing opts with default values %
@@ -89,10 +112,10 @@ if length(varargin) > 1
             outputs = varargin{1};
         end
     else
-        [outputs, opts] = check_inputs('H',inputs,varargin{:});
+        [inputs, outputs, opts] = check_inputs('H',inputs,varargin{:});
     end
 else
-    [outputs, opts] = check_inputs('H',inputs,varargin{:});
+    [inputs, outputs, opts] = check_inputs('H',inputs,varargin{:});
 end
 
 nVars = length(inputs);
@@ -118,27 +141,36 @@ if DimsA(end) ~= DimsB(end)
     msg = sprintf('The number of trials for A (%d) and B (%d) are not consistent. Ensure both variables have the same number of trials.',DimsA(end),DimsB(end));
     error('H:InvalidInput', msg);
 end
-nTrials = DimsA(end);
+
+if length(DimsA) > 2 || length(DimsB) > 2
+    if length(DimsA) > 2 && length(DimsB) <= 2
+        inputs{2} = reshape(inputs{2}, [DimsB(1), 1, DimsB(2)]);
+        inputs{2} = repmat(inputs{2}, [1, DimsA(2), 1]);
+    elseif length(DimsB) > 2 && length(DimsA) <= 2
+        inputs{1} = reshape(inputs{1}, [DimsA(1), 1, DimsA(2)]);
+        inputs{1} = repmat(inputs{1}, [1, DimsB(2), 1]);
+    end
+    nTimepoints = (DimsA(2));
+    opts.timeseries = true;
+else
+    nTimepoints = 1;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %               Step 2: Prepare Data (binning/reduce dimensions)                %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ~opts.isbinned 
+if ~opts.isBinned 
     inputs_b = binning(inputs,opts);
-    opts.isbinned = true;
-    for c=1:length(inputs)
-        inputs_b{c} = inputs_b{c}+1;
-    end
+    opts.isBinned = true;
 else
     inputs_b = inputs;
-
 end
 
 inputs_1d = inputs_b;
 if DimsA(1) > 1
     inputs_1d{1} = reduce_dim(inputs_b{1}, 1);
     if  any(strcmp(outputs,'Hlin(A)')) || any(strcmp(outputs,'Hind(A)')) || any(strcmp(outputs, 'Hind(A|B)'))
-        inputs_1d{3} = inputs{1};
+        inputs_1d{3} = inputs_b{1};
     end 
 end
 if DimsB(1) > 1
@@ -155,14 +187,19 @@ end
 corr = opts.bias;
 corefunc = @H;
 nullDist_opts = opts;
-nullDist_opts.compute_nulldist = false;
+nullDist_opts.computeNulldist = false;
 
-entropies_nullDist = 0;
-if opts.compute_nulldist
-        entropies_nullDist = create_NullDistribution(inputs, outputs, @H, nullDist_opts);
-end
+if opts.computeNulldist == true
+        entropies_nullDist = create_nullDist(inputs_b, outputs, @H, nullDist_opts);
+else 
+    entropies_nullDist = 0;
+end 
+
 if ~strcmp(corr, 'naive')
-    [entropies, entropies_naive, entropies_nullDist] = correction(inputs_1d, outputs, corr, corefunc, opts);
+    [entropies, entropies_naive, entropies_shuffAll] = correction(inputs_1d, outputs, corr, corefunc, opts);
+    if ~iscell(entropies_nullDist)
+        entropies_nullDist = entropies_shuffAll;
+    end 
     return
 end
 
@@ -209,58 +246,70 @@ prob_dists = prob_estimator(inputs_1d, required_distributions, opts);
 %                      Step 4.B: Compute requested Entropies                    %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 entropies = cell(1, length(outputs));
-for i = 1:length(indices)
-    idx = indices(i);
-    switch possibleOutputs{idx}
-        case 'H(A)'
-            P_A = prob_dists{strcmp(required_distributions, 'P(A)')};
-            P_lin_log = P_A .* log2(P_A);
-            P_lin_log(isnan(P_lin_log)) = 0;
-            entropies{i} = -sum(P_lin_log(:));
-        case 'H(A|B)'
-            P_AB = prob_dists{strcmp(required_distributions, 'P(A|B)')};
-            P_B = prob_dists{strcmp(required_distributions, 'P(B)')};
-            P_Bext = repmat(P_B,1, size(P_AB,1));
-            P_lin_log = P_Bext' .* P_AB .* log2(P_AB);
-            P_lin_log(isnan(P_lin_log)) = 0;
-            entropies{i} = -sum(P_lin_log(:));
-        case 'Hlin(A)'
-            P_lin = prob_dists{strcmp(required_distributions, 'Plin(A)')};
-            P_lin_log = P_lin .* log2(P_lin);
-            P_lin_log(isnan(P_lin_log)) = 0;  % Handle 0*log(0) cases
-            entropies{i} = -sum(P_lin_log(:));
-        case 'Hind(A)'
-            P_indA = prob_dists{strcmp(required_distributions, 'Pind(A)')};
-            P_lin_log = P_indA .* log2(P_indA);
-            P_lin_log(isnan(P_lin_log)) = 0;
-            entropies{i} = -sum(P_lin_log(:));
-        case 'Hind(A|B)'
-            P_indAB = prob_dists{strcmp(required_distributions, 'Pind(A|B)')};
-            P_B = prob_dists{strcmp(required_distributions, 'P(B)')};
-            P_lin_log = P_B' .* P_indAB .* log2(P_indAB);
-            P_lin_log(isnan(P_lin_log)) = 0;
-            entropies{i} = -sum(P_lin_log(:));
-        case 'Chi(A)'
-            P_A = prob_dists{strcmp(required_distributions, 'P(A)')};
-            P_indA = prob_dists{strcmp(required_distributions, 'Pind(A)')};
-            if size(P_A,1)<size(P_indA,1)
-               P_A = [P_A; zeros(size(P_indA,1)-size(P_A,1))];
-            end
-            P_lin_log = P_A .* log2(P_indA);
-            P_lin_log(isnan(P_lin_log)) = 0;
-            P_lin_log(isinf(P_lin_log)) = 0;
-            entropies{i} = -sum(P_lin_log(:));
-        case 'Hsh(A)'
-            P_shA = prob_dists{strcmp(required_distributions, 'Psh(A)')};
-            P_lin_log = P_shA .* log2(P_shA);
-            P_lin_log(isnan(P_lin_log)) = 0;
-            entropies{i} = -sum(P_lin_log(:));
-        case 'Hsh(A|B)'
-            P_shAB = prob_dists{strcmp(required_distributions, 'Psh(A|B)')};
-            P_B = prob_dists{strcmp(required_distributions, 'P(B)')};
-            P_lin_log = P_B' .* P_shAB .* log2(P_shAB);
-            P_lin_log(isnan(P_lin_log)) = 0;
-            entropies{i} = -sum(P_lin_log(:));
+
+for t = 1:nTimepoints
+    for i = 1:length(indices)
+        idx = indices(i);
+        switch possibleOutputs{idx}
+            case 'H(A)'
+                P_A = prob_dists{t, strcmp(required_distributions, 'P(A)')};
+                P_lin_log = P_A .* log2(P_A);
+                P_lin_log(isnan(P_lin_log)) = 0;
+                entropies{i}(1,t) = -sum(P_lin_log(:));
+                
+            case 'H(A|B)'
+                P_AB = prob_dists{t, strcmp(required_distributions, 'P(A|B)')};
+                P_B = prob_dists{t, strcmp(required_distributions, 'P(B)')};
+                P_Bext = repmat(P_B, 1, size(P_AB, 1));
+                P_lin_log = P_Bext' .* P_AB .* log2(P_AB);
+                P_lin_log(isnan(P_lin_log)) = 0;
+                entropies{i}(1,t) = -sum(P_lin_log(:));
+                
+            case 'Hlin(A)'
+                P_lin = prob_dists{t, strcmp(required_distributions, 'Plin(A)')};
+                P_lin_log = P_lin .* log2(P_lin);
+                P_lin_log(isnan(P_lin_log)) = 0; 
+                entropies{i}(1,t) = -sum(P_lin_log(:));
+                
+            case 'Hind(A)'
+                P_indA = prob_dists{t, strcmp(required_distributions, 'Pind(A)')};
+                P_lin_log = P_indA .* log2(P_indA);
+                P_lin_log(isnan(P_lin_log)) = 0;
+                entropies{i}(1,t) = -sum(P_lin_log(:));
+                
+            case 'Hind(A|B)'
+                P_indAB = prob_dists{t, strcmp(required_distributions, 'Pind(A|B)')};
+                P_B = prob_dists{t, strcmp(required_distributions, 'P(B)')};
+                P_lin_log = P_B' .* P_indAB .* log2(P_indAB);
+                P_lin_log(isnan(P_lin_log)) = 0;
+                entropies{i}(1,t) = -sum(P_lin_log(:));
+                
+            case 'Chi(A)'
+                P_A = prob_dists{t, strcmp(required_distributions, 'P(A)')};
+                P_indA = prob_dists{t, strcmp(required_distributions, 'Pind(A)')};
+                if size(P_A, 1) < size(P_indA, 1)
+                   P_A = [P_A; zeros(size(P_indA, 1) - size(P_A, 1), 1)];
+                elseif size(P_A, 1) > size(P_indA, 1)
+                    P_indA = [P_indA; zeros(size(P_A, 1) - size(P_indA, 1), 1)];
+                end
+                P_lin_log = P_A .* log2(P_indA);
+                P_lin_log(isnan(P_lin_log)) = 0;
+                P_lin_log(isinf(P_lin_log)) = 0;
+                entropies{i}(1,t) = -sum(P_lin_log(:));
+                
+            case 'Hsh(A)'
+                P_shA = prob_dists{t, strcmp(required_distributions, 'Psh(A)')};
+                P_lin_log = P_shA .* log2(P_shA);
+                P_lin_log(isnan(P_lin_log)) = 0;
+                entropies{i}(1,t) = -sum(P_lin_log(:));
+                
+            case 'Hsh(A|B)'
+                P_shAB = prob_dists{t, strcmp(required_distributions, 'Psh(A|B)')};
+                P_B = prob_dists{t, strcmp(required_distributions, 'P(B)')};
+                P_lin_log = P_B' .* P_shAB .* log2(P_shAB);
+                P_lin_log(isnan(P_lin_log)) = 0;
+                entropies{i}(1,t) = -sum(P_lin_log(:));
+        end
     end
 end
 entropies_naive = entropies;

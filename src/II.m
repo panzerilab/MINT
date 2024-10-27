@@ -1,77 +1,93 @@
 function [II_values, II_naive, II_nullDist, atom1, atom2] = II(inputs, varargin)
-%%% *function [II, PID_SR_C, PID_RC_S] = II(S, R, C, varargin)*
-%%%
-%%% ### Description
-%%% This function computes the intersection information (II), either
-%%% naive or bias-corrected, based on the input data.
-%%%
-%%% ### Inputs:
-%%% - *S*: An array of size *nDimsS x nTrials* representing the discrete 
-%%%        stimulus presented in each trial.
-%%% - *R*: An array of size *nDimsR x nTrials* representing the response
-%%%        of each of the *nDimsR* dimensions for each trial.
-%%% - *C*: An array of size *nDimsC x nTrials* representing the discrete
-%%%        choice made by the subject in each trial.
-%%% - *opts*: Optional settings used to calculate II (see further notes).
-%%%
-%%% ### Outputs:
-%%% - *II_v*: final value of intersection information. If opts.bias is 'naive', it's the
-%%% uncorrected value. If opts.bias is anything else, it is the value after
-%%% bias correction.
-%%% - *II_naive*: uncorrected value of intersection information. 
-%%% - *shuff_v*: intersection information values for each permutation.
-%%%
-%%% ### Further notes:
-%%% The *opts* structure can have the following fields:
-%%%
-%%% - *opts.bias*: Specifies the bias correction method.
-%%%   Allowed values:
-%%%     - `'naive'`: No bias correction (default)
-%%%     - `'le'`: Linear extrapolation
-%%%     - `'qe'`: Quadratic extrapolation
-%%%
-%%% - *opts.bin_methodS*, *opts.bin_methodR*, *opts.bin_methodC*:
-%%%   Specify the binning method for the stimulus (*S*), response (*R*), 
-%%%   and choice (*C*), respectively. The following binning methods 
-%%%   are allowed:
-%%%     - `'none'`: No binning (default for *S* and *C*)
-%%%     - `'eqpop'`: Evenly populated binning (default for *R*)
-%%%     - `'eqspace'`: Evenly spaced binning
-%%%   See the documentation for the `binr` function for more details.
-%%%
-%%% - *opts.n_binsS*: Specifies the number of bins used to reduce the 
-%%%   dimensionality of the stimulus. Must be an integer > 1 (default: 3).
-%%%
-%%% - *opts.n_binsR*: Specifies the number of bins used to reduce the 
-%%%   dimensionality of the response. Must be an integer > 1 (default: 3).
-%%%
-%%% - *opts.n_binsC*: Specifies the number of bins used to reduce the 
-%%%   dimensionality of the choice. Must be an integer > 1 (default: 3).
-%%%
-%%% - *opts.shuff*: Specifies the number of bootstrap operations for 
-%%%   significance testing. The bootstraps are performed independently on
-%%%   each variable listed in `opts.shuff_variables`. Must be an integer ≥ 0
-%%%   (default: 0).
-%%%
-%%% - *opts.shuff_variables*: A cell array of strings specifying which
-%%%   variables to bootstrap. Can include one or more of the following:
-%%%     - `"S"`: Stimulus
-%%%     - `"R"`: Response
-%%%     - `"C"`: Choice
-%%%   If multiple bootstraps are requested, all specified variables are 
-%%%   shuffled.
-%%%
-%%% - *opts.shuff_type*: Specifies the type of bootstrapping to apply to 
-%%%   each variable in `opts.shuff_variables`. Each element of the cell array 
-%%%   should specify the type of shuffling:
-%%%     - `'all'`: Shuffles all values of the variable across trials.
-%%%     - `$VAR$conditioned`: Shuffles the trials conditioned on the values 
-%%%       of the variable `$VAR$`, where `$VAR$` can be `"S"`, `"R"`, or `"C"`.
-%%%
-%%% - *opts.shuff_bias*: Specifies the bias correction method to be applied 
-%%%   for each variable in `opts.shuff_variables`. Each element should 
-%%%   specify one of the bias correction methods described in `opts.bias`.
+% II - Intersection Information (II) and related information-theoretic quantities
+%
+% This function calculates the intersection information (II) based on the provided inputs, 
+% outputs, and optional parameters.
+%
+% Inputs:
+%   - inputs: A cell array containing the data:
+%             - inputs{1}: First input data (A) with dimensions
+%                          nDims X (nTimepoints X) nTrials
+%             - inputs{2}: Second input data (B) with dimensions
+%                          nDims X (nTimepoints X) nTrials
+%             - inputs{3}: Third input data (C) with dimensions
+%                          nDims X (nTimepoints X) nTrials
+%             -> In cases where the input is provided as a time series, the outputs 
+%                will be computed for each time point, resulting in outputs that are 
+%                also represented as time series
+%
+%   - outputs: A cell array of strings specifying which measures to compute:
+%               - 'II(A,B,C)'    :information between A and B that is readout for C
+%               - 'II(B,C,A)'    :information between B and C that is readout for A
+%               - 'II(A,C,B)'    :information between A and C that is readout for B
+%
+%   - varargin: Optional arguments, passed as a structure. Fields may include:
+%              - redundancy_measure: name of the measure of the redundancy between sources 
+%                                    'I_BROJA' : only available for two sources, which defines redundancy as the result of a
+%                                                constrained optimization problem (Bertschinger et al., 2014; Makkeh et al., 2018)
+%                                    'I_MMI'   : minimal mutual information (MMI) defines the redundancy as the smallest 
+%                                                singleinformation between a source and the target (Barret, 2015)
+%                                    'I_min'   : redundancy measure proposed by (Williams and Beer, 2010)                              
+%     
+%              - bias:               Specifies the bias correction method to be used.
+%                                    'naive'                      :(default) - No correction applied.
+%                                    'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
+%                                    'ShuffSub'                   :Shuffle Substraction (need to specify shuff as number of shufflings).
+%                                    'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
+%                                    Users can also define their own custom bias correction method
+%                                    (type 'help correction' for more information)
+%     
+%              - bin_method:         Cell array specifying the binning method to be applied.
+%                                    'none'      : (default) - No binning applied.
+%                                    'eqpop'     : Equal population binning.
+%                                    'eqspace'   : Equal space binning.
+%                                    'userEdges' : Binning based on a specified edged.
+%                                    Users can also define their own custom binning method
+%                                    If one entry is provided, it will be applied to both A and B.
+%                                    (type 'help binning' for more information).
+%     
+%              - n_bins:             Specifies the number of bins to use for binning.
+%                                    It can be a single integer or a cell array with one or two entries.
+%                                    Default number of bins is {3}.
+%
+%              - computeNulldist:    If set to true, generates a null distribution
+%                                    based on the specified inputs and core function.
+%                                    When this option is enabled, the following can be specified:
+%                                     - `n_samples`: The number of null samples to generate (default: 100).
+%                                     - 'shuffling': Additional shuffling options to determine the variables to be 
+%                                        shuffled during the computation of the null distribution (default: {'A'}).
+%                                        (type 'help shuffle' for more information).
+%   
+%              - suppressWarnings:    Boolean (true/false) to suppress warning messages.
+%                                     Default is false, meaning warnings will be shown
+%
+%              - NaN_handling:     Specifies how NaN values should be handled in the data.
+%                                  Options include:
+%                                  'removeTrial' : Removes trials containing NaN in any variable 
+%                                                  from all input data.
+%                                  'setToZero'   : Sets NaN values to zero.
+%                                  'error'       : (default) Throws an error if NaN values are detected.
+% 
+% Outputs:
+%   - II_values: A cell array containing the computed II values as specified in the outputs argument.
+%   - II_naive: A cell array containing the naive II estimates.
+%   - II_nullDist: Results of the null distribution computation (0 if not performed).
+%   - atom1, atom2: The redundancy atoms between A and B about C (atom1), and between C and B about A (atom2).
 
+% Copyright (C) 2024 Gabriel Matias Lorenz, Nicola Marie Engel
+% This file is part of MINT. 
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+% 
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 1: Check Inputs, Check OutputList, Fill missing opts with default values %
@@ -83,10 +99,10 @@ if length(varargin) > 1
             outputs = varargin{1};
         end
     else
-        [outputs, opts] = check_inputs('II',inputs,varargin{:});
+        [inputs, outputs, opts] = check_inputs('II',inputs,varargin{:});
     end
 else
-    [outputs, opts] = check_inputs('II',inputs,varargin{:});
+    [inputs, outputs, opts] = check_inputs('II',inputs,varargin{:});
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -99,17 +115,55 @@ if ~opts.isBinned
 else
     inputs_b = inputs;
 end
-inputs_1d = inputs_b;
 
-for var = 1:length(inputs_b)
+nTimepoints_all = 1;
+Dims_tmp = size(inputs_b{1});
+nTrials_comp = Dims_tmp(end);
+for var = 1:length(inputs)
+    Dims_var = size(inputs_b{var});
+    if length(Dims_var) == 2
+        nTrials = Dims_var(end);
+        if nTrials ~= nTrials_comp
+            error('II: Inconsistent number of trials in input');
+        end
+    elseif length(Dims_var) == 3
+        nTrials = Dims_var(end);
+        if nTrials ~= nTrials_comp
+            error('II: Inconsistent number of trials in input');
+        end
+        nTimepoints_all = [nTimepoints_all, Dims_var(2)];
+    else
+        error('II: Invalid input size');
+    end
+end
+nTimepoints = max(nTimepoints_all);
+if nTimepoints > 1
+    opts.timeseries = true;
+end 
+for var = 1:length(inputs)
+    Dims_var = size(inputs_b{var});
+    if length(Dims_var) == 2 && nTimepoints > 1
+        inputs_b{var} = reshape(inputs_b{var}, [Dims_var(1), 1, Dims_var(2)]);
+        inputs_b{var} = repmat(inputs_b{var}, [1, nTimepoints, 1]);
+    end
+end
+
+inputs_1d = inputs_b;
+size_tmp = size(inputs_1d{1});
+nTrials_comp = size_tmp(end);
+for var = 1:length(inputs)
     sizeVar = size(inputs_1d{var});
+    nTrials = sizeVar(end);
+    if nTrials ~= nTrials_comp
+        msg = 'Inconsistent input size. Number of Trials must be consistent.';
+        error('II:Invalid Input', msg);
+    end
     if sizeVar(1) > 1
         inputs_1d{var} = reduce_dim(inputs_1d{var}, 1);
     end
 end
 
-
-possibleOutputs = {'II(B,A,C)','II(A,B,C)', 'II(A,C,B)'};
+possibleOutputs = {'II(A,B,C)','II(B,C,A)', 'II(A,C,B)'};
 [isMember, indices] = ismember(outputs, possibleOutputs);
 if any(~isMember)
     nonMembers = outputs(~isMember);
@@ -123,11 +177,15 @@ end
 II_nullDist = 0;
 corr = opts.bias;
 corefunc = @II;
+nullDist_opts = opts;
+nullDist_opts.computeNulldist = false;
+
 if any(opts.computeNulldist)
-        II_nullDist = create_NullDistribution(inputs, outputs, @II, nullDist_opts);
+        nullDist_opts.isBinned=true;
+        II_nullDist = create_nullDist(inputs_b, outputs, @II, nullDist_opts);
 end
 if ~strcmp(corr, 'naive')  
-    opts.compute_nulldist = false;
+    opts.computeNulldist = false;
     [II_values, II_naive] = correction(inputs_1d, outputs, corr, corefunc, opts);
     return
 end
@@ -136,21 +194,28 @@ end
 %             Step 3.B: Compute Probability Distributions                       %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 entropy_distributions = struct( ...
-    'II_BAC', {{'P(B,A,C)'}}, ...
     'II_ABC', {{'P(A,B,C)'}}, ...
+    'II_BCA', {{'P(B,C,A)'}}, ...
     'II_ACB', {{'P(A,C,B)'}} ...
     );
 
-opts.multidim = true;
+switch opts.redundancy_measure
+    case 'I_BROJA'
+        opts.function = @pidBROJA;
+    case 'I_MMI'
+        opts.function = @pidimmi;
+    case 'I_min'
+        opts.function = @pidimin;
+end
 
 required_distributions = {};
 for ind = 1:length(indices)
     idx = indices(ind);
     switch possibleOutputs{idx}
-        case 'II(B,A,C)'
-            required_distributions = [required_distributions, entropy_distributions.II_BAC{:}];
         case 'II(A,B,C)'
             required_distributions = [required_distributions, entropy_distributions.II_ABC{:}];
+        case 'II(B,C,A)'
+            required_distributions = [required_distributions, entropy_distributions.II_BCA{:}];
         case 'II(A,C,B)'
             required_distributions = [required_distributions, entropy_distributions.II_ACB{:}];
     end
@@ -159,10 +224,10 @@ end
 prob_dists = {};
 for i = 1:length(required_distributions)
     switch required_distributions{i}
-        case 'P(B,A,C)'
-            prob_dists{i} =  prob_estimator({inputs_1d{2},inputs_1d{1},inputs_1d{3}}, {'P(A,B,C)'}, opts);
         case 'P(A,B,C)'
             prob_dists{i} =  prob_estimator({inputs_1d{1},inputs_1d{2},inputs_1d{3}}, {'P(A,B,C)'}, opts);
+        case 'P(B,C,A)'
+            prob_dists{i} =  prob_estimator({inputs_1d{2},inputs_1d{3},inputs_1d{A}}, {'P(A,B,C)'}, opts);
         case 'P(A,C,B)'
             prob_dists{i} =  prob_estimator({inputs_1d{1},inputs_1d{3},inputs_1d{2}}, {'P(A,B,C)'}, opts);
     end
@@ -175,29 +240,33 @@ end
 II_values = cell(1, length(outputs));
 atom1 = cell(1, length(outputs));
 atom2 = cell(1, length(outputs));
-
-for i = 1:length(indices)
-    idx = indices(i);
-    switch possibleOutputs{idx}
-        case 'II(B,A,C)'
-            Prob_d = prob_dists{strcmp(required_distributions, 'P(B,A,C)')};
-            atoms = ii_core(Prob_d, opts);
-            II_values{i} = min(atoms);
-            atom1{i} = atoms(1);
-            atom2{i} = atoms(2);
-        case 'II(A,B,C)'
-            Prob_d = prob_dists{strcmp(required_distributions, 'P(A,B,C)')};
-            atoms = ii_core(Prob_d, opts);
-            II_values{i} = min(atoms);
-            atom1{i} = atoms(1);
-            atom2{i} = atoms(2);
-        case 'II(A,C,B)'
-            Prob_d = prob_dists{strcmp(required_distributions, 'P(A,C,B)')};
-            atoms = ii_core(Prob_d, opts);
-            II_values{i} = min(atoms);
-            atom1{i} = atoms(1);
-            atom2{i} = atoms(2);
+for t = 1:nTimepoints
+    for i = 1:length(indices)
+        idx = indices(i);
+        switch possibleOutputs{idx}          
+            case 'II(A,B,C)'
+                Prob_d = prob_dists{strcmp(required_distributions, 'P(A,B,C)')};
+                Prob_d = Prob_d{t, 1};
+                atoms = ii_core(Prob_d, opts);
+                II_values{i}(1,t) = min(atoms);
+                atom1{i}(1,t) = atoms(1);
+                atom2{i}(1,t) = atoms(2);
+            case 'II(B,C,A)'
+                Prob_d = prob_dists{strcmp(required_distributions, 'P(B,C,A)')};
+                Prob_d = Prob_d{t, 1};
+                atoms = ii_core(Prob_d, opts);
+                II_values{i}(1,t) = min(atoms);
+                atom1{i}(1,t) = atoms(1);
+                atom2{i}(1,t) = atoms(2);
+            case 'II(A,C,B)'
+                Prob_d = prob_dists{strcmp(required_distributions, 'P(A,C,B)')};
+                Prob_d = Prob_d{t, 1};
+                atoms = ii_core(Prob_d, opts);
+                II_values{i}(1,t) = min(atoms);
+                atom1{i}(1,t) = atoms(1);
+                atom2{i}(1,t) = atoms(2);
+        end
     end
-end
+end 
 II_naive = II_values;
 end

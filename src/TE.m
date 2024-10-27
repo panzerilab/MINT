@@ -1,100 +1,117 @@
 function [TE_values, TE_naive, TE_nullDist] = TE(inputs, varargin)
-%%% *function [TE_values, TE_naive, TE_nullDist] = TE(inputs, outputs, varargin)*
-%%%
-%%% The TE function computes Transfer Entropy (TE) values from time series data.
-%%% Transfer entropy from a process A to another process B is the amount of uncertainty
-%%% reduced in future values of B by knowing the past values of A given past values of B.
-%%%
-%%% Inputs:
-%%%   - inputs: A cell array containing the input time series data. Each cell represents a time series, where:
-%%%             - inputs{1}: First time series (A) with dimensions
-%%%                          nDims X nTimepoints X nTrials
-%%%             - inputs{2}: Second time series (B) with dimensions
-%%%                          nDims X nTimepoints X nTrials)
-%%%   - outputs: A cell array of strings specifying which entropies to compute.
-%%%              Possible outputs include:
-%%%               - 'TE'      : Standard Transfer Entropy.
-%%%               - 'shTE'    : Shuffled Transfer Entropy.
-%%%               - 'normTE'  : Normalized Transfer Entropy.
-%%%               - 'normShTE': Normalized Shuffled Transfer Entropy.
-%%%
-%%%   - varargin: Optional arguments, passed as a structure. Fields may include:
-%%%              - tau:            Integer that specifies the delay for the time series.
-%%%                                This can be defined separately for A and B as a cell:
-%%%                                opts.tau{1} = delay for A;
-%%%                                opts.tau{2} = delay for B;
-%%%                                If a single integer or a single cell field is provided,
-%%%                                the same delay will be applied to both A and B.
-%%%
-%%%                                Default is 1 timepoint.
-%%%              - tpres:          Specifies the present timepoint for the calculation.
-%%%                                This can also be defined separately for A and B in the same manner as tau:
-%%%                                opts.tpres{1} = present for A;
-%%%                                opts.tpres{2} = present for B;
-%%%                                If only a single value or cell is given, it applies to both.
-%%%                                Default is set to the last timepoint of input A.
-%%%
-%%%              - singleTimepoint:Boolean (true/false) indicating whether to compute Transfer Entropy
-%%%                                for a single timepoint or for the entire time series.
-%%%                                If set to true, only single timepoints will be considered in the analysis.
-%%%                                Default is false.
-%%%
-%%%              - bias:           Specifies the bias correction method to be used.
-%%%                                Possible values include:
-%%%                                'naive'                      :(default) - No correction applied.
-%%%                                'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
-%%%                                'ShuffSub'                   :Shuffle Substraction (need to specify shuff as number of shufflings).
-%%%                                'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
-%%%                                'pt'                         :Panzeri-Treves bias correction.
-%%%                                'bub'                        :
-%%%                                Users can also define their own custom bias correction method
-%%%                                (see help for correction.m)
-%%%
-%%%              - bin_method:     Cell array specifying the binning method.
-%%%                                It can have one or two entries:
-%%%                                If one entry is provided, it will be applied to both A and B.
-%%%                                Possible values include:
-%%%                                'eqpop'     : Equal population binning.
-%%%                                'eqspace'   : Equal space binning.
-%%%                                'threshold' : Binning based on a specified threshold.
-%%%                                Users can also define their own custom binning method
-%%%                                (see help for binning.m).
-%%%                                Default is {'none'}.
-%%%
-%%%              - n_bins:         Specifies the number of bins to use for binning.
-%%%                                It can be a single integer or a cell array with one or two entries.
-%%%                                If one entry is provided, it will be used for both A and B.
-%%%                                This integer defines how the continuous values will be
-%%%                                discretized into bins for analysis.
-%%%                                Default number of bins is {3}.
-%%%
-%%%              - suppressWarnings: Boolean (true/false) to suppress warning messages.
-%%%                                  Default is false, meaning warnings will be shown.
-%%% Outputs:
-%%%   - TE_values: A cell array containing the computed TE values as specified in the outputs argument.
-%%%   - TE_naive: A cell array containing the naive TE estimates.
-%%%   - TE_nullDist: A value indicating the all results of the shuffling procedure (0 if not performed).
-%%%
-%%% Note:
-%%% Input A and B can represent multiple neurons concatenated along the first dimension.
-%%% This means that each neuron can contribute its activity data, allowing the analysis
-%%% of interactions between different neurons and their influence on other time series.
-%%%
-%%% EXAMPLE
-%%% Suppose we have two time series of groups of neurons X1 and X2
-%%% and two time series of groups of neurons Y1 and Y2.
-%%% (Structur of X1, X2, Y1, Y1 is nNeurons x nTimepoints x nTrials)
-%%%
-%%% We can structure our inputs as follows:
-%%% Thus, the total input for A and B would be:
-%%% A = cat(1, X1, X2);  % Concatenates X1 and X2 along the first dimension (neurons)
-%%% B = cat(1, Y1, Y2);  % Concatenates Y1 and Y2 along the first dimension (neurons)
-%%%
-%%% To compute the Transfer Entropy from time series A (X) to B (Y), the function can be called as:
-%%% TE_values = TE({A, B}, {'TE'}, opts);
-%%%
-%%% Here, 'opts' represents additional options you may want to include, such as
-%%% specifying the delay (tau), number of bins (n_bins), and other parameters as needed.
+% *function [TE_values, TE_naive, TE_nullDist] = TE(inputs, outputs, opts)*
+%
+% The TE function computes Transfer Entropy (TE) values from time series data.
+% Transfer entropy from a process A to another process B is the amount of uncertainty
+% reduced in future values of B by knowing the past values of A given past values of B.
+%
+% Inputs:
+%   - inputs: A cell array containing the data:
+%             - inputs{1}: First input data (A) with dimensions
+%                          nDims X nTimepoints X nTrials
+%             - inputs{2}: Second input data (B) with dimensions
+%                          nDims X nTimepoints X nTrials
+%
+%   - outputs: A cell array of strings specifying which transfer entropies to compute:
+%              - 'TE(A->B;S)' : Transfer entropy from A to B
+%              - 'TE(B->A;S)' : Transfer entropy from B to A
+%
+%   - varargin: Optional arguments, passed as a structure. Fields may include:
+%              - singleTimepoint:    Boolean (true/false) indicating whether to compute Transfer Entropy
+%                                    for a single timepoint or the delayed timeseries
+%
+%              - tau:                Integer that specifies the delay for the time series.
+%                                    This can be defined separately for A and B as a cell:
+%                                    opts.tau{1} = delay for A;
+%                                    opts.tau{2} = delay for B;
+%                                    If a single integer or a single cell field is provided,
+%                                    the same delay will be applied to both A and B (default: 1)
+%
+%              - tpres:              Specifies the present timepoint for the calculation.
+%                                    This can also be defined separately for A and B in the same manner as tau:
+%                                    opts.tpres{1} = present for A;
+%                                    opts.tpres{2} = present for B;
+%                                    If only a single value or cell is given, it applies to both.
+%                                    Default is length of A.
+%
+%              - bias:               Specifies the bias correction method to be used.
+%                                    'naive'                      :(default) - No correction applied.
+%                                    'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
+%                                    'ShuffSub'                   :Shuffle Substraction (need to specify shuff as number of shufflings).
+%                                    'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
+%                                    'pt'                         :Panzeri-Treves bias correction (Panzeri and Treves 1996).
+%                                    'bub'                        :best upper bound(Paninsky, 2003)
+%                                    Users can also define their own custom bias correction method
+%                                    (type 'help correction' for more information)
+%   
+%              - bin_method:         Cell array specifying the binning method to be applied.
+%                                    'none'      : (default) - No binning applied.
+%                                    'eqpop'     : Equal population binning.
+%                                    'eqspace'   : Equal space binning.
+%                                    'userEdges' : Binning based on a specified edged.
+%                                    Users can also define their own custom binning method
+%                                    If one entry is provided, it will be applied to both A and B.
+%                                    (type 'help binning' for more information).
+%   
+%              - n_bins:             Specifies the number of bins to use for binning.
+%                                    It can be a single integer or a cell array with one or two entries.
+%                                    Default number of bins is {3}
+%
+%              - computeNulldist:  If set to true, generates a null distribution
+%                                  based on the specified inputs and core function.
+%                                  When this option is enabled, the following can be specified:
+%                                   - `n_samples`: The number of null samples to generate (default: 100).
+%                                   - 'shuffling': Additional shuffling options to determine the variables to be 
+%                                      shuffled during the computation of the null distribution (default: {'A'}).
+%                                      (type 'help shuffle' for more information).
+% 
+%              - suppressWarnings:  Boolean (true/false) to suppress warning messages.
+%                                   Default is false, meaning warnings will be shown.
+%
+%              - NaN_handling:     Specifies how NaN values should be handled in the data.
+%                                  Options include:
+%                                  'removeTrial' : Removes trials containing NaN in any variable 
+%                                                  from all input data.
+%                                  'setToZero'   : Sets NaN values to zero.
+%                                  'error'       : (default) Throws an error if NaN values are detected.
+%
+% Outputs:
+%   - TE_values: A cell array containing the computed TE values as specified in the outputs argument.
+%   - TE_naive: A cell array containing the naive TE estimates.
+%   - TE_nullDist: Results of the null distribution computation (0 if not performed).
+%
+% Note:
+% Input A and B can represent multiple neurons concatenated along the first dimension.
+%
+% EXAMPLE
+% Suppose we have two time series of groups of neurons X1 and X2
+% and two time series of groups of neurons Y1 and Y2.
+% (Structur of X1, X2, Y1, Y1 is nNeurons x nTimepoints x nTrials)
+%
+% We can structure our inputs as follows:
+% Thus, the total input for A and B would be:
+% X = cat(1, X1, X2);   Concatenates X1 and X2 along the first dimension (neurons)
+% Y = cat(1, Y1, Y2);   Concatenates Y1 and Y2 along the first dimension (neurons)
+%
+% To compute the Transfer Entropy from time series A (X) to B (Y), the function can be called as:
+% TE_values = TE({X, Y}, {'TE(A->B;S)', 'TE(B->A;S)'}, opts);
+%
+% Here, 'opts' represents additional options you may want to include (see varargin options)
+
+% Copyright (C) 2024 Gabriel Matias Lorenz, Nicola Marie Engel
+% This file is part of MINT. 
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+% 
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -107,10 +124,10 @@ if length(varargin) > 1
             outputs = varargin{1};
         end
     else
-        [outputs, opts] = check_inputs('TE',inputs,varargin{:});
+        [inputs, outputs, opts] = check_inputs('TE',inputs,varargin{:});
     end
 else
-    [outputs, opts] = check_inputs('TE',inputs,varargin{:});
+    [inputs, outputs, opts] = check_inputs('TE',inputs,varargin{:});
 end
 
 
@@ -208,8 +225,8 @@ else
     B_past = squeeze(B_delayed(:, 2:end, :));
     A_past = squeeze(A_delayed(:, 2:end, :));
     S = inputs{end};
-    A_pres = reshape(A_delayed(:, 1, :), 1, DimsA(3));  % Shape [nDims, nTrials]
-    B_pres = reshape(B_delayed(:, 1, :), 1, DimsB(3));  % Shape [nDims, nTrials]
+    A_pres = reshape(A_delayed(:, 1, :), DimsA(1), DimsA(3));  % Shape [nDims, nTrials]
+    B_pres = reshape(B_delayed(:, 1, :), DimsB(1), DimsB(3));  % Shape [nDims, nTrials]
 
     A_past = reshape(A_delayed(:, 2:end, :), DimsA(1), size(A_delayed, 2)-1, DimsA(3));  % Shape [nDims-1, delays, nTrials]
     B_past = reshape(B_delayed(:, 2:end, :), DimsB(1), size(B_delayed, 2)-1, DimsB(3));  % Shape [nDims-1, delays, nTrials]
@@ -220,14 +237,14 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Reshape opts.bin_method
-if numel(opts.bin_method) == 1
+if isscalar(opts.bin_method)
     opts.bin_method = repmat(opts.bin_method, 1, 4);
 else
     opts.bin_method = [repmat(opts.bin_method(1), 1, 2), repmat(opts.bin_method(2), 1, 2)];
 end
 
 % Reshape opts.n_bins
-if numel(opts.n_bins) == 1
+if isscalar(opts.n_bins)
     opts.n_bins = repmat(opts.n_bins, 1, 4);
 else
     opts.n_bins = [repmat(opts.n_bins(1), 1, 2), repmat(opts.n_bins(2), 1, 2)];
@@ -244,14 +261,14 @@ for var = 1:length(inputs_b)
     if sizeVar(1) > 1
         inputs_1d{var} = reduce_dim(inputs_1d{var}, 1);
     end
-    if sizeVar(2) > 1
+    if length(sizeVar) > 2 && sizeVar(2) > 1
         inputs_1d{var} = reduce_dim(inputs_1d{var}, 2);
     end
     inputs_1d{var} = squeeze(inputs_1d{var});
-    inputs_1d{var} = reshape(inputs_1d{var}, 1, sizeVar(3));
+    inputs_1d{var} = reshape(inputs_1d{var}, 1, sizeVar(end));
 end
 
-possibleOutputs = {'TE(A->B)', 'TE(B->A)','shTE(A->B)','shTE(B->A)','normTE(A->B)','normTE(B->A)','normShTE(A->B)','normShTE(B->A)'};
+possibleOutputs = {'TE(A->B)', 'TE(B->A)'};
 [isMember, indices] = ismember(outputs, possibleOutputs);
 if any(~isMember)
     nonMembers = outputs(~isMember);
@@ -266,13 +283,7 @@ end
 % List of required entropy dependencies
 entropy_dependencies = struct( ...
     'TE_AB', {{'H(B_pres|B_past)', 'H(B_pres|B_past,A_past)'}}, ...
-    'TE_BA', {{'H(A_pres|A_past)', 'H(A_pres|A_past,B_past)'}}, ...
-    'shTE_AB', {{'H(A_past|B_past)','H(A_past|B_past,B_pres)', 'Hsh(A_past|B_past,B_pres)'}}, ...
-    'shTE_BA', {{'H(B_past|A_past)','H(B_past|A_past,A_pres)', 'Hsh(B_past|A_past,A_pres)'}}, ...
-    'normTE_AB', {{'H(B_pres|B_past)', 'H(B_pres|B_past,A_past)', 'H(B_pres,B_past)', 'H(B_pres)'}}, ...
-    'normTE_BA', {{'H(A_pres|A_past)', 'H(A_pres|A_past,B_past)', 'H(A_pres,A_past)', 'H(A_pres)'}}, ...
-    'normShTE_AB', {{'H(A_past|B_past)','H(A_past|B_past,B_pres)', 'Hsh(A_past|B_past,B_pres)','H(B_pres,B_past)', 'H(B_pres)'}}, ...
-    'normShTE_BA', {{'H(B_past|A_past)','H(B_past|A_past,A_pres)', 'Hsh(B_past|A_past,A_pres)','H(A_pres,A_past)', 'H(A_pres)'}} ...
+    'TE_BA', {{'H(A_pres|A_past)', 'H(A_pres|A_past,B_past)'}} ...    
     );
 
 required_entropies = {};
@@ -282,19 +293,7 @@ for ind = 1:length(indices)
         case 'TE(A->B)'
             required_entropies = [required_entropies, entropy_dependencies.TE_AB{:}];
         case 'TE(B->A)'
-            required_entropies = [required_entropies, entropy_dependencies.TE_BA{:}];
-        case 'shTE(A->B)'
-            required_entropies = [required_entropies, entropy_dependencies.shTE_AB{:}];
-        case 'shTE(B->A)'
-            required_entropies = [required_entropies, entropy_dependencies.shTE_BA{:}];
-        case 'normTE(A->B)'
-            required_entropies = [required_entropies, entropy_dependencies.normTE_AB{:}];
-        case 'normTE(B->A)'
-            required_entropies = [required_entropies, entropy_dependencies.normTE_BA{:}];
-        case 'normShTE(A->B)'
-            required_entropies = [required_entropies, entropy_dependencies.normShTE_AB{:}];
-        case 'normShTE(B->A)'
-            required_entropies = [required_entropies, entropy_dependencies.normShTE_BA{:}];
+            required_entropies = [required_entropies, entropy_dependencies.TE_BA{:}];        
     end
 end
 required_entropies = unique(required_entropies);
@@ -303,38 +302,17 @@ H_naive = cell(1, length(required_entropies));
 H_shuff_all = cell(1, length(required_entropies));
 
 opts_entropy = opts;
-opts_entropy.compute_nulldist = false;
-%     inputs_b = binning({A_pres,A_past,B_pres,B_past} ,opts);
+opts_entropy.computeNulldist = false;
 for i = 1:length(required_entropies)
     switch required_entropies{i}
         case 'H(B_pres|B_past)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{3}, inputs_1d{4}}, {'H(A|B)'}, opts_entropy);
+            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{3}(1,:), inputs_1d{4}(1,:)}, {'H(A|B)'}, opts_entropy);
         case 'H(B_pres|B_past,A_past)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{3}, cat(1, inputs_1d{4},inputs_1d{2})}, {'H(A|B)'}, opts_entropy);
-        case 'H(A_past|B_past)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{2},inputs_1d{4}}, {'H(A|B)'}, opts_entropy);
-        case 'H(A_past|B_past, B_pres)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{2}, cat(1, inputs_1d{4}, inputs_1d{3})}, {'H(A|B)'}, opts_entropy);
-        case 'Hsh(A_past|B_past,B_pres)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{2}, cat(1,inputs_1d{4},inputs_1d{3})}, {'Hsh(A|B)'}, opts_entropy);
-        case 'H(B_pres,B_past)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({cat(1,inputs_1d{3},inputs_1d{4})}, {'H(A)'}, opts_entropy);
-        case 'H(B_pres)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{3}}, {'H(A)'}, opts_entropy);
+            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{3}(1,:), cat(1, inputs_1d{4}(1,:),inputs_1d{2}(1,:))}, {'H(A|B)'}, opts_entropy);                      
         case 'H(A_pres|A_past)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{1}, inputs_1d{2}}, {'H(A|B)'}, opts_entropy);
+            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{1}(1,:), inputs_1d{2}(1,:)}, {'H(A|B)'}, opts_entropy);
         case 'H(A_pres|A_past,B_past)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{1}, cat(1, inputs_1d{2},inputs_1d{4})}, {'H(A|B)'}, opts_entropy);
-        case 'H(B_past|A_past)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{4},inputs_1d{2}}, {'H(A|B)'}, opts_entropy);
-        case 'H(B_past|A_past, A_pres)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{4}, cat(1, inputs_1d{2}, inputs_1d{1})}, {'H(A|B)'}, opts_entropy);
-        case 'Hsh(B_past|A_past,A_pres)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{4}, cat(1,inputs_1d{2},inputs_1d{1})}, {'Hsh(A|B)'}, opts_entropy);
-        case 'H(A_pres,A_past)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({cat(1,inputs_1d{1},inputs_1d{2})}, {'H(A)'}, opts_entropy);
-        case 'H(A_pres)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{1}}, {'H(A)'}, opts_entropy);
+            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{1}(1,:), cat(1, inputs_1d{2}(1,:),inputs_1d{4}(1,:))}, {'H(A|B)'}, opts_entropy);          
     end
 end
 
@@ -419,146 +397,14 @@ for i = 1:length(indices)
                         TE_shuff_all{i}(shuffIdx) = H_Apres_Apast_shuff - H_Apres_Apast_Bpast_shuff;
                     end
                 end
-            end
-        % case 'shTE(A->B)'
-        %     H_Apast_Bpast = H_values{strcmp(required_entropies, 'H(A_past|B_past)')};
-        %     H_Apast_Bpast_Bpres = H_values{strcmp(required_entropies, 'H(A_past|B_past, B_pres)')};
-        %     Hsh_Apast_Bpast_Bpres = H_values{strcmp(required_entropies, 'Hsh(A_past|B_past,B_pres)')};
-        %     TE_values{i} = H_Apast_Bpast{1} - H_Apast_Bpast_Bpres{1} + Hsh_Apast_Bpast_Bpres{1};
-        %     if nOut > 1
-        %         H_Apast_Bpast = H_naive{strcmp(required_entropies, 'H(A_past|B_past)')};
-        %         H_Apast_Bpast_Bpres = H_naive{strcmp(required_entropies, 'H(A_past|B_past, B_pres)')};
-        %         Hsh_Apast_Bpast_Bpres = H_naive{strcmp(required_entropies, 'Hsh(A_past|B_past,B_pres)')};
-        %         TE_naive{i} = H_Apast_Bpast{1} -  H_Apast_Bpast_Bpres{1} + Hsh_Apast_Bpast_Bpres{1};
-        %         if nOut > 2 && strcmp(opts.bias,'shuffSub')
-        %             for shuffIdx = 1:opts.shuff
-        %                 H_Apast_Bpast = H_shuff_all{strcmp(required_entropies, 'H(A_past|B_past)')}(shuffIdx);
-        %                 H_Apast_Bpast_Bpres = H_shuff_all{strcmp(required_entropies, 'H(A_past|B_past, B_pres)')}(shuffIdx);
-        %                 Hsh_Apast_Bpast_Bpres = H_shuff_all{strcmp(required_entropies, 'Hsh(A_past|B_past,B_pres)')}(shuffIdx);
-        %                 TE_shuff_all{i}(shuffIdx) = H_Apast_Bpast{1} -  H_Apast_Bpast_Bpres{1} + Hsh_Apast_Bpast_Bpres{1};
-        %             end
-        %         end
-        %     end
-        % case 'shTE(B->A)'
-        %     H_Bpast_Apast = H_values{strcmp(required_entropies, 'H(B_past|A_past)')};
-        %     H_Bpast_Apast_Apres = H_values{strcmp(required_entropies, 'H(B_past|A_past, A_pres)')};
-        %     Hsh_Bpast_Apast_Apres = H_values{strcmp(required_entropies, 'Hsh(B_past|A_past,A_pres)')};
-        %     TE_values{i} = H_Bpast_Apast{1} - H_Bpast_Apast_Apres{1} + Hsh_Bpast_Apast_Apres{1};
-        %     if nOut > 1
-        %         H_Bpast_Apast = H_naive{strcmp(required_entropies, 'H(B_past|A_past)')};
-        %         H_Bpast_Apast_Apres = H_naive{strcmp(required_entropies, 'H(B_past|A_past, A_pres)')};
-        %         Hsh_Bpast_Apast_Apres = H_naive{strcmp(required_entropies, 'Hsh(B_past|A_past,A_pres)')};
-        %         TE_naive{i} = H_Bpast_Apast{1} -  H_Bpast_Apast_Apres{1} + Hsh_Bpast_Apast_Apres{1};
-        %         if nOut > 2 && strcmp(opts.bias,'shuffSub')
-        %             for shuffIdx = 1:opts.shuff
-        %                 H_Bpast_Apast = H_shuff_all{strcmp(required_entropies, 'H(B_past|A_past)')}(shuffIdx);
-        %                 H_Bpast_Apast_Apres = H_shuff_all{strcmp(required_entropies, 'H(B_past|A_past, A_pres)')}(shuffIdx);
-        %                 Hsh_Bpast_Apast_Apres = H_shuff_all{strcmp(required_entropies, 'Hsh(B_past|A_past,A_pres)')}(shuffIdx);
-        %                 TE_shuff_all{i}(shuffIdx) = H_Bpast_Apast{1} -  H_Bpast_Apast_Apres{1} + Hsh_Bpast_Apast_Apres{1};
-        %             end
-        %         end
-        %     end
-        % case 'normTE(A->B)'
-        %     H_Bpres_Bpast = H_values{strcmp(required_entropies, 'H(B_pres|B_past)')};
-        %     H_Bpres_Bpast_Apast = H_values{strcmp(required_entropies, 'H(B_pres|B_past,A_past)')};
-        %     H_BpresBpast = H_values{strcmp(required_entropies, 'H(B_pres,B_past)')};
-        %     H_Bpres = H_values{strcmp(required_entropies, 'H(B_pres)')};
-        %     TE_values{i} = (H_Bpres_Bpast{1} - H_Bpres_Bpast_Apast{1})/(H_BpresBpast{1}-H_Bpres{1});
-        %     if nOut > 1
-        %         H_Bpres_Bpast = H_naive{strcmp(required_entropies, 'H(B_pres|B_past)')};
-        %         H_Bpres_Bpast_Apast = H_naive{strcmp(required_entropies, 'H(B_pres|B_past,A_past)')};
-        %         H_BpresBpast = H_naive{strcmp(required_entropies, 'H(B_pres,B_past)')};
-        %         H_Bpres = H_naives{strcmp(required_entropies, 'H(B_pres)')};
-        %         TE_naive{i} = (H_Bpres_Bpast{1} - H_Bpres_Bpast_Apast{1})/(H_BpresBpast{1}-H_Bpres{1});
-        %         if nOut > 2 && strcmp(opts.bias,'shuffSub')
-        %             for shuffIdx = 1:opts.shuff
-        %                 H_Bpres_Bpast = H_shuff_all{strcmp(required_entropies, 'H(B_pres|B_past)')}(shuffIdx);
-        %                 H_Bpres_Bpast_Apast = H_shuff_all{strcmp(required_entropies, 'H(B_pres|B_past,A_past)')}(shuffIdx);
-        %                 H_BpresBpast = H_shuff_all{strcmp(required_entropies, 'H(B_pres,B_past)')}(shuffIdx);
-        %                 H_Bpres = H_shuff_all{strcmp(required_entropies, 'H(B_pres)')}(shuffIdx);
-        %                 TE_shuff_all{i}(shuffIdx) = (H_Bpres_Bpast{1} - H_Bpres_Bpast_Apast{1})/(H_BpresBpast{1}-H_Bpres{1});
-        %             end
-        %         end
-        %     end
-        % case 'normTE(B->A)'
-        %     H_Apres_Apast = H_values{strcmp(required_entropies, 'H(A_pres|A_past)')};
-        %     H_Apres_Apast_Bpast = H_values{strcmp(required_entropies, 'H(A_pres|A_past,B_past)')};
-        %     H_ApresApast = H_values{strcmp(required_entropies, 'H(A_pres,A_past)')};
-        %     H_Apres = H_values{strcmp(required_entropies, 'H(A_pres)')};
-        %     TE_values{i} = (H_Apres_Apast{1} - H_Apres_Apast_Bpast{1})/(H_ApresApast{1}-H_Apres{1});
-        %     if nOut > 1
-        %         H_Apres_Apast = H_naive{strcmp(required_entropies, 'H(A_pres|A_past)')};
-        %         H_Apres_Apast_Bpast = H_naive{strcmp(required_entropies, 'H(A_pres|A_past,B_past)')};
-        %         H_ApresApast = H_naive{strcmp(required_entropies, 'H(A_pres,A_past)')};
-        %         H_Apres = H_naives{strcmp(required_entropies, 'H(A_pres)')};
-        %         TE_naive{i} = (H_Apres_Apast{1} - H_Apres_Apast_Bpast{1})/(H_ApresApast{1}-H_Apres{1});
-        %         if nOut > 2 && opts.shuff > 0
-        %             for shuffIdx = 1:opts.shuff
-        %                 H_Apres_Apast = H_shuff_all{strcmp(required_entropies, 'H(A_pres|A_past)')}(shuffIdx);
-        %                 H_Apres_Apast_Bpast = H_shuff_all{strcmp(required_entropies, 'H(A_pres|A_past,B_past)')}(shuffIdx);
-        %                 H_ApresApast = H_shuff_all{strcmp(required_entropies, 'H(A_pres,A_past)')}(shuffIdx);
-        %                 H_Apres = H_shuff_all{strcmp(required_entropies, 'H(A_pres)')}(shuffIdx);
-        %                 TE_shuff_all{i}(shuffIdx) = (H_Apres_Apast{1} - H_Apres_Apast_Bpast{1})/(H_ApresApast{1}-H_Apres{1});
-        %             end
-        %         end
-        %     end
-        % case 'normShTE(A->B)'
-        %     H_Apast_Bpast = H_values{strcmp(required_entropies, 'H(A_past|B_past)')};
-        %     H_Apast_Bpast_Bpres = H_values{strcmp(required_entropies, 'H(A_past|B_past, B_pres)')};
-        %     Hsh_Apast_Bpast_Bpres = H_values{strcmp(required_entropies, 'Hsh(A_past|B_past,B_pres)')};
-        %     H_BpresBpast = H_values{strcmp(required_entropies, 'H(B_pres,B_past)')};
-        %     H_Bpres = H_values{strcmp(required_entropies, 'H(B_pres)')};
-        %     TE_values{i} = (H_Apast_Bpast{1} -  H_Apast_Bpast_Bpres{1} + Hsh_Apast_Bpast_Bpres{1})/(H_BpresBpast-H_Bpres{1});
-        %     if nOut > 1
-        %         H_Apast_Bpast = H_naive{strcmp(required_entropies, 'H(A_past|B_past)')};
-        %         H_Apast_Bpast_Bpres = H_naive{strcmp(required_entropies, 'H(A_past|B_past, B_pres)')};
-        %         Hsh_Apast_Bpast_Bpres = H_naive{strcmp(required_entropies, 'Hsh(A_past|B_past,B_pres)')};
-        %         H_BpresBpast = H_naive{strcmp(required_entropies, 'H(B_pres,B_past)')};
-        %         H_Bpres = H_naive{strcmp(required_entropies, 'H(B_pres)')};
-        %         TE_naive{i} = (H_Apast_Bpast{1} -  H_Apast_Bpast_Bpres{1} + Hsh_Apast_Bpast_Bpres{1})/(H_BpresBpast-H_Bpres{1});
-        %         if nOut > 2 && strcmp(opts.bias,'shuffSub')
-        %             for shuffIdx = 1:opts.shuff
-        %                 H_Apast_Bpast = H_shuff_all{strcmp(required_entropies, 'H(A_past|B_past)')}(shuffIdx);
-        %                 H_Apast_Bpast_Bpres = H_shuff_all{strcmp(required_entropies, 'H(A_past|B_past, B_pres)')}(shuffIdx);
-        %                 Hsh_Apast_Bpast_Bpres = H_shuff_all{strcmp(required_entropies, 'Hsh(A_past|B_past,B_pres)')}(shuffIdx);
-        %                 H_BpresBpast = H_shuff_all{strcmp(required_entropies, 'H(B_pres,B_past)')}(shuffIdx);
-        %                 H_Bpres = H_shuff_all{strcmp(required_entropies, 'H(B_pres)')}(shuffIdx);
-        %                 TE_shuff_all{i} = (H_Apast_Bpast{1} -  H_Apast_Bpast_Bpres{1} + Hsh_Apast_Bpast_Bpres{1})/(H_BpresBpast-H_Bpres{1});
-        %             end
-        %         end
-        %     end
-        % case 'normShTE(B->A)'
-        %     H_Bpast_Apast = H_values{strcmp(required_entropies, 'H(B_past|A_past)')};
-        %     H_Bpast_Apast_Apres = H_values{strcmp(required_entropies, 'H(B_past|A_past, A_pres)')};
-        %     Hsh_Bpast_Apast_Apres = H_values{strcmp(required_entropies, 'Hsh(B_past|A_past,A_pres)')};
-        %     H_ApresApast = H_values{strcmp(required_entropies, 'H(A_pres,A_past)')};
-        %     H_Apres = H_values{strcmp(required_entropies, 'H(A_pres)')};
-        %     TE_values{i} = (H_Bpast_Apast{1} -  H_Bpast_Apast_Apres{1} + Hsh_Bpast_Apast_Apres{1})/(H_ApresApast-H_Apres{1});
-        %     if nOut > 1
-        %         H_Bpast_Apast = H_naive{strcmp(required_entropies, 'H(B_past|A_past)')};
-        %         H_Bpast_Apast_Apres = H_naive{strcmp(required_entropies, 'H(B_past|A_past, A_pres)')};
-        %         Hsh_Bpast_Apast_Apres = H_naive{strcmp(required_entropies, 'Hsh(B_past|A_past,A_pres)')};
-        %         H_ApresApast = H_naive{strcmp(required_entropies, 'H(A_pres,A_past)')};
-        %         H_Apres = H_naive{strcmp(required_entropies, 'H(A_pres)')};
-        %         TE_naive{i} = (H_Bpast_Apast{1} -  H_Bpast_Apast_Apres{1} + Hsh_Bpast_Apast_Apres{1})/(H_ApresApast-H_Apres{1});
-        %         if nOut > 2 && strcmp(opts.bias,'shuffSub')
-        %             for shuffIdx = 1:opts.shuff
-        %                 H_Bpast_Apast = H_shuff_all{strcmp(required_entropies, 'H(B_past|A_past)')}(shuffIdx);
-        %                 H_Bpast_Apast_Apres = H_shuff_all{strcmp(required_entropies, 'H(B_past|A_past, A_pres)')}(shuffIdx);
-        %                 Hsh_Bpast_Apast_Apres = H_shuff_all{strcmp(required_entropies, 'Hsh(B_past|A_past,A_pres)')}(shuffIdx);
-        %                 H_ApresApast = H_shuff_all{strcmp(required_entropies, 'H(A_pres,A_past)')}(shuffIdx);
-        %                 H_Apres = H_shuff_all{strcmp(required_entropies, 'H(A_pres)')}(shuffIdx);
-        %                 TE_shuff_all{i}(shuffIdx) = (H_Bpast_Apast{1} -  H_Bpast_Apast_Apres{1} + Hsh_Bpast_Apast_Apres{1})/(H_ApresApast-H_Apres{1});
-        %             end
-        %         end
-            % end
+            end        
     end
 end
 
 if opts.computeNulldist
     nullDist_opts = opts;
     nullDist_opts.computeNulldist = false;
-    TE_nullDist = create_NullDistribution(inputs, outputs, @TE, nullDist_opts);
+    TE_nullDist = create_nullDist(inputs, outputs, @TE, nullDist_opts);
 else
     TE_nullDist = TE_shuff_all;
 end

@@ -1,41 +1,56 @@
 function R_1d = reduce_dim(R_Nd, dim_to_collapse)
-%%% *function R_1d = reduce_dim(R_Nd, dim_to_collapse)*
-%%%
-%%% The reduce_dim function takes a multi-dimensional array and collapses the specified 
-%%% dimension into a single dimension, effectively reducing the overall dimensionality 
-%%% of the array. This is particularly useful for simplifying data representation 
-%%% while preserving unique values from the collapsed dimension.
-%%%
-%%% Inputs:
-%%%   - R_Nd: A multi-dimensional array with dimensions greater than or equal to 2.
-%%%            The array can represent various data structures, such as trials, 
-%%%            timepoints, or other features.
-%%%
-%%%   - dim_to_collapse: (Optional) An integer specifying which dimension to collapse.
-%%%                      If not provided, the first dimension is collapsed by default.
-%%%
-%%% Outputs:
-%%%   - R_1d: A reduced-dimensional array where the specified dimension has been collapsed. 
-%%%            The resulting structure will have one less dimension than the original 
-%%%            input, maintaining the unique values from the collapsed dimension.
-%%%
-%%% Note: 
-%%% The resulting array R_1d contains the indices of the unique values from the 
-%%% collapsed dimension. This allows for efficient representation of the data while 
-%%% enabling further analysis without losing critical information.
-%%%
-%%% EXAMPLE
-%%% Suppose we have a 3D array representing responses from multiple trials, 
-%%% with the dimensions representing trials, features, and observations:
-%%% 
-%%% R_Nd = randn(4, 5, 3);  
-%%% To reduce the dimensionality by collapsing the first dimension, the function can be called as:
-%%% R_1d = reduce_dim(R_Nd, 1);
-%%% R_1d will then be a 1 x 5 x 3 double.
-%%%
-%%% Alternatively, to collapse the second dimension, you would call:
-%%% R_1d = reduce_dim(R_Nd, 2);
-%%% R_1d will then be a 4 x 1 x 3 double.
+% *function R_1d = reduce_dim(R_Nd, dim_to_collapse)*
+%
+% The reduce_dim function takes a multi-dimensional array and collapses the specified 
+% dimension into a single dimension, effectively reducing the overall dimensionality 
+% of the array. This is particularly useful for simplifying data representation 
+% while preserving unique values from the collapsed dimension.
+%
+% Inputs:
+%   - R_Nd: A multi-dimensional array with dimensions greater than or equal to 2.
+%            The array can represent various data structures, such as trials, 
+%            timepoints, or other features.
+%
+%   - dim_to_collapse: (Optional) An integer specifying which dimension to collapse.
+%                      If not provided, the first dimension is collapsed by default.
+%
+% Outputs:
+%   - R_1d: A reduced-dimensional array where the specified dimension has been collapsed. 
+%            The resulting structure will have one less dimension than the original 
+%            input, maintaining the unique values from the collapsed dimension.
+%
+% Note: 
+% The resulting array R_1d contains the indices of the unique values from the 
+% collapsed dimension. This allows for efficient representation of the data while 
+% enabling further analysis without losing critical information.
+%
+% EXAMPLE
+% Suppose we have a 3D array representing responses from multiple trials, 
+% with the dimensions representing trials, features, and observations:
+% 
+% R_Nd = randn(4, 5, 3);  
+% To reduce the dimensionality by collapsing the first dimension, the function can be called as:
+% R_1d = reduce_dim(R_Nd, 1);
+% R_1d will then be a 1 x 5 x 3 double.
+%
+% Alternatively, to collapse the second dimension, you would call:
+% R_1d = reduce_dim(R_Nd, 2);
+% R_1d will then be a 4 x 1 x 3 double.
+
+% Copyright (C) 2024 Gabriel Matias Lorenz, Nicola Marie Engel
+% This file is part of MINT.
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses
 
 if nargin < 2
     warning('reduce_dim:notEnoughInput', 'Not enough input arguments. Collapsing the first dimension by default.');

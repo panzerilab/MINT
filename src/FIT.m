@@ -1,40 +1,101 @@
 function [FIT_values, FIT_naive, FIT_nullDist, atom1, atom2] = FIT(inputs, varargin)
-%%% *function [FIT_values, FIT_naive, FIT_shuff_all] = FIT(inputs,outputs, varargin)*
-%%%
-%%% ### Description
-%%% This function computes the Feature-specific (i.e. $S$-specific) Information Transmission (FIT) between a *source* $X$ and a *receiver* $Y$. NIT provides tools for both naive or bias-corrected estimation, given input data.
-%%%
-%%% ### Inputs:
-%%% - *S*: must be an array of *nDimsS X nTrials * elements representing the discrete value of the stimulus presented in each trial.
-%%% - *hX*: must be an array of *nDimsX X nTimepoints X nTrials* response matrix describing the past of the emitter variables on each of the *nDims* dimensions for each trial.
-%%% - *hY*: must be an array of *nDimsY X nTimepoints X nTrials* response matrix describing the past of the receiver variable on each of the *nDims* dimensions for each trial.
-%%% - *Y*: must be an array of *nDimsY X nTimepoints X nTrials* response matrix describing the response of each of the *nDims* dimensions for each trial.
-%%% - *opts*: options used to calculate FIT (see further notes).
-%%%
-%%% ### Outputs:
-%%% - *FIT*: data structure containing naive, and bias corrected (if required) estimation of the $S$-related Information Transfer between the *source* $X$ and the *receiver* $Y$. If calculated, the structure contains as well the shuff estimate. In case of multiple bootstrapping options (i.e. in case of `length(opts.shuff_variables) > 1`) multiple bootstrap estimates are returned.
-%%% ### Further notes:
-%%% The *opts* structure can have the following fields:
-%%%
-
-%%% | field                                | description                                                                                                                                                                                                                                             | allowed values                                                                                                                                                                                                                                     | default   |
-%%% |--------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|
-%%% | opts.bias                            | specifies the bias correction method                                                                                                                                                                                                                    | `'naive'` (no bias correction)<br>`'le'` (linear extrapolation)<br>`'qe'` (quadratic extrapolation)                                                                                                                                                | `'naive'` |
-%%% | opts.bin_methodX                     | specifies the binning method for the X signals                                                                                                                                                                                                          | `'none'` (no binning)<br>`'eqpop'` (evenly populated binning)<br>`'eqspace'`(evenly spaced binning)<br>`'ceqspace'`(centered evenly spaced binning)<br>`'gseqspace'`(gaussian evenly spaced binning)<br> See the documentation of [[binr|binr]] function for more details   | `'eqpop'` |
-%%% | opts.bin_methodY                     | specifies the binning method for the Y signals                                                                                                                                                                                                          | `'none'` (no binning)<br>`'eqpop'` (evenly populated binning)<br>`'eqspace'`(evenly spaced binning)<br>`'ceqspace'`(centered evenly spaced binning)<br>`'gseqspace'`(gaussian evenly spaced binning)<br> See the documentation of [[binr|binr]] function for more details   | `'eqpop'` |
-%%% | opts.bin_methodS                     | specifies the binning method for the stimulus signals                                                                                                                                                                                                   | `'none'` (no binning)<br>`'eqpop'` (evenly populated binning)<br>`'eqspace'`(evenly spaced binning)<br>`'ceqspace'`(centered evenly spaced binning)<br>`'gseqspace'`(gaussian evenly spaced binning)<br> See the documentation of [[binr|binr]] function for more details   | `'eqpop'` |
-%%% | opts.n_binsX                         | number of bins to be used to reduce the dimensionality of the response X                                                                                                                                                                                | int > 1                                                                                                                                                                                                                                            | 3         |
-%%% | opts.n_binsY                         | number of bins to be used to reduce the dimensionality of the response Y                                                                                                                                                                                | int > 1                                                                                                                                                                                                                                            | 3         |
-%%% | opts.n_binsS                         | number of bins to be used to reduce the dimensionality of the stimulus S                                                                                                                                                                                | int > 1                                                                                                                                                                                                                                            | 2         |
-%%% | opts.shuff                           | number of bootstrap operations to perform for significance testing (those will be performed independently on each of the variables listed in `opts.shuff_variables`)                                                                                                              | int >= 0                                                                                                                                                                                                                                                                   | 0         |
-%%% | opts.shuff_variables                 | list of variables to be bootstrapped, specified as a cell array of strings. If multiple bootstrapping operations are requested, `opts.shuff_variables` can contain multiple variables. In this case a `opts.shuff_type` option should be specified for each `opts.shuff_variables`  | cell array containing one (or more) strings (`"S"`, `"R"` or `"C"`) corresponding to all variables to be bootstrapped                                                                                                                                                      | N/A       |
-%%% | opts.shuff_type                      | type of bootstrapping to be applied for each variable (`'all'` shuffles all values of the corresponding variable in `opts.shuff_variables` across trials, while `'$VAR$conditioned'` shuffles trials by conditioning on values of the variable specified in the substring `$VAR$`)| cell array of same size of opts.shuff_variables, each element contains the type of shuffling to be performed for the variable (either "all"` or `"Cconditioned"`, `"Rconditioned"`, or `"Sconditioned"`)                                                                    | N/A       |
-%%% | opts.shuff_bias                      | bias correction method to be applied for each variable (same values than in opts.bias)
-%%% | opts.taux                            | lag considered for the causing signal. Lag is specified as **strictly negative** integer.                                                                                                                                                               | int < 0                                                                                                                                                                                                                                                         | 3         |
-%%% | opts.tauy                            | lag considered for the caused signal. Lag is specified as **strictly negative** integer.
-%%% | opts.tpres                           | timepoint which should be considered as present in the computation (integer)
+% *function [FIT_values, FIT_naive, FIT_nullDist, atom1, atom2] = FIT(inputs, outputs, opts)*
 %
-% | 3         |
+% The FIT function computes the Feature-specific Information Transfer (FIT) values between time series data.
+% Feature-specific Information Transfer quantifies how much information about a specific feature (S)
+% flows between two regions (A)(B). 
+%
+% Inputs:
+%   - inputs: A cell array containing the input data with N sources and one target:
+%             - inputs{1}:   First data (A) with dimensions
+%                            nDims X nTimepoints X nTrials
+%             - inputs{2}:   Second data (B) with dimensions
+%                            nDims X nTimepoints X nTrials
+%             - inputs{3}:   Feature data (S) with dimensions
+%                            nDims X (nTimepoints X) nTrials  
+%
+%   - outputs: A cell array of strings specifying which FIT values to compute.
+%              - 'FIT(A->B;S)' 
+%              - 'FIT(B->A;S)'
+%
+%   - varargin: Optional arguments, passed as a structure. Fields may include:
+%              - bias:               Specifies the bias correction method to be used.
+%                                    'naive'                      :(default) - No correction applied.
+%                                    'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
+%                                    'ShuffSub'                   :Shuffle Substraction (need to specify shuff as number of shufflings).
+%                                    'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
+%                                    Users can also define their own custom bias correction method
+%                                    (type 'help correction' for more information)
+%
+%              - tau:                Cell array specifying the delays for the analysis.
+%                                    Possible values include scalar or vector values indicating
+%                                    the time lags to consider for A and B.
+%
+%              - tpres:              Cell array specifying the time points to be used as 'present'
+%                                    It can have one or two entries to apply to A and B, respectively.
+%
+%              - bin_method:         Cell array specifying the binning method to be applied.
+%                                    'none'      : (default) - No binning applied.
+%                                    'eqpop'     : Equal population binning.
+%                                    'eqspace'   : Equal space binning.
+%                                    'userEdges' : Binning based on a specified edged.
+%                                    Users can also define their own custom binning method
+%                                    If one entry is provided, it will be applied to both A and B.
+%                                    (type 'help binning' for more information).
+%     
+%              - n_bins:             Specifies the number of bins to use for binning.
+%                                    It can be a single integer or a cell array with one or two entries.
+%                                    Default number of bins is {3}.
+%
+%              - computeNulldist:    If set to true, generates a null distribution
+%                                    based on the specified inputs and core function.
+%                                    When this option is enabled, the following can be specified:
+%                                     - `n_samples`: The number of null samples to generate (default: 100).
+%                                     - 'shuffling': Additional shuffling options to determine the variables to be 
+%                                        shuffled during the computation of the null distribution (default: {'A'}).
+%                                        (type 'help shuffle' for more information).
+%   
+%              - suppressWarnings:    Boolean (true/false) to suppress warning messages.
+%                                     Default is false, meaning warnings will be shown
+%
+%              - NaN_handling:     Specifies how NaN values should be handled in the data.
+%                                  Options include:
+%                                  'removeTrial' : Removes trials containing NaN in any variable 
+%                                                  from all input data.
+%                                  'setToZero'   : Sets NaN values to zero.
+%                                  'error'       : (default) Throws an error if NaN values are detected.
+%
+% Outputs:
+%   - FIT_values: A cell array containing the computed FIT values as specified in the outputs argument.
+%   - FIT_naive: A cell array containing the naive FIT estimates.
+%   - FIT_nullDist: Results of the null distribution computation (0 if not performed).
+%   - atom1: A cell array containing the first atom values computed during the analysis.
+%   - atom2: A cell array containing the second atom values computed during the analysis.
+%
+% Example:
+%   To compute the Feature-specific Information Transfer from two neural populations X1 and X2 about S,
+%   the function can be called as follows:
+%   inputs = {X1, X2, S};
+%   FIT_values = FIT({X1, X2, S}s, {'FIT(A->B;S)', 'FIT(B->A;S)'}, opts);
+% 
+% Here, 'opts' represents additional options you may want to include (see varargin options)
+
+% Copyright (C) 2024 Gabriel Matias Lorenz, Nicola Marie Engel
+% This file is part of MINT. 
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+% 
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 1: Check Inputs, Check OutputList, Fill missing opts with default values %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -45,14 +106,18 @@ if length(varargin) > 1
             outputs = varargin{1};
         end
     else
-        [outputs, opts] = check_inputs('FIT',inputs,varargin{:});
+        [inputs, outputs, opts] = check_inputs('FIT',inputs,varargin{:});
     end
 else
-    [outputs, opts] = check_inputs('FIT',inputs,varargin{:});
+    [inputs, outputs, opts] = check_inputs('FIT',inputs,varargin{:});
 end
 
 nullDist_opts = opts;
-% nullDist_opts.compute_nulldist = false;
+nullDist_opts.computeNulldist = false;
+
+if ~isfield(opts, 'recall')
+    opts.recall = false;
+end
 
 if ~opts.recall
     nSources = length(inputs)-1;
@@ -99,37 +164,50 @@ if ~opts.recall
     %        Step 2: Prepare Data (Shift based on tau,tpres/bin/reduce dims)        %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    A_delayed = zeros(length(Atau), 1, nTrials);
-    for tau = 1:length(Atau)
+    A_delayed = zeros(DimsA(1), length(Atau), nTrials); %(nDims x nTaus x nTrials)
+    for tau = 1:length(Atau) 
         index = opts.tpres{1} - Atau(tau);
         if index > 0 && index <= nTimepointsA
-            A_delayed(tau,:, :) = inputs{1}(:, index, :);
+            A_delayed(:,tau, :) = inputs{1}(:, index, :);
         else
             msg = "The specified delay for A is not available for the timeseries.";
             error('FIT:InvalidInput', msg);
         end
     end
-    B_delayed = zeros(length(Btau),1, nTrials);
+    B_delayed = zeros(DimsB(1), length(Btau), nTrials); %(nDims x nTaus x nTrials)
     for tau = 1:length(Btau)
         index = opts.tpres{2} - Btau(tau);
         if index > 0 && index <= nTimepointsB
-            B_delayed(tau,:, :) = inputs{2}(:, index, :);
+            B_delayed(:,tau, :) = inputs{2}(:, index, :);
         else
             msg = "The specified delay for B is not available for the timeseries.";
-            error('TE:InvalidInput', msg);
+            error('FIT:InvalidInput', msg);
         end
     end
 
-    A_pres = squeeze(A_delayed(1, :, :));
-    B_pres = squeeze(B_delayed(1, :, :));
-    B_past = squeeze(B_delayed(2:end, :, :));
-    A_past = squeeze(A_delayed(2:end, :, :));
+    A_pres = squeeze(A_delayed(:, 1, :));
+    B_pres = squeeze(B_delayed(:, 1, :));
+    B_past = squeeze(B_delayed(:, 2:end, :));
+    A_past = squeeze(A_delayed(:, 2:end, :));
     S = inputs{end};
-    A_pres = reshape(A_delayed(1, :, :), 1, DimsA(3));  % Shape [1, nTrials]
-    B_pres = reshape(B_delayed(1, :, :), 1, DimsB(3));  % Shape [1, nTrials]
 
-    A_past = reshape(A_delayed(2:end, :, :), size(A_delayed, 1)-1, DimsA(3));  % Shape [nDims-1, nTrials]
-    B_past = reshape(B_delayed(2:end, :, :), size(B_delayed, 1)-1, DimsB(3));  % Shape [nDims-1, nTrials]
+    % A_pres = reshape(A_delayed(:, 1, :), DimsA(1), DimsA(3));  % Shape [nDims, nTrials]
+    % B_pres = reshape(B_delayed(:, 1, :), DimsB(1), DimsB(3));  % Shape [nDims, nTrials]
+    % A_past = squeeze(reshape(A_delayed(:, 2:end, :), DimsA(1), size(A_delayed, 2)-1, DimsA(3)));  % Shape [nDims-1, delays, nTrials]
+    % B_past = squeeze(reshape(B_delayed(:, 2:end, :), DimsB(1), size(B_delayed, 2)-1, DimsB(3)));  % Shape [nDims-1, delays, nTrials]
+   
+    if size(A_past,1) == nTrials
+        A_past = A_past';
+    end
+    if size(A_pres,1) == nTrials
+        A_pres = A_pres';
+    end
+    if size(B_past,1) == nTrials
+        B_past = B_past';
+    end
+    if size(B_pres,1) == nTrials
+        B_pres = B_pres';
+    end
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %               Step 3: Binning, reduce dimensions if necessary                 %
@@ -186,12 +264,13 @@ end
 FIT_nullDist = 0;
 corr = opts.bias;
 corefunc = @FIT;
-if any(opts.compute_nulldist)
-        FIT_nullDist = create_NullDistribution(inputs, outputs, @FIT, nullDist_opts);
+if any(opts.computeNulldist)
+        nullDist_opts.recall = false;
+        FIT_nullDist = create_nullDist(inputs, outputs, @FIT, nullDist_opts);
 end
 if ~strcmp(corr, 'naive')  
     opts.recall = true;
-    opts.compute_nulldist = false;
+    opts.computeNulldist = false;
     [FIT_values, FIT_naive] = correction(inputs_1d, outputs, corr, corefunc, opts);
     return
 end
@@ -200,8 +279,8 @@ end
 %             Step 4.B: Compute Probability Distributions                       %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 entropy_distributions = struct( ...
-    'FIT_AB_S', {{'P(S,B_pres,A_past,B_past)'}}, ...
-    'FIT_BA_S', {{'P(S,A_pres,B_past,A_past)'}} ...
+    'FIT_AB_S', {{'P(B_pres,A_past,B_past,S)'}}, ...
+    'FIT_BA_S', {{'P(A_pres,B_Past,A_past,S)'}} ...
     );
 
 opts.multidim = true;
@@ -219,14 +298,10 @@ end
 prob_dists = {};
 for i = 1:length(required_distributions)
     switch required_distributions{i}
-        case 'P(S,B_pres,A_past,B_past)'
-            % B_pres, A_past, B_past
-            sourceInput = cat(1, inputs_1d{3},inputs_1d{2},inputs_1d{4});
-            prob_dists{i} =  prob_estimator({sourceInput,inputs_1d{end}}, {'P(A,B,C)'}, opts);
-        case 'P(S,A_pres,B_past,A_past)'
-            % A_pres, B_Past, A_past
-            sourceInput = cat(1, inputs_1d{1},inputs_1d{4},inputs_1d{2});
-            prob_dists{i} =  prob_estimator({sourceInput,inputs_1d{end}}, {'P(A,B,C)'}, opts);
+        case 'P(B_pres,A_past,B_past,S)'
+            prob_dists{i} =  prob_estimator({inputs_1d{3},inputs_1d{2},inputs_1d{4},inputs_1d{end}}, {'P(all)'}, opts);
+        case 'P(A_pres,B_Past,A_past,S)'
+            prob_dists{i} =  prob_estimator({inputs_1d{1},inputs_1d{4},inputs_1d{2},inputs_1d{end}}, {'P(all)'}, opts);
     end
 end
 
@@ -241,14 +316,14 @@ for i = 1:length(indices)
     idx = indices(i);
     switch possibleOutputs{idx}
         case 'FIT(A->B;S)'
-            Prob_d = prob_dists{strcmp(required_distributions, 'P(S,B_pres,A_past,B_past)')};
-            atoms = fit_core(Prob_d, opts);
+            Prob_d = prob_dists{strcmp(required_distributions, 'P(B_pres,A_past,B_past,S)')};
+            atoms = fit_core(Prob_d{1});
             FIT_values{i} = min(atoms);
             atom1{i} = atoms(1);
             atom2{i} = atoms(2);
         case 'FIT(B->A;S)'
-            Prob_d = prob_dists{strcmp(required_distributions, 'P(S,A_pres,B_past,A_past)')};
-            atoms = fit_core(Prob_d, opts);
+            Prob_d = prob_dists{strcmp(required_distributions, 'P(A_pres,B_Past,A_past,S)')};
+            atoms = fit_core(Prob_d{1});
             FIT_values{i} = min(atoms);
             atom1{i} = atoms(1);
             atom2{i} = atoms(2);

@@ -1,104 +1,126 @@
-function cTE_values = cTE(inputs, varargin)
-%%% *function [TE_values, TE_naive, TE_shuff_all] = TE(inputs, outputs, varargin)*
-%%%
-%%% The cTE function computes conditioned Transfer Entropy (cTE) values from time series data.
-%%% Conditioned Transfer entropy from a process A to another process B is the amount of uncertainty
-%%% reduced in future values of B by knowing the past values of A given past values of B and C.
-%%%
-%%% Inputs:
-%%%   - inputs: A cell array containing the input time series data. Each cell represents a time series, where:
-%%%             - inputs{1}: First time series (A) with dimensions
-%%%                          nDims X nTimepoints X nTrials
-%%%             - inputs{2}: Second time series (B) with dimensions
-%%%                          nDims X nTimepoints X nTrials
-%%%             - inputs{3}: Third time series (C) with dimensions
-%%%                          nDims X nTimepoints X nTrials
-%%%   - outputs: A cell array of strings specifying which entropies to compute.
-%%%              Possible outputs include:
-%%%               - 'cTE'      : Standard cond. Transfer Entropy.
-%%%               - 'shcTE'    : Shuffled cond. Transfer Entropy.
-%%%               - 'normcTE'  : Normalized cond. Transfer Entropy.
-%%%               - 'normShcTE': Normalized Shuffled cond. Transfer Entropy.
-%%%
-%%%   - varargin: Optional arguments, passed as a structure. Fields may include:
-%%%              - tau:            Integer that specifies the delay for the time series.
-%%%                                This can be defined separately for A and B as a cell:
-%%%                                opts.tau{1} = delay for A;
-%%%                                opts.tau{2} = delay for B;
-%%%                                opts.tau{3} = delay for C;
-%%%                                If a single integer or a single cell field is provided,
-%%%                                the same delay will be applied to both A and B.
-%%%                                Default is 1 timepoint.
-%%%
-%%%              - tpres:          Specifies the present timepoint for the calculation.
-%%%                                This can also be defined separately for A and B in the same manner as tau:
-%%%                                opts.tpres{1} = present for A;
-%%%                                opts.tpres{2} = present for B;
-%%%                                opts.tpres{3} = present for C;
-%%%                                If only a single value or cell is given, it applies to both.
-%%%                                Default is set to the last timepoint of input A.
-%%%
-%%%              - singleTimepoint:Boolean (true/false) indicating whether to compute Transfer Entropy
-%%%                                for a single timepoint or for the entire time series.
-%%%                                If set to true, only single timepoints will be considered in the analysis.
-%%%                                Default is false.
-%%%
-%%%              - bias:           Specifies the bias correction method to be used.
-%%%                                Possible values include:
-%%%                                'naive'                      :(default) - No correction applied.
-%%%                                'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
-%%%                                'ShuffSub'                   :Shuffle Substraction (need to specify shuff as number of shufflings).
-%%%                                'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
-%%%                                'pt'                         :Panzeri-Treves bias correction.
-%%%                                'bub'                        :
-%%%                                Users can also define their own custom bias correction method
-%%%                                (see help for correction.m)
-%%%
-%%%              - bin_method:     Cell array specifying the binning method.
-%%%                                It can have one or two entries:
-%%%                                If one entry is provided, it will be applied to both A, B and C.
-%%%                                Possible values include:
-%%%                                'eqpop'     : Equal population binning.
-%%%                                'eqspace'   : Equal space binning.
-%%%                                'threshold' : Binning based on a specified threshold.
-%%%                                Users can also define their own custom binning method
-%%%                                (see help for binning.m).
-%%%                                Default is {'none'}.
-%%%
-%%%              - n_bins:         Specifies the number of bins to use for binning.
-%%%                                It can be a single integer or a cell array with one or two entries.
-%%%                                If one entry is provided, it will be used for both A, B and C.
-%%%                                This integer defines how the continuous values will be
-%%%                                discretized into bins for analysis.
-%%%                                Default number of bins is {3}.
-%%%
-%%%              - suppressWarnings: Boolean (true/false) to suppress warning messages.
-%%%                                  Default is false, meaning warnings will be shown.
-%%% Outputs:
-%%%   - cTE_values: A cell array containing the computed cTE values as specified in the outputs argument.
-%%%   - cTE_naive: A cell array containing the naive cTE estimates.
-%%%   - cTE_shuff_all: A value indicating the all results of the shuffling procedure (0 if not performed).
-%%%
-%%% Note:
-%%% Input A, B and C can represent multiple neurons concatenated along the first dimension.
-%%% This means that each neuron can contribute its activity data, allowing the analysis
-%%% of interactions between different neurons and their influence on other time series.
-%%%
-%%% EXAMPLE
-%%% Suppose we have two time series of groups of neurons X1 and X2, two time series of groups of neurons Y1 and Y2 and
-%%% two time series of groups of neurons Z1 and Z2.
-%%% (Structur data is nNeurons x nTimepoints x nTrials)
-%%%
-%%% We can structure our inputs as follows:
-%%% Thus, the total input for A and B would be:
-%%% A = cat(1, X1, X2);  % Concatenates X1 and X2 along the first dimension (neurons)
-%%% B = cat(1, Y1, Y2);  % Concatenates Y1 and Y2 along the first dimension (neurons)
-%%% C = cat(1, Z1, Z2);  % Concatenates Z1 and Z2 along the first dimension (neurons)
-%%%
-%%% To compute the Transfer Entropy from time series A (X) to B (Y) conditioned on c(Z) the function can be called as:
-%%% cTE_values = cTE({A, B, C}, {'cTE'}, opts);
-%%% 'opts' represents additional options you may want to include, such as
-%%% specifying the delay (tau), number of bins (n_bins), and other parameters as needed.
+function [cTE_values, cTE_naive, cTE_shuff_all] = cTE(inputs, varargin)
+% *function [cTE_values, cTE_naive, cTE_nullDist] = cTE(inputs, outputs, opts)*
+%
+% The cTE function computes transfer entropy (cTE) between two 
+% time series (A and B) conditioned on a third time series (C). The 
+% function supports different configurations for the time series data and 
+% allows for multiple time points, lag adjustments, and various binning 
+% methods.
+%
+% Inputs:
+%   - inputs: A cell array containing the input time series data. Each cell represents a time series, where:
+%             - inputs{1}: First time series (A) with dimensions
+%                          nDims X nTimepoints X nTrials
+%             - inputs{2}: Second time series (B) with dimensions
+%                          nDims X nTimepoints X nTrials
+%             - inputs{3}: Third time series (C) with dimensions
+%                          nDims X nTimepoints X nTrials
+%
+%   - outputs: A cell array of strings specifying which cTE measures to compute.
+%              Possible outputs include:
+%               - 'TE(A->B|C)' : Conditional Transfer Entropy from A to B given C
+%               - 'TE(B->A|C)' : Conditional Transfer Entropy from B to A given C
+%
+%   - varargin: Optional arguments, passed as a structure. Fields may include:
+%              - singleTimepoint:    Boolean (true/false) indicating whether to compute Transfer Entropy
+%                                    for a single timepoint or the delayed timeseries
+%
+%              - tau:                Integer that specifies the delay for the time series.
+%                                    This can be defined separately for A, B and C as a cell:
+%                                    opts.tau{1} = delay for A;
+%                                    opts.tau{2} = delay for B;
+%                                    opts.tau{3} = delay for C;
+%                                    If a single integer or a single cell field is provided,
+%                                    the same delay will be applied to A, B and C (default: 1)
+%
+%              - tpres:              Specifies the present timepoint for the calculation.
+%                                    This can also be defined separately for A, B and C in the same manner as tau:
+%                                    opts.tpres{1} = present for A;
+%                                    opts.tpres{2} = present for B;
+%                                    opts.tpres{C} = present for C;
+%                                    If only a single value or cell is given, it applies to A, B and C.
+%                                    Default is length of A.
+%
+%              - bias:               Specifies the bias correction method to be used.
+%                                    'naive'                      :(default) - No correction applied.
+%                                    'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
+%                                    'ShuffSub'                   :Shuffle Substraction (need to specify shuff as number of shufflings).
+%                                    'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
+%                                    'pt'                         :Panzeri-Treves bias correction (Panzeri and Treves 1996).
+%                                    'bub'                        :best upper bound(Paninsky, 2003)
+%                                    Users can also define their own custom bias correction method
+%                                    (type 'help correction' for more information)
+%   
+%              - bin_method:         Cell array specifying the binning method to be applied.
+%                                    'none'      : (default) - No binning applied.
+%                                    'eqpop'     : Equal population binning.
+%                                    'eqspace'   : Equal space binning.
+%                                    'userEdges' : Binning based on a specified edged.
+%                                    Users can also define their own custom binning method
+%                                    If one entry is provided, it will be applied to both A and B.
+%                                    (type 'help binning' for more information).
+%   
+%              - n_bins:             Specifies the number of bins to use for binning.
+%                                    It can be a single integer or a cell array with one or two entries.
+%                                    Default number of bins is {3}
+%
+%              - computeNulldist:  If set to true, generates a null distribution
+%                                  based on the specified inputs and core function.
+%                                  When this option is enabled, the following can be specified:
+%                                   - `n_samples`: The number of null samples to generate (default: 100).
+%                                   - 'shuffling': Additional shuffling options to determine the variables to be 
+%                                      shuffled during the computation of the null distribution (default: {'A'}).
+%                                      (type 'help shuffle' for more information).
+% 
+%              - suppressWarnings:  Boolean (true/false) to suppress warning messages.
+%                                   Default is false, meaning warnings will be shown.
+%
+%              - NaN_handling:     Specifies how NaN values should be handled in the data.
+%                                  Options include:
+%                                  'removeTrial' : Removes trials containing NaN in any variable 
+%                                                  from all input data.
+%                                  'setToZero'   : Sets NaN values to zero.
+%                                  'error'       : (default) Throws an error if NaN values are detected.
+%
+% Outputs:
+%   - cTE_values: A cell array containing the computed cTE values as specified in the outputs argument.
+%   - cTE_naive: A cell array containing the naive cTE estimates.
+%   - cTE_shuff_all: Results of the null distribution computation (0 if not performed).
+%
+% Note:
+% Input A, B and C can represent multiple neurons concatenated along the first dimension.
+% This means that each neuron can contribute its activity data, allowing the analysis
+% of interactions between different neurons and their influence on other time series.
+%
+% EXAMPLE
+% Suppose we have two time series of groups of neurons X1 and X2, two time series of groups of neurons Y1 and Y2 and
+% two time series of groups of neurons Z1 and Z2.
+% (Structur data is nNeurons x nTimepoints x nTrials)
+%
+% We can structure our inputs as follows:
+% X = cat(1, X1, X2);  Concatenates X1 and X2 along the first dimension (neurons)
+% Y = cat(1, Y1, Y2);  Concatenates Y1 and Y2 along the first dimension (neurons)
+% Z = cat(1, Z1, Z2);  Concatenates Z1 and Z2 along the first dimension (neurons)
+%
+% To compute the Transfer Entropy from time series X to Y conditioned on Z the function can be called as:
+% cTE_values = cTE({X, Y, Z}, {'TE(A->B|C)'}, opts);
+%
+% Here, 'opts' represents additional options you may want to include (see varargin options)
+
+% Copyright (C) 2024 Gabriel Matias Lorenz, Nicola Marie Engel
+% This file is part of MINT. 
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+% 
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 1: Check Inputs, Check OutputList, Fill missing opts with default values %
@@ -110,10 +132,10 @@ if length(varargin) > 1
             outputs = varargin{1};
         end
     else
-        [outputs, opts] = check_inputs('cTE',inputs,varargin{:});
+        [inputs, outputs, opts] = check_inputs('cTE',inputs,varargin{:});
     end
 else
-    [outputs, opts] = check_inputs('cTE',inputs,varargin{:});
+    [inputs, outputs, opts] = check_inputs('cTE',inputs,varargin{:});
 end
 
 possibleOutputs = {'TE(A->B|C)', 'TE(B->A|C)'};
@@ -180,7 +202,7 @@ if ~opts.singleTimepoint
     minA_tp = presA - max(Atau);
     minB_tp = presB - max(Btau);
     minC_tp = presC - max(Ctau);
-    tPoints = min(minA_tp,minB_tp, minC_tp);
+    tPoints = min(minA_tp,minB_tp);
 
     A_delayed =  zeros(DimsA(1), length(Atau), tPoints, nTrials);
     A_delayed(:,1,:,:) = inputs{1}(:,(presA-tPoints+1):presA,:);
@@ -216,7 +238,7 @@ else
             A_delayed(:,tau, :) = inputs{1}(:, index, :);
         else
             msg = "The specified delay for A is not available for the timeseries.";
-            error('TE:InvalidInput', msg);
+            error('cTE:InvalidInput', msg);
         end
     end
     B_delayed = zeros(DimsB(1), length(Btau), nTrials); %(nDims x nTaus x nTrials)
@@ -226,7 +248,7 @@ else
             B_delayed(:,tau, :) = inputs{2}(:, index, :);
         else
             msg = "The specified delay for B is not available for the timeseries.";
-            error('TE:InvalidInput', msg);
+            error('cTE:InvalidInput', msg);
         end
     end
     C_delayed = zeros(DimsC(1), length(Ctau), nTrials); %(nDims x nTaus x nTrials)
@@ -243,13 +265,15 @@ else
     B_pres = squeeze(B_delayed(:, 1, :));
     B_past = squeeze(B_delayed(:, 2:end, :));
     A_past = squeeze(A_delayed(:, 2:end, :));
-    C_past = C_delayed;
     S = inputs{end};
-    A_pres = reshape(A_delayed(:, 1, :), 1, DimsA(3));  % Shape [nDims, nTrials]
-    B_pres = reshape(B_delayed(:, 1, :), 1, DimsB(3));  % Shape [nDims, nTrials]
+    A_pres = reshape(A_delayed(:, 1, :), DimsA(1), DimsA(3));  % Shape [nDims, nTrials]
+    B_pres = reshape(B_delayed(:, 1, :), DimsB(1), DimsB(3));  % Shape [nDims, nTrials]
+
     A_past = reshape(A_delayed(:, 2:end, :), DimsA(1), size(A_delayed, 2)-1, DimsA(3));  % Shape [nDims-1, delays, nTrials]
     B_past = reshape(B_delayed(:, 2:end, :), DimsB(1), size(B_delayed, 2)-1, DimsB(3));  % Shape [nDims-1, delays, nTrials]
+    C_past = C_delayed;
 end  
+
 
 % Reshape opts.bin_method
 if numel(opts.bin_method) == 1
@@ -276,14 +300,14 @@ inputs_1d = inputs_b;
 % Reduce the Dimensions if necessary
 for var = 1:length(inputs_b)
     sizeVar = size(inputs_1d{var});
-    if sizeVar(1) > 1  0 
+    if sizeVar(1) > 1
         inputs_1d{var} = reduce_dim(inputs_1d{var}, 1);
     end
-    if sizeVar(2) > 1
+    if length(sizeVar) > 2 && sizeVar(2) > 1
         inputs_1d{var} = reduce_dim(inputs_1d{var}, 2);
     end
     inputs_1d{var} = squeeze(inputs_1d{var});
-    inputs_1d{var} = reshape(inputs_1d{var}, 1, sizeVar(3));
+    inputs_1d{var} = reshape(inputs_1d{var}, 1, sizeVar(end));
 end
 
 
@@ -406,8 +430,14 @@ for i = 1:length(indices)
                     end
                 end
             end
-
     end
+end
+if opts.computeNulldist
+    nullDist_opts = opts;
+    nullDist_opts.computeNulldist = false;
+    cTE_nullDist = create_nullDist(inputs, outputs, @TE, nullDist_opts);
+else
+    cTE_nullDist = TE_shuff_all;
 end
 
 end
