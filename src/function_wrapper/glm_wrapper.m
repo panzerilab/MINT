@@ -4,7 +4,10 @@ function output_values = glm_wrapper(input,varargin)
 %
 % This function implements a Generalized Linear Model (GLM)
 % classification, offering options for regularization techniques such as Elastic Net,
-% as well as cross-validation and hyperparameter optimization.
+% as well as cross-validation and hyperparameter optimization. The glm_wrapper function 
+% of is specifically implemented for binary labels, meaning it can fit models 
+% for binary classification tasks but is not designed to handle multi-class 
+% or multi-bin labels.
 %
 % Usage:
 %   output_values = GLM_pipeline(input, varargin)
@@ -14,7 +17,7 @@ function output_values = glm_wrapper(input,varargin)
 %       - input{1}: Feature matrix (data), where rows represent observations and columns
 %         represent features.
 %       - input{2}: Label vector (labels) corresponding to the observations in the feature
-%         matrix.
+%         matrix (binary).
 %
 %   - varargin: Optional arguments, which may include:
 %       - outputs: A cell array specifying which outputs to return (default is {'all'}).

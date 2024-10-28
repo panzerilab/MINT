@@ -39,11 +39,15 @@ if noiseLevel > 0
 else
     noisyLabels = labels;
 end 
+%%
 % -----------------------------------------------------------------------------
 %                               GLM
 % -----------------------------------------------------------------------------
 % In this section, we utilize the MINT toolbox to perform GLM analysis 
-% on the generated data. 
+% on the generated data. The glm_wrapper function of the MINT toolbox is 
+% specifically implemented for binary labels, meaning it can fit models 
+% for binary classification tasks but is not designed to handle multi-class 
+% or multi-bin labels.
 
 % To fit the GLM model you can use crossvalidation. Therefore ypu can
 % specify the field 'cv' as a cell with a String containing the validation
@@ -147,7 +151,9 @@ popInfo_GLM = cell2mat(MI({GLM_labelsBinary', labels'}, {'I(A;B)'}, MI_opts));
 %                               SVM
 % -----------------------------------------------------------------------------
 % In this section, we utilize the MINT toolbox to perform SVM analysis 
-% on the generated data.
+% on the generated data.T he svm_wrapper function of the MINT toolbox is 
+% implemented for binary classification tasks as well as multi-class
+% classifiction. 
 
 % To fit the SVM model, you can use cross-validation. Specify the 'cv' field
 % as a cell array with a string containing the validation method and a second
