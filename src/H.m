@@ -261,71 +261,90 @@ for t = 1:nTimepoints
                 P_A = prob_dists{t, strcmp(required_distributions, 'P(A)')};
                 P_lin_log = P_A .* log2(P_A);
                 P_lin_log(isnan(P_lin_log)) = 0;
-                entropies{i}(1,t) = -sum(P_lin_log(:));
+                entropies_naive{i}(1,t) = -sum(P_lin_log(:));
                 if strcmp(opts.bias, 'bub')
-                    bias = bub(nTrials * P_A);
-                    entropies_naive{i}(1,t) = entropies{i}(1,t);
-                    entropies{i}(1,t) = entropies_naive{i}(1,t) - bias;               
+                    bias = bub(nTrials * P_A);                           
+                elseif strcmp(opts.bias, 'pt')
+                    bias = pt(inputs_1d{1}, length(unique(inputs_1d{1})), nTrials);
+                else 
+                    bias = 0;
                 end
-                if strcmp(opts.bias, 'pt')
-                    uniqueV = length(unique(redA));
-                end
+                entropies{i}(1,t) = entropies_naive{i}(1,t) - bias;   
             case 'H(B)'
                 P_B = prob_dists{t, strcmp(required_distributions, 'P(B)')};
                 P_lin_log = P_B .* log2(P_B);
                 P_lin_log(isnan(P_lin_log)) = 0;
-                entropies{i}(1,t) = -sum(P_lin_log(:));
+                entropies_naive{i}(1,t) = -sum(P_lin_log(:));
                 if strcmp(opts.bias, 'bub')
                     bias = bub(nTrials * P_B);
-                    entropies_naive{i}(1,t) = entropies{i}(1,t);
-                    entropies{i}(1,t) = entropies_naive{i}(1,t) - bias;
+                elseif strcmp(opts.bias, 'pt')
+                    bias = pt(inputs_1d{2}, length(unique(inputs_1d{2})), nTrials);
+                else 
+                    bias = 0;
                 end
-                if strcmp(opts.bias, 'pt')
-                    uniqueV = length(unique(redB));
-                end
+                entropies{i}(1,t) = entropies_naive{i}(1,t) - bias;   
             case 'H(A|B)'
                 P_AB = prob_dists{t, strcmp(required_distributions, 'P(A|B)')};
                 P_B = prob_dists{t, strcmp(required_distributions, 'P(B)')};
                 P_Bext = repmat(P_B, 1, size(P_AB, 1));
                 P_lin_log = P_Bext' .* P_AB .* log2(P_AB);
                 P_lin_log(isnan(P_lin_log)) = 0;
-                entropies{i}(1,t) = -sum(P_lin_log(:));
+                entropies_naive{i}(1,t) = -sum(P_lin_log(:));
                 if strcmp(opts.bias, 'bub')
                     P_A = prob_dists{t, strcmp(required_distributions, 'P(A)')};
                     pAB = P_AB .* P_B';
                     biasA  = bub(nTrials*P_A(:));
                     biasAB = bub(nTrials*pAB(:));
-                    bias = biasAB - biasA; 
-                    entropies_naive{i}(1,t) = entropies{i}(1,t);
-                    entropies{i}(1,t) = entropies_naive{i}(1,t) - bias;
+                    bias = biasAB - biasA;
+                elseif strcmp(opts.bias, 'pt')
+                    bias = 0;
+                    uniqueB = unique(inputs_1d{2});
+                    nb = length(uniqueB);
+                    for b_i=1:nb
+                        A_tmp = inputs_1d{1}(inputs_1d{2} == uniqueB(b_i));
+                        bias = bias + pt(A_tmp, length(unique(A_tmp)), nTrials);
+                    end
+                else
+                    bias = 0;
                 end
+                entropies{i}(1,t) = entropies_naive{i}(1,t) - bias;
             case 'Hlin(A)'
                 P_lin = prob_dists{t, strcmp(required_distributions, 'Plin(A)')};
                 P_lin_log = P_lin .* log2(P_lin);
                 P_lin_log(isnan(P_lin_log)) = 0;
-                entropies{i}(1,t) = -sum(P_lin_log(:));
+                entropies_naive{i}(1,t) = -sum(P_lin_log(:));
                 if strcmp(opts.bias, 'bub')
                     bias = 0;
                     for row=1:size(plin,1)
                         pl = P_lin(row,:);
                         bias =  bias + bub(nTrials*pl);
                     end
-                    entropies_naive{i}(1,t) = entropies{i}(1,t);
-                    entropies{i}(1,t) = entropies_naive{i}(1,t) - bias;
+                elseif strcmp(opts.bias, 'pt')
+                    bias = 0;
+                    for row=1:size(inputs{1},1)
+                        Arow = inputs{1}(row,:);
+                        nArow = length(unique(Arow));
+                        bias =  bias + pt(Arow, nArow, nTrials);
+                    end
+                else
+                    bias = 0;
                 end
+                entropies{i}(1,t) = entropies_naive{i}(1,t) - bias;
             case 'Hind(A)'
                 P_indA = prob_dists{t, strcmp(required_distributions, 'Pind(A)')};
                 P_lin_log = P_indA .* log2(P_indA);
                 P_lin_log(isnan(P_lin_log)) = 0;
-                entropies{i}(1,t) = -sum(P_lin_log(:)); 
-                entropies_naive{i}(1,t) = entropies{i}(1,t);
+                entropies_naive{i}(1,t) = -sum(P_lin_log(:));
+                bias = 0;
+                entropies{i}(1,t) = entropies_naive{i}(1,t) - bias;
             case 'Hind(A|B)'
                 P_indAB = prob_dists{t, strcmp(required_distributions, 'Pind(A|B)')};
                 P_B = prob_dists{t, strcmp(required_distributions, 'P(B)')};
                 P_lin_log = P_B' .* P_indAB .* log2(P_indAB);
                 P_lin_log(isnan(P_lin_log)) = 0;
-                entropies{i}(1,t) = -sum(P_lin_log(:));
-                entropies_naive{i}(1,t) = entropies{i}(1,t);
+                entropies_naive{i}(1,t) = -sum(P_lin_log(:));
+                bias = 0;
+                entropies{i}(1,t) = entropies_naive{i}(1,t) - bias;
             case 'Chi(A)'
                 P_A = prob_dists{t, strcmp(required_distributions, 'P(A)')};
                 P_indA = prob_dists{t, strcmp(required_distributions, 'Pind(A)')};
@@ -337,24 +356,30 @@ for t = 1:nTimepoints
                 P_lin_log = P_A .* log2(P_indA);
                 P_lin_log(isnan(P_lin_log)) = 0;
                 P_lin_log(isinf(P_lin_log)) = 0;
-                entropies{i}(1,t) = -sum(P_lin_log(:));
-                entropies_naive{i}(1,t) = entropies{i}(1,t);
+                entropies_naive{i}(1,t) = -sum(P_lin_log(:));
+                bias = 0;
+                entropies{i}(1,t) = entropies_naive{i}(1,t) - bias;
             case 'Hsh(A)'
                 P_shA = prob_dists{t, strcmp(required_distributions, 'Psh(A)')};
                 P_lin_log = P_shA .* log2(P_shA);
                 P_lin_log(isnan(P_lin_log)) = 0;
-                entropies{i}(1,t) = -sum(P_lin_log(:));
+                entropies_naive{i}(1,t) = -sum(P_lin_log(:));
                 if strcmp(opts.bias, 'bub')
                     bias = bub(nTrials*P_shA);
                     entropies_naive{i}(1,t) = entropies{i}(1,t);
                     entropies{i}(1,t) = entropies_naive{i}(1,t) - bias;
-                end             
+                elseif strcmp(opts.bias, 'pt')
+                    bias = pt(inputs_1d{1}, length(unique(inputs_1d{1})), nTrials);
+                else
+                    bias = 0;
+                end
+                entropies{i}(1,t) = entropies_naive{i}(1,t) - bias;
             case 'Hsh(A|B)'
                 P_shAB = prob_dists{t, strcmp(required_distributions, 'Psh(A|B)')};
                 P_B = prob_dists{t, strcmp(required_distributions, 'P(B)')};
                 P_lin_log = P_B' .* P_shAB .* log2(P_shAB);
                 P_lin_log(isnan(P_lin_log)) = 0;
-                entropies{i}(1,t) = -sum(P_lin_log(:));
+                entropies_naive{i}(1,t) = -sum(P_lin_log(:));
                 if strcmp(opts.bias, 'bub')
                     P_shA = prob_dists{t, strcmp(required_distributions, 'Psh(A)')};
                     PshAB = P_shAB .* P_B;
@@ -363,7 +388,18 @@ for t = 1:nTimepoints
                     bias = biasAB - biasA;
                     entropies_naive{i}(1,t) = entropies{i}(1,t);
                     entropies{i}(1,t) = entropies_naive{i}(1,t) - bias;
-                end             
+                elseif strcmp(opts.bias, 'pt')
+                    bias = 0;
+                    uniqueB = unique(inputs_1d{2});
+                    nb = length(uniqueB);
+                    for b_i=1:nb
+                        A_tmp = inputs_1d{1}(inputs_1d{2} == uniqueB(b_i));
+                        bias = bias + pt(A_tmp, length(unique(A_tmp)), nTrials);
+                    end
+                else
+                    bias = 0;
+                end
+                entropies{i}(1,t) = entropies_naive{i}(1,t) - bias;         
         end
     end
 end

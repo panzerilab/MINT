@@ -345,8 +345,8 @@ for t = 1:max(1, nTimepoints)
 
 
     %% Collate all results
-    for i = 1:length(outputs)
-        switch outputs{i}
+    for outidx = 1:length(outputs)
+        switch outputs{outidx}
             case 'P(A)', prob_dist_result = p_A;
             case 'Plin(A)', prob_dist_result = plin_A;
             case 'P(A,B)', prob_dist_result = p_AB;
@@ -363,9 +363,9 @@ for t = 1:max(1, nTimepoints)
 
         % If multiple timepoints, store result per timepoint
         if nTimepoints > 1
-            prob_dists{t, i} = prob_dist_result;
+            prob_dists{t, outidx} = prob_dist_result;
         else
-            prob_dists{i} = prob_dist_result;  % If single timepoint, store directly
+            prob_dists{outidx} = prob_dist_result;  % If single timepoint, store directly
         end
     end
 end
