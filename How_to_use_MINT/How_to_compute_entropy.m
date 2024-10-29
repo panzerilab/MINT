@@ -47,8 +47,7 @@ entropy_opts.n_bins = {4, 3};               % Specify an integer for the number 
 % opts.NaN_handling. 
 entropy_opts.NaN_handling = 'removeTrial';  % Options:                                              | (default: 'error')
                                             % 'error' (Throws an error if NaN values are detected in any input)
-                                            % 'removeTrial' (Removes trials (across all variables) that contain NaN values)                                             
-                                            % 'setToZero' (Replaces NaN values with zeros in all input data)                                                           
+                                            % 'removeTrial' (Removes trials (across all variables) that contain NaN values)                                                                                                  
 
 
 % To correct for sampling bias, you can specify methods for bias correction 

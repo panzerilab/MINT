@@ -12,7 +12,6 @@ function inputs = nan_method(inputs,handling)
 %
 %   - handling: A string specifying how to handle NaN values in `inputs`. Available options are:
 %               - 'removeTrial' : Removes all trials (across all variables) that contain NaN values.
-%               - 'setToZero'   : Replaces NaN values with zeros in all input data.
 %               - 'error'       : (default) Throws an error if NaN values are detected in any input.
 %
 % Outputs:
@@ -50,10 +49,10 @@ if strcmp(handling, 'removeTrial')
             inputs{var}(:, NaN_indices) = [];
         end
     end
-elseif strcmp(handling, 'setToZero')
-    for var = 1:length(inputs)
-        inputs{var}(isnan(inputs{var})) = 0;
-    end
+% elseif strcmp(handling, 'setToZero')
+%     for var = 1:length(inputs)
+%         inputs{var}(isnan(inputs{var})) = 0;
+%     end
 elseif strcmp(handling, 'error')
     for var = 1:length(inputs)
         if any(isnan(inputs{var}),'all')

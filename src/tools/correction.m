@@ -149,8 +149,8 @@ switch corr
     case 'pt'
         [corrected_v, naive_v] = pt(inputs_b, outputs, corefunc, opts); % Check Timeseries input for that
     case 'bub'
-        if strcmp(func2str(corefunc), 'MI') || strcmp(func2str(corefunc), 'cMI') || strcmp(func2str(corefunc), 'H') || strcmp(func2str(corefunc), 'TE') || strcmp(func2str(corefunc), 'cTE') 
-            [corrected_v, naive_v] = bub(inputs_b, outputs, corefunc, opts); % Check Timeseries input for that
+        if strcmp(func2str(corefunc), 'MI') || strcmp(func2str(corefunc), 'cMI') || strcmp(func2str(corefunc), 'H') || strcmp(func2str(corefunc), 'TE') || strcmp(func2str(corefunc), 'cTE')
+            [corrected_v, naive_v] = bub(inputs_b, outputs, opts); 
         else 
             warning('bub bias correction is only valid for MI, cMI, H, TE, and cTE');           
         end 

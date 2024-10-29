@@ -14,54 +14,15 @@ function [corrected_v, naive_v] = bub(inputs, outputs, corefunc, varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses
 
+
 % Check Outputslist
-possibleOutputs = {'H(A)', 'H(A|B)', 'Hlin(A)', 'Hind(A)', 'Hind(A|B)', 'Chi(A)','Hsh(A)', 'Hsh(A|B)'};
+possibleOutputs = {'H(A)', 'H(A|B)', 'Hlin(A)', 'Hind(A)', 'Hind(A|B)','Hsh(A)', 'Hsh(A|B)'};
 [isMember, indices] = ismember(outputs, possibleOutputs);
 if any(~isMember)
     nonMembers = outputs(~isMember);
     msg = sprintf('Invalid Outputs: %s', strjoin(nonMembers, ', '));
     error('H:invalidOutput', msg);
 end
-
-DimsA = size(inputs{1});
-DimsB = size(inputs{2});
-if DimsA(end) ~= DimsB(end)
-    msg = sprintf('The number of trials for A (%d) and B (%d) are not consistent. Ensure both variables have the same number of trials.',DimsA(end),DimsB(end));
-    error('H:InvalidInput', msg);
-end
-nTrials = DimsA(end);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%               Step 2: Prepare Data (binning/reduce dimensions)                %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-opts = varargin{1};
-if ~opts.isbinned
-    inputs_b = binning(inputs,opts);
-    opts.isbinned = true;
-    for c=1:length(inputs)
-        inputs_b{c} = inputs_b{c}+1;
-    end
-else
-    inputs_b = inputs;
-end
-
-inputs_1d = inputs_b;
-if DimsA(1) > 1
-    inputs_1d{1} = reduce_dim(inputs_b{1}, 1);
-    if  any(strcmp(outputs,'Hlin(A)')) || any(strcmp(outputs,'Hind(A)')) || any(strcmp(outputs, 'Hind(A|B)'))
-        inputs_1d{3} = inputs{1};
-    end 
-end
-if DimsB(1) > 1
-    inputs_1d{2} = reduce_dim(inputs_b{2}, 1);
-end
-if DimsA(2:end) ~= DimsB(2:end)
-    msg = 'Inconsistent sizes of A and B';
-    error('H:inconsistentSizes', msg);
-end
-
-naiveopts = opts;
-naiveopts.bias = 'naive';
 
 [naive_v, ~, ~, prob_dists] = H(inputs_1d, outputs, naiveopts);
 
@@ -72,6 +33,8 @@ entropy_distributions = struct( ...
     'H_A', {{'P(A)'}}, ...
     'H_A_B', {{'P(A|B)', 'P(B)'}}, ...
     'Hlin_A', {{'Plin(A)'}}, ...
+    'Hind_A', {{'Pind(A)'}}, ...
+    'Hind_A_B', {{'Pind(A|B)', 'P(B)'}}, ...
     'Hsh_A', {{'Psh(A)'}}, ...
     'Hsh_A_B', {{'Psh(A|B)', 'P(B)'}} ...
     );

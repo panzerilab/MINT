@@ -88,6 +88,10 @@ MI_opts.shuff = 30;
 % with the opts field supressWarnings (default: false).
 MI_opts.supressWarnings = true;
 
+MI_opts.NaN_handling = 'removeTrial';       % Options:                                          | (default: 'error')
+                                            % 'error' (Throws an error if NaN values are detected in any input)
+                                            % 'removeTrial' (Removes trials (across all variables) that contain NaN values)
+                                            
 % To test for significance, you may want to generate a null distribution.
 % The functions in the MINT toolbox offer an option to do this through 
 % the `opts.computeNulldist` parameter. To obtain the null distribution, 

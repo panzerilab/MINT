@@ -62,7 +62,6 @@ function [FIT_values, FIT_naive, FIT_nullDist, atom1, atom2] = FIT(inputs, varar
 %                                  Options include:
 %                                  'removeTrial' : Removes trials containing NaN in any variable 
 %                                                  from all input data.
-%                                  'setToZero'   : Sets NaN values to zero.
 %                                  'error'       : (default) Throws an error if NaN values are detected.
 %
 % Outputs:

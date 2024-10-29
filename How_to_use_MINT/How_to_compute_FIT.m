@@ -117,6 +117,10 @@ FIT_opts.xtrp = 10;
 FIT_opts.pid_constrained = true;            % Options.                                                       | (default: true)
                                             % true/false
 
+FIT_opts.NaN_handling = 'removeTrial';  % Options:                                                           | (default: 'error')
+                                            % 'error' (Throws an error if NaN values are detected in any input)
+                                            % 'removeTrial' (Removes trials (across all variables) that contain NaN values)  
+
 % Several functions give you warning, e.g. if you did not specify an opts
 % field that is needed and the function is using the default ist will
 % inform you. If you don't want to get these warning you can supress them
@@ -148,7 +152,7 @@ FIT_opts.parallel_sampling = true;
 
 % No we defined all options and we can call the FIT function H() as
 % follows: 
-%[FIT_corrected, FIT_naive, FIT_nullDist] = FIT(inputs, outputList, FIT_opts); 
+[FIT_corrected, FIT_naive, FIT_nullDist] = FIT(inputs, outputList, FIT_opts); 
 
 
 % -------------------------------------------------------------------------
@@ -183,5 +187,4 @@ FIT_opts.bin_method = {'eqpop', 'eqpop', 'eqpop','none'};
 FIT_opts.n_bins = {5, 5, 5}; 
 FIT_opts.shuffling = {'AB_D'};
 FIT_opts.n_trials = num_trials*4;
-%[cFIT_corrected, cFIT_naive, cFIT_nullDist] = cFIT(inputs, outputList, FIT_opts); 
-[cFIT_corrected, cFIT_naive, cFIT_nullDist] = cFIT_old(S, X1,X2,X3, FIT_opts); 
+[cFIT_corrected, cFIT_naive, cFIT_nullDist] = cFIT(inputs, outputList, FIT_opts); 

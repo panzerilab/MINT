@@ -73,7 +73,6 @@ function [PID_values, PID_naive, PID_nullDist] = PID(inputs, varargin)
 %                                  Options include:
 %                                  'removeTrial' : Removes trials containing NaN in any variable 
 %                                                  from all input data.
-%                                  'setToZero'   : Sets NaN values to zero.
 %                                  'error'       : (default) Throws an error if NaN values are detected.
 %
 %              - pid_constrained:   Boolean (true/false) to specify whether the partial information decomposition (PID) 

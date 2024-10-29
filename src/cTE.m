@@ -79,7 +79,6 @@ function [cTE_values, cTE_naive, cTE_shuff_all] = cTE(inputs, varargin)
 %                                  Options include:
 %                                  'removeTrial' : Removes trials containing NaN in any variable 
 %                                                  from all input data.
-%                                  'setToZero'   : Sets NaN values to zero.
 %                                  'error'       : (default) Throws an error if NaN values are detected.
 %
 % Outputs:

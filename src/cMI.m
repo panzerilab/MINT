@@ -59,7 +59,6 @@ function [cMI_values, cMI_naive, cMI_nullDist] =  cMI(inputs, varargin)
 %                                  Options include:
 %                                  'removeTrial' : Removes trials containing NaN in any variable 
 %                                                  from all input data.
-%                                  'setToZero'   : Sets NaN values to zero.
 %                                  'error'       : (default) Throws an error if NaN values are detected.
 %
 % Outputs:
