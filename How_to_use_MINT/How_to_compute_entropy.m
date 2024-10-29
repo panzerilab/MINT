@@ -97,7 +97,7 @@ entropy_opts.supressWarnings = false;
 % Window.
 entropy_opts.computeNulldist = true;
 entropy_opts.n_samples = 100;
-entropy_opts.parallel_sampling = true;
+entropy_opts.parallel_sampling = false;
 entropy_opts.shuffling = {'AB','A'};
 entropy_opts.dim_shuffle = {'Trials'};
 
