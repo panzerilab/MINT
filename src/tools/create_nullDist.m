@@ -25,7 +25,7 @@ function null_distribution = create_nullDist(inputs, outputs, corefunc, varargin
 %               - `n_bins`: The number of bins for discretizing continuous data (default: 3).
 %               - `shuff`: An integer specifying the number of shuffles to apply (default: 0).
 %               - `n_samples`: Number of null samples to generate (default: 100).
-%               - 'shuffling': Cell with string specifiying what to shuffle (can be also more than one)(for help see in shuffle function)(default: {'A'})
+%               - 'shuffling': Cell with string specifiying what to shuffle (can be also more than one)(for help type "help hShuffle" function)(default: {'A'})
 %               - `parallel_sampling`: Boolean for enabling parallel sampling (default: false).
 %               - `dim_shuffle`: Specifies the dimension along which shuffling occurs (default: {'Trials'}).
 %               - `supressWarnings`: Boolean flag to suppress warnings during execution (default: false).
@@ -127,7 +127,7 @@ for shIdx = 1:length(opts.shuffling)
     if ~opts.parallel_sampling
         for shuffIdx = 1:opts.n_samples
             shuffOutputs = {opts.shuffling{shIdx}};
-            inputs_sh = shuffle(inputs, shuffOutputs,opts);
+            inputs_sh = hShuffle(inputs, shuffOutputs,opts);
             values = feval(corefunc, inputs_sh, outputs, opts_funcCall);
             for outIdx = 1:length(outputs)
                 null_distribution_tmp{shuffIdx, outIdx} = values{outIdx};
@@ -137,7 +137,7 @@ for shIdx = 1:length(opts.shuffling)
         null_distribution_tmp = cell(opts.n_samples, length(outputs));
         parfor shuffIdx = 1:opts.n_samples
             shuffOutputs = {opts.shuffling{shIdx}};
-            inputs_sh = shuffle(inputs, shuffOutputs, opts);           
+            inputs_sh = hShuffle(inputs, shuffOutputs, opts);           
             values = feval(corefunc, inputs_sh, outputs, opts_funcCall);
             null_distribution_tmp(shuffIdx, :) = values;
         end

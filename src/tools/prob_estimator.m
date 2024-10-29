@@ -6,10 +6,15 @@ function prob_dists = prob_estimator(inputs, outputs, opts)
 % as independent distributions.
 %
 % Inputs:
-%   - inputs: A cell array containing two time series data sets:
+%   - inputs: A cell array containing X data sets:
 %             - inputs{1}: First data input (A) with dimensions
 %                          nDims [X nTimepoints] X nTrials
 %             - inputs{2}: Second data input (B) with dimensions
+%                          nDims [X nTimepoints] X nTrials)
+%             - inputs{3}: Thirs data input (C) with dimensions
+%                          nDims [X nTimepoints] X nTrials)
+%                                   ...
+%             - inputs{N}: data input N with dimensions
 %                          nDims [X nTimepoints] X nTrials)
 %
 %   - outputs: A cell array of strings specifying which probability distributions
@@ -21,10 +26,11 @@ function prob_dists = prob_estimator(inputs, outputs, opts)
 %               - 'Pind(A)'      : Independent joint probability distribution of A.
 %               - 'Pind(A|B)'    : Independent conditional probability distribution of A given B.
 %               - 'Psh(A|B)'     : Shuffled conditional probability distribution of A given B.
-%               - 'Psh(A)'        : Shuffled probability distribution of A.
+%               - 'Psh(A)'       : Shuffled probability distribution of A.
 %               - 'Plin(A)'      : Independent joint probability distribution of A computed linearly.
 %
 %               - 'P(A,B,C)'     : Multidim Joint probability distribution of A, B and C.
+%               - 'P(all)'       : Multidim Joint probability distribution of all input vars.   
 %
 % Outputs:
 %   - prob_dists: A cell array containing the estimated probability distributions

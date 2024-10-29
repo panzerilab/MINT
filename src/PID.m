@@ -64,7 +64,7 @@ function [PID_values, PID_naive, PID_nullDist] = PID(inputs, varargin)
 %                                     - `n_samples`: The number of null samples to generate (default: 100).
 %                                     - 'shuffling': Additional shuffling options to determine the variables to be 
 %                                        shuffled during the computation of the null distribution (default: {'A'}).
-%                                        (type 'help shuffle' for more information).
+%                                        (type 'help hShuffle' for more information).
 %   
 %              - suppressWarnings:    Boolean (true/false) to suppress warning messages.
 %                                     Default is false, meaning warnings will be shown
@@ -75,6 +75,19 @@ function [PID_values, PID_naive, PID_nullDist] = PID(inputs, varargin)
 %                                                  from all input data.
 %                                  'setToZero'   : Sets NaN values to zero.
 %                                  'error'       : (default) Throws an error if NaN values are detected.
+%
+%              - pid_constrained:   Boolean (true/false) to specify whether the partial information decomposition (PID) 
+%                                   should be computed with constraints on specific atomic terms. When enabled, it uses 
+%                                   the chosen atomic term specified in `chosen_atom` to compute the other atoms.
+%                                   Default istrue, meaning PID is calculated with these constraints.
+%                                   When this option is enabled, the following can be specified:
+%                                    - `chosen_atom`: Determines the atomic term used in constrained PID calculations. 
+%                                       Options include:
+%                                       'Syn' : Synaptic or synergistic information (default).
+%                                       'Red' : Redundant information.
+%                                       'Unq1': Unique information from source 1.
+%                                       'Unq2': Unique information from source 2.
+
 %
 % Outputs:
 %   - PID_values: A cell array containing the computed MI values as specified in the outputs argument.

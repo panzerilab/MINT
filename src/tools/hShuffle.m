@@ -1,5 +1,5 @@
-function  inputs_sh = shuffle(inputs, varargin)
-% *inputs_sh = shuffle(inputs, outputs, opts)*
+function  inputs_sh = hShuffle(inputs, varargin)
+% *inputs_sh = hShuffle(inputs, outputs, opts)*
 % SHUFFLE - Shuffle neural data with optional consistency constraints
 %
 % This function shuffles neural data across specified dimensions, with options
@@ -46,14 +46,14 @@ function  inputs_sh = shuffle(inputs, varargin)
 %
 % Examples:
 % 1. To shuffle neural data 'A' and 'B', conditioned on 'C':
-%      inputs_sh = shuffle({A, B, C}, {'AB_C'}, opts);
+%      inputs_sh = hShuffle({A, B, C}, {'AB_C'}, opts);
 %
 % 2. To shuffle neural data across trials without any conditioning:
-%      inputs_sh = shuffle({A, B}, {'AB'}, opts);
+%      inputs_sh = hShuffle({A, B}, {'AB'}, opts);
 %
 % 3. To shuffle neural data 'A', maintaining consistency based on behavioral data:
 %      cond_input = ... % Behavioral data
-%      inputs_sh = shuffle({A}, {'A'}, opts, cond_input);
+%      inputs_sh = hShuffle({A}, {'A'}, opts, cond_input);
 %
 % Here, the options can be defined in `opts`, and `cond_input` applies consistency constraints for shuffling.
 

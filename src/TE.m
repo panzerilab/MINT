@@ -63,7 +63,7 @@ function [TE_values, TE_naive, TE_nullDist] = TE(inputs, varargin)
 %                                   - `n_samples`: The number of null samples to generate (default: 100).
 %                                   - 'shuffling': Additional shuffling options to determine the variables to be 
 %                                      shuffled during the computation of the null distribution (default: {'A'}).
-%                                      (type 'help shuffle' for more information).
+%                                      (type 'help hShuffle' for more information).
 % 
 %              - suppressWarnings:  Boolean (true/false) to suppress warning messages.
 %                                   Default is false, meaning warnings will be shown.
