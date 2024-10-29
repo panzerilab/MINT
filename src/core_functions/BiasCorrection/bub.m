@@ -1,106 +1,3 @@
-function [corrected_v, naive_v] = bub(inputs, outputs, corefunc, varargin)
-% Copyright (C) 2024 Gabriel Matias Lorenz, Nicola Marie Engel
-% This file is part of MINT.
-% This program is free software: you can redistribute it and/or modify
-% it under the terms of the GNU General Public License as published by
-% the Free Software Foundation, either version 3 of the License, or
-% (at your option) any later version.
-%
-% This program is distributed in the hope that it will be useful,
-% but WITHOUT ANY WARRANTY; without even the implied warranty of
-% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-% GNU General Public License for more details.
-%
-% You should have received a copy of the GNU General Public License
-% along with this program.  If not, see <http://www.gnu.org/licenses
-
-
-% Check Outputslist
-possibleOutputs = {'H(A)', 'H(A|B)', 'Hlin(A)', 'Hind(A)', 'Hind(A|B)','Hsh(A)', 'Hsh(A|B)'};
-[isMember, indices] = ismember(outputs, possibleOutputs);
-if any(~isMember)
-    nonMembers = outputs(~isMember);
-    msg = sprintf('Invalid Outputs: %s', strjoin(nonMembers, ', '));
-    error('H:invalidOutput', msg);
-end
-
-[naive_v, ~, ~, prob_dists] = H(inputs_1d, outputs, naiveopts);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%            Step 3.B: Compute required Probability Distributions               %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-entropy_distributions = struct( ...
-    'H_A', {{'P(A)'}}, ...
-    'H_A_B', {{'P(A|B)', 'P(B)'}}, ...
-    'Hlin_A', {{'Plin(A)'}}, ...
-    'Hind_A', {{'Pind(A)'}}, ...
-    'Hind_A_B', {{'Pind(A|B)', 'P(B)'}}, ...
-    'Hsh_A', {{'Psh(A)'}}, ...
-    'Hsh_A_B', {{'Psh(A|B)', 'P(B)'}} ...
-    );
-
-entropies_nullDist = 0;
-required_distributions = {};
-for ind = 1:length(indices)
-    idx = indices(ind);
-    switch possibleOutputs{idx}
-        case 'H(A)'
-            required_distributions = [required_distributions, entropy_distributions.H_A{:}];
-        case 'H(A|B)'
-            required_distributions = [required_distributions, entropy_distributions.H_A_B{:}];
-        case 'Hlin(A)'
-            required_distributions = [required_distributions, entropy_distributions.Hlin_A{:}];
-        case 'Hsh(A)'
-            required_distributions = [required_distributions, entropy_distributions.Hsh_A{:}];
-        case 'Hsh(A|B)'
-            required_distributions = [required_distributions, entropy_distributions.Hsh_A_B{:}];
-    end
-end
-required_distributions = unique(required_distributions);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                      Step 4.B: Compute requested Entropy Biases               %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-entropy_biases = cell(1, length(outputs));
-corrected_v = cell(1, length(outputs));
-for i = 1:length(indices)
-    idx = indices(i);
-    switch possibleOutputs{idx}
-        case 'H(A)'
-            pA = prob_dists{strcmp(required_distributions, 'P(A)')};
-            entropy_biases{i} = bub_core(nTrials*pA);
-        case 'H(A|B)'
-            pA = prob_dists{strcmp(required_distributions, 'P(A)')};
-            pB = prob_dists{strcmp(required_distributions, 'P(B)')};
-            pAcB = prob_dists{strcmp(required_distributions, 'P(A|B)')};
-            pAB = pAcB .* pB';
-            biasA  = bub_core(nTrials*pA(:));
-            biasAB = bub_core(nTrials*pAB(:));
-            entropy_biases{i} = biasAB - biasA;
-        case 'Hlin(A)'
-            bias_bub = 0;
-            plin = prob_dists{strcmp(required_distributions, 'Plin(A)')};
-            for row=1:size(plin,1)
-                pl = plin(row,:);
-                bias_bub =  bias_bub + bub_core(nTrials*pl);
-            end
-            entropy_biases{i} = bias_bub;
-        case 'Hsh(A)'
-            pAsh = prob_dists{strcmp(required_distributions, 'P(A)')};
-            entropy_biases{i} = bub_core(nTrials*pAsh);
-        case 'Hsh(A|B)'
-            pshA = prob_dists{strcmp(required_distributions, 'Psh(A)')};
-            pB = prob_dists{strcmp(required_distributions, 'P(B)')};
-            pshAcB = prob_dists{strcmp(required_distributions, 'Psh(A|B)')};
-            pshAB = pshAcB .* pB;
-            biasA  = bub_core(nTrials*pshA);
-            biasAB = bub_core(nTrials*pshAB);
-            entropy_biases{i} = biasAB - biasA;
-    end
-    corrected_v{i} = naive_v{i} - entropy_biases{i};
-end
-
-end
 %*******************************************************************************************************
 % function bias = bub(C)
 %
@@ -108,7 +5,7 @@ end
 %
 % OUT: bias = scalar, bias of C
 
-function bias = bub_core(C)
+function bias = bub(C)
 assert(size(C,2) == 1)
 N = sum(C);
 m = length(unique(C));
