@@ -27,7 +27,11 @@ function [PID_values, PID_naive, PID_nullDist] = PID(inputs, varargin)
 %               - 'PID_atoms'  : All the PID atoms 
 %               - 'Joint'      : The sum of all the PID atoms, equal to the joint information of the sources about the target 
 %               - 'Union'      : The sum of the atoms 'Red', 'Unq'
-%               - 'q_dist'     : The probability distribution used to calculate the PID terms.
+%               - 'q_dist'     : This output option is available only when the redundancy measure is set to 'I_BROJA'. 
+%                                The 'q_dist' provides the probability distribution derived from the Broja optimization 
+%                                process. This optimization seeks to maximize the joint information while maintaining the 
+%                                pairwise marginals at specified target values.
+
 %
 %   - varargin: Optional arguments, passed as a structure. Fields may include:
 %              - redundancy_measure: name of the measure of the redundancy between sources 
@@ -91,7 +95,7 @@ function [PID_values, PID_naive, PID_nullDist] = PID(inputs, varargin)
 % Outputs:
 %   - PID_values: A cell array containing the computed MI values as specified in the outputs argument.
 %   - PID_naive: A cell array containing the naive MI estimates.
-%   - PID_shuff_all: Results of the null distribution computation (0 if not performed).
+%   - PID_nullDist: Results of the null distribution computation (0 if not performed).
 %
 % EXAMPLE
 % Suppose we have two groups of neurons X1 and X2 and a Stimulus S.
@@ -144,7 +148,11 @@ elseif ismember('PID_atoms', outputs)
     outputs(ismember(outputs, 'PID_atoms')) = [];
     outputs = [outputs, {'Syn', 'Red', 'Unq1', 'Unq2'}];
 elseif ismember('all', outputs)
-    outputs = {'Syn', 'Red', 'Unq1', 'Unq2', 'Unq', 'Joint', 'Union'};
+    if strcmp(opts.redundancy_measure, 'I_BROJA')
+        outputs = {'Syn', 'Red', 'Unq1', 'Unq2', 'Unq', 'Joint', 'Union'};
+    else 
+        outputs = {'Syn', 'Red', 'Unq1', 'Unq2', 'Unq', 'Joint', 'Union', 'q_dist'};
+    end 
 end
 [isMember, ~] = ismember(outputs, possibleOutputs);
 if any(~isMember)
