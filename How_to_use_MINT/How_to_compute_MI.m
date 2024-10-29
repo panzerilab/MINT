@@ -2,7 +2,7 @@ clc, clear;
 % -------------------------------------------------------------------------
 % Tutorial: Overview of how to use the MINT toolbox -  Mutual Information
 % -------------------------------------------------------------------------
-% First we generate random data. The Mutual Information function MI() in the MINT Toolbox 
+% The Mutual Information function MI() in the MINT Toolbox 
 % works with input data in form of a cell. Suppose we have neural data of
 % X1 that encodesa stimulus S from timepoint 10 to 20:
 rate1 = [12, 12, 2, 2];  
@@ -27,25 +27,20 @@ for tP = non_stim_timepoints
 end
 S = [ones(1, num_trials/4), 2*ones(1, num_trials/4), 3*ones(1, num_trials/4), 4*ones(1, num_trials/4)];
 
-% -------------------------------------------------------------------------
-%                                 Mutual Information
-% -------------------------------------------------------------------------
-% MINT offers various Information measures:
-% - 'I(A;B)'    : Mutual Information I(A;B)
-% - 'Ilin(A;B)' : Linear MI Ilin(A;B)
-% - 'coI(A;B)'  : Co-information coI(A;B)
-% - 'Iss(A)'    : Sig. Sim Information Iss(A)
-% - 'Ic(A;B)'   : Sum of Ici and Icd - Ic(A;B)
-% - 'Ici(A;B)'  : Correlation Independent Information Ici(A;B)
-% - 'Icd(A;B)'  : Correlation Dependent Information Icd(A;B)
-
-% If we want to compute for example I(A;B), Ilin(A;B) and Ici(A;B) for X1 and X2; we specify
-% the input and the outputs list as follows:
+%% -------------------------------------------------------------------------
+%                       Compute Mutual Information
+% --------------------------------------------------------------------------
+% The Mutual Information function MI() in the MINT Toolbox  works with
+% input data in form of a cell and requested information measures specified
+% in a second cell. If the requested information measures are not specified
+% the function computes the default output (for MI 'I(A;B)')
+% If we want to compute for the Mutual Information between neural data and a 
+% stimulus, we specify the input and the outputs list as follows:
 inputs = {X1, S};
-outputList = {'I(A;B)', 'Ilin(A;B)', 'Ici(A;B)'};
+outputList = {'I(A;B)'};
 
 % The MINT toolbox allows you to define optional parameters using a 
-% structure with various fields. For MI computation, you can specify 
+% structure with various fields. For the MI computation, you can specify 
 % the following options. If not provided, the function will use default 
 % options automatically.
 
@@ -88,15 +83,15 @@ MI_opts.shuff = 30;
 % with the opts field supressWarnings (default: false).
 MI_opts.supressWarnings = true;
 
-MI_opts.NaN_handling = 'removeTrial';       % Options:                                          | (default: 'error')
+MI_opts.NaN_handling = 'removeTrial';       % Options:                                      | (default: 'error')
                                             % 'error' (Throws an error if NaN values are detected in any input)
                                             % 'removeTrial' (Removes trials (across all variables) that contain NaN values)
-                                            
+ 
 % To test for significance, you may want to generate a null distribution.
-% The functions in the MINT toolbox offer an option to do this through 
+% The main functions in the MINT toolbox offer an option to do this through 
 % the `opts.computeNulldist` parameter. To obtain the null distribution, 
 % set this option to `true` and specify the number of samples using 
-% `opts.n_samples` (default is 100).
+% `opts.n_samples` (default is 100). 
 %
 % You can also indicate which variables should be shuffled to create the 
 % null distribution or specify if the shuffling should be conditioned on 
@@ -107,14 +102,14 @@ MI_opts.NaN_handling = 'removeTrial';       % Options:                          
 % dimension that should be shuffled with opts.dim_shuffle. For 'Trials' it
 % shuffles the last dimension, for 'Objects' the first and for 'Timepoints'
 % the second.
-% For more information, type 'help create_NullDistribution' in your Command 
-% Window.
-MI_opts.computeNulldist = true;
-MI_opts.n_samples = 10;
-MI_opts.shuffling = {'AB'};
+% For more information, type 'help create_nullDist' in your Command Window.
+MI_opts.computeNulldist = true;             % true/false
+MI_opts.parallel_sampling = true;           % true/false (if true parallel sampling for the n_samples)
+MI_opts.n_samples = 10;                     % number of samples 
+MI_opts.shuffling = {'AB'};                 
 MI_opts.dim_shuffle = {'Trials'};
 
 % No we defined all options and we can call the MI function MI() as
 % follows: 
-[MI_corrected, MI_naive, MI_nullDist] =   MI(inputs, outputList, MI_opts); 
+[MI_corrected, MI_naive, MI_nullDist] = MI(inputs, outputList, MI_opts); 
 

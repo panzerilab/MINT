@@ -190,7 +190,9 @@ opts_entropies.computeNulldist = false;
 if strcmp(opts.bias, 'shuffCorr')
     [MI_values, MI_naive, MI_nullDist] = correction(inputs, outputs, corr, @MI, opts_entropies);
     return
-end
+else 
+    MI_nullDist = 0;
+end 
 [H_values, H_naive, H_shuff_all] = H(inputs, required_entropies, opts_entropies);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

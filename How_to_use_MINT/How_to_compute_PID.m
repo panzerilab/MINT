@@ -70,7 +70,7 @@ PID_opts.n_bins = {3, 3};                           % Specify an integer for the
 % second output of the functions. 
 % For more details type 'help correction' in your Command Window.
 % You can define the bias correction options using the following parameters:
-PID_opts.bias = 'abc';                 % Options:                                                        | (default: 'naive')
+PID_opts.bias = 'qe';                 % Options:                                                        | (default: 'naive')
                                             % 'naive' (no bias correction)                                                                   
                                             % 'qe' (Quadratic Extrapolation), 
                                             % 'le' (Linear Extrapolation), 
@@ -120,6 +120,7 @@ PID_opts.NaN_handling = 'removeTrial';      % Options:                          
 % For more information, type 'help create_NullDistribution' in your Command 
 % Window.
 PID_opts.computeNulldist = true;
+PID_opts.parallel_sampling = true;   
 PID_opts.n_samples = 20;
 PID_opts.shuffling = {'AB', 'A'};
 PID_opts.dim_shuffle = {'Trials'};

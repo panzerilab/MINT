@@ -124,6 +124,7 @@ end
 
 for shIdx = 1:length(opts.shuffling)
     field_name = opts.shuffling{shIdx};
+    null_distribution_tmp = cell(opts.n_samples, length(outputs));
     if ~opts.parallel_sampling
         for shuffIdx = 1:opts.n_samples
             shuffOutputs = {opts.shuffling{shIdx}};
@@ -134,7 +135,6 @@ for shIdx = 1:length(opts.shuffling)
             end
         end
     else
-        null_distribution_tmp = cell(opts.n_samples, length(outputs));
         parfor shuffIdx = 1:opts.n_samples
             shuffOutputs = {opts.shuffling{shIdx}};
             inputs_sh = hShuffle(inputs, shuffOutputs, opts);           
