@@ -17,6 +17,7 @@ function [entropies, entropies_naive, entropies_nullDist, prob_dists] = H(inputs
 %
 %   - outputs: A cell array of strings specifying which entropies to compute.
 %               - 'H(A)'        : Entropy of A.
+%               - 'H(B)'        : Entropy of B.
 %               - 'H(A|B)'      : Conditional entropy of A given B.
 %               - 'Hlin(A)'     : Linear entropy of A.
 %               - 'Hind(A)'     : Independent entropy of A.
@@ -127,7 +128,7 @@ if length(opts.n_bins) < nVars
 end
 
 % Check Outputslist
-possibleOutputs = {'H(A)', 'H(A|B)', 'Hlin(A)', 'Hind(A)', 'Hind(A|B)', 'Chi(A)','Hsh(A)', 'Hsh(A|B)'};
+possibleOutputs = {'H(A)', 'H(B)','H(A|B)', 'Hlin(A)', 'Hind(A)', 'Hind(A|B)', 'Chi(A)','Hsh(A)', 'Hsh(A|B)'};
 [isMember, indices] = ismember(outputs, possibleOutputs);
 if any(~isMember)
     nonMembers = outputs(~isMember);
@@ -209,6 +210,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 entropy_distributions = struct( ...
     'H_A', {{'P(A)'}}, ...
+    'H_B', {{'P(B)'}}, ...
     'H_A_B', {{'P(A|B)', 'P(B)', 'P(A)'}}, ...
     'Hlin_A', {{'Plin(A)'}}, ...
     'Hind_A', {{'Pind(A)'}}, ...
@@ -224,6 +226,8 @@ for ind = 1:length(indices)
     switch possibleOutputs{idx}
         case 'H(A)'
             required_distributions = [required_distributions, entropy_distributions.H_A{:}];
+        case 'H(B)'
+            required_distributions = [required_distributions, entropy_distributions.H_B{:}];
         case 'H(A|B)'
             required_distributions = [required_distributions, entropy_distributions.H_A_B{:}];
         case 'Hlin(A)'
@@ -262,6 +266,22 @@ for t = 1:nTimepoints
                     bias = bub(nTrials * P_A);
                     entropies_naive{i}(1,t) = entropies{i}(1,t);
                     entropies{i}(1,t) = entropies_naive{i}(1,t) - bias;               
+                end
+                if strcmp(opts.bias, 'pt')
+                    uniqueV = length(unique(redA));
+                end
+            case 'H(B)'
+                P_B = prob_dists{t, strcmp(required_distributions, 'P(B)')};
+                P_lin_log = P_B .* log2(P_B);
+                P_lin_log(isnan(P_lin_log)) = 0;
+                entropies{i}(1,t) = -sum(P_lin_log(:));
+                if strcmp(opts.bias, 'bub')
+                    bias = bub(nTrials * P_B);
+                    entropies_naive{i}(1,t) = entropies{i}(1,t);
+                    entropies{i}(1,t) = entropies_naive{i}(1,t) - bias;
+                end
+                if strcmp(opts.bias, 'pt')
+                    uniqueV = length(unique(redB));
                 end
             case 'H(A|B)'
                 P_AB = prob_dists{t, strcmp(required_distributions, 'P(A|B)')};
