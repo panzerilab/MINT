@@ -9,9 +9,6 @@
 *.mexa64
 resources
 
-# Data for simulations
-**/*.mat
-
 # Precompiled files by glpkmex
 !extern/glpkmex-master/*.mex*
 !extern/glpkmex-master/win32/*.mex*
