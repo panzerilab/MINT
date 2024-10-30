@@ -1,5 +1,5 @@
 function [cFIT_values, cFIT_naive, cFIT_nullDist, atom1, atom2] = cFIT(inputs, varargin)
-% *function [cFIT_values, cFIT_naive, cFIT_nullDist, atom1, atom2] = cFIT(inputs, outputs, opts)*
+% *function [cFIT_values, cFIT_naive, cFIT_nullDist, atom1, atom2] = cFIT(inputs, reqOutputs, opts)*
 %
 % The cFIT function computes the conditioned Feature-specific Information Transfer (cFIT) values between time series data.
 % Conditioned Feature-specific Information Transfer quantifies how much information about a specific feature (S)
@@ -16,7 +16,7 @@ function [cFIT_values, cFIT_naive, cFIT_nullDist, atom1, atom2] = cFIT(inputs, v
 %             - inputs{4}:   Feature data (S) with dimensions
 %                            nDims X (nTimepoints X) nTrials                                   
 %
-%   - outputs: A cell array of strings specifying which FIT values to compute:
+%   - reqOutputs: A cell array of strings specifying which FIT values to compute:
 %              - 'cFIT(A->B;S|C)' 
 %              - 'cFIT(B->A;S|C)'
 %
@@ -68,7 +68,7 @@ function [cFIT_values, cFIT_naive, cFIT_nullDist, atom1, atom2] = cFIT(inputs, v
 %
 %
 % Outputs:
-%   - cFIT_values: A cell array containing the computed cFIT values as specified in the outputs argument.
+%   - cFIT_values: A cell array containing the computed cFIT values as specified in the reqOutputs argument.
 %   - cFIT_naive: A cell array containing the naive cFIT estimates.
 %   - cFIT_nullDist: Results of the null distribution computation (0 if not performed).
 %   - atom1: A cell array containing the first atom values computed during the analysis.
@@ -103,13 +103,13 @@ if length(varargin) > 1
     opts = varargin{2};
     if isfield(opts, 'isChecked')
         if opts.isChecked
-            outputs = varargin{1};
+            reqOutputs = varargin{1};
         end
     else
-        [inputs, outputs, opts] = check_inputs('cFIT',inputs,varargin{:});
+        [inputs, reqOutputs, opts] = check_inputs('cFIT',inputs,varargin{:});
     end
 else
-    [inputs, outputs, opts] = check_inputs('cFIT',inputs,varargin{:});
+    [inputs, reqOutputs, opts] = check_inputs('cFIT',inputs,varargin{:});
 end
 
 nullDist_opts = opts;
@@ -277,10 +277,10 @@ end
 
 
 possibleOutputs = {'cFIT(A->B;S|C)', 'cFIT(B->A;S|C)'};
-[isMember, indices] = ismember(outputs, possibleOutputs);
+[isMember, indices] = ismember(reqOutputs, possibleOutputs);
 if any(~isMember)
-    nonMembers = outputs(~isMember);
-    msg = sprintf('Invalid Outputs: %s', strjoin(nonMembers, ', '));
+    nonMembers = reqOutputs(~isMember);
+    msg = sprintf('Invalid reqOutputs: %s', strjoin(nonMembers, ', '));
     error('cFIT:invalidOutput', msg);
 end
 
@@ -292,12 +292,12 @@ corr = opts.bias;
 corefunc = @cFIT;
 if any(opts.computeNulldist)
         nullDist_opts.recall = false;
-        cFIT_nullDist = create_nullDist(inputs, outputs, @cFIT, nullDist_opts);
+        cFIT_nullDist = create_nullDist(inputs, reqOutputs, @cFIT, nullDist_opts);
 end
 if ~strcmp(corr, 'naive')  
     opts.recall = true;
     opts.computeNulldist = false;
-    [cFIT_values, cFIT_naive] = correction(inputs_1d, outputs, corr, corefunc, opts);
+    [cFIT_values, cFIT_naive] = correction(inputs_1d, reqOutputs, corr, corefunc, opts);
     return
 end
 
@@ -335,9 +335,9 @@ end
 %                  Step 4.C: Compute requested Output Values                    %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Compute the TE values
-cFIT_values = cell(1, length(outputs));
-atom1 = cell(1, length(outputs));
-atom2 = cell(1, length(outputs));
+cFIT_values = cell(1, length(reqOutputs));
+atom1 = cell(1, length(reqOutputs));
+atom2 = cell(1, length(reqOutputs));
 for i = 1:length(indices)
     idx = indices(i);
     switch possibleOutputs{idx}

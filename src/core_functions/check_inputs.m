@@ -1,4 +1,4 @@
-function [inputs, outputs, opts] = check_inputs(corefunc,inputs,varargin)
+function [inputs, reqOutputs, opts] = check_inputs(corefunc,inputs,varargin)
 % Copyright (C) 2024 Gabriel Matias Lorenz, Nicola Marie Engel
 % This file is part of MINT.
 % This program is free software: you can redistribute it and/or modify
@@ -57,10 +57,10 @@ if isempty(varargin)
     opts.parallel = false;
     opts.n_bins = {3};
     opts.supressWarnings = false;
-    outputs = eval(['defaultOutputs_' corefunc]);
+    reqOutputs = eval(['defaultOutputs_' corefunc]);
 elseif isscalar(varargin)
     if iscell(varargin{1})
-        outputs = varargin{1};
+        reqOutputs = varargin{1};
         opts = defaultOpts;
         opts.isBinned = false;
         opts.n_bins = {3};
@@ -84,9 +84,9 @@ elseif isscalar(varargin)
         if ~isfield(opts, 'isChecked')
             opts.isChecked = false;
         end
-        outputs = eval(['defaultOutputs_' corefunc]);
+        reqOutputs = eval(['defaultOutputs_' corefunc]);
         if ~opts.supressWarnings
-            warning("No outputs list provided in %s. The function will compute the default output.", corefunc)
+            warning("No reqOutputs list provided in %s. The function will compute the default output.", corefunc)
         end
         if ~opts.isChecked
             default_fields= fieldnames(defaultOpts);
@@ -118,7 +118,7 @@ elseif isscalar(varargin)
         end
     end
 else
-    outputs =  varargin{1};
+    reqOutputs =  varargin{1};
     opts = varargin{2};
     if ~isfield(opts, 'supressWarnings')
         opts.supressWarnings = false;

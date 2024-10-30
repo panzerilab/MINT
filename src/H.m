@@ -1,9 +1,9 @@
 function [entropies, entropies_naive, entropies_nullDist, prob_dists] = H(inputs, varargin)
-% *function [entropies, entropies_naive, entropies_nullDist, prob_dists] = H(inputs, outputs, opts)*
+% *function [entropies, entropies_naive, entropies_nullDist, prob_dists] = H(inputs, reqOutputs, opts)*
 % H - Calculate Entropy (H) and related information-theoretic quantities
 %
 % This function calculates entropy (H) and other related measures based on the 
-% provided inputs, outputs, and optional parameters.
+% provided inputs, reqOutputs, and optional parameters.
 %
 % Inputs:
 %   - inputs: A cell array containing the data:
@@ -15,7 +15,7 @@ function [entropies, entropies_naive, entropies_nullDist, prob_dists] = H(inputs
 %                will be computed for each time point, resulting in outputs that are 
 %                also represented as time series
 %
-%   - outputs: A cell array of strings specifying which entropies to compute.
+%   - reqOutputs: A cell array of strings specifying which entropies to compute.
 %               - 'H(A)'        : Entropy of A.
 %               - 'H(B)'        : Entropy of B.
 %               - 'H(A|B)'      : Conditional entropy of A given B.
@@ -69,7 +69,7 @@ function [entropies, entropies_naive, entropies_nullDist, prob_dists] = H(inputs
 %                                  'error'       : (default) Throws an error if NaN values are detected.
 %
 % Outputs:
-%   - entropies: A cell array containing the computed entropy values as specified in the outputs argument.
+%   - entropies: A cell array containing the computed entropy values as specified in the reqOutputs argument.
 %   - entropies_naive: A cell array containing the naive entropy estimates.
 %   - entropies_nullDist: Results of the null distribution computation (0 if not performed).
 %   - prob_dists: A cell array containing the estimated probability distributions used in entropy calculations.
@@ -110,13 +110,13 @@ if length(varargin) > 1
     opts = varargin{2};
     if isfield(opts, 'isChecked')
         if opts.isChecked
-            outputs = varargin{1};
+            reqOutputs = varargin{1};
         end
     else
-        [inputs, outputs, opts] = check_inputs('H',inputs,varargin{:});
+        [inputs, reqOutputs, opts] = check_inputs('H',inputs,varargin{:});
     end
 else
-    [inputs, outputs, opts] = check_inputs('H',inputs,varargin{:});
+    [inputs, reqOutputs, opts] = check_inputs('H',inputs,varargin{:});
 end
 
 nVars = length(inputs);
@@ -129,10 +129,10 @@ end
 
 % Check Outputslist
 possibleOutputs = {'H(A)', 'H(B)','H(A|B)', 'Hlin(A)', 'Hind(A)', 'Hind(A|B)', 'Chi(A)','Hsh(A)', 'Hsh(A|B)'};
-[isMember, indices] = ismember(outputs, possibleOutputs);
+[isMember, indices] = ismember(reqOutputs, possibleOutputs);
 if any(~isMember)
-    nonMembers = outputs(~isMember);
-    msg = sprintf('Invalid Outputs: %s', strjoin(nonMembers, ', '));
+    nonMembers = reqOutputs(~isMember);
+    msg = sprintf('Invalid reqOutputs: %s', strjoin(nonMembers, ', '));
     error('H:invalidOutput', msg);
 end
 
@@ -171,7 +171,7 @@ end
 inputs_1d = inputs_b;
 if DimsA(1) > 1
     inputs_1d{1} = reduce_dim(inputs_b{1}, 1);
-    if  any(strcmp(outputs,'Hlin(A)')) || any(strcmp(outputs,'Hind(A)')) || any(strcmp(outputs, 'Hind(A|B)'))
+    if  any(strcmp(reqOutputs,'Hlin(A)')) || any(strcmp(reqOutputs,'Hind(A)')) || any(strcmp(reqOutputs, 'Hind(A|B)'))
         inputs_1d{3} = inputs_b{1};
     end 
 end
@@ -192,13 +192,13 @@ nullDist_opts = opts;
 nullDist_opts.computeNulldist = false;
 
 if opts.computeNulldist == true
-        entropies_nullDist = create_nullDist(inputs_b, outputs, @H, nullDist_opts);
+        entropies_nullDist = create_nullDist(inputs_b, reqOutputs, @H, nullDist_opts);
 else 
     entropies_nullDist = 0;
 end 
 
 if ~strcmp(corr, 'naive') &&  ~strcmp(corr, 'bub')
-    [entropies, entropies_naive, entropies_shuffAll] = correction(inputs_1d, outputs, corr, corefunc, opts);
+    [entropies, entropies_naive, entropies_shuffAll] = correction(inputs_1d, reqOutputs, corr, corefunc, opts);
     if ~iscell(entropies_nullDist)
         entropies_nullDist = entropies_shuffAll;
     end 
@@ -250,8 +250,8 @@ prob_dists = prob_estimator(inputs_1d, required_distributions, opts);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                      Step 4.B: Compute requested Entropies                    %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-entropies = cell(1, length(outputs));
-entropies_naive = cell(1, length(outputs));
+entropies = cell(1, length(reqOutputs));
+entropies_naive = cell(1, length(reqOutputs));
 
 for t = 1:nTimepoints
     for i = 1:length(indices)

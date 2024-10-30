@@ -1,5 +1,5 @@
 function  inputs_sh = hShuffle(inputs, varargin)
-% *inputs_sh = hShuffle(inputs, outputs, opts)*
+% *inputs_sh = hShuffle(inputs, reqOutputs, opts)*
 % SHUFFLE - Shuffle neural data with optional consistency constraints
 %
 % This function shuffles neural data across specified dimensions, with options
@@ -12,7 +12,7 @@ function  inputs_sh = hShuffle(inputs, varargin)
 %             with dimensions such as nTrials x nObjects x nTimepoints.
 %
 %   - varargin: Optional input arguments, which can include:
-%       - outputs: A cell array of strings specifying the shuffle rules.
+%       - reqOutputs: A cell array of strings specifying the shuffle rules.
 %                 Each string defines the variables to be shuffled and, optionally,
 %                 which variables they should be conditioned on. For example:
 %                 - 'AB_C': Shuffle variables A and B conditioned on C.
@@ -35,7 +35,7 @@ function  inputs_sh = hShuffle(inputs, varargin)
 %
 % Output:
 %   - inputs_sh: A cell array where each element contains the shuffled neural data based on the respective rule
-%                in `outputs`. Each element of `inputs_sh` is a modified version of the original input, shuffled
+%                in `reqOutputs`. Each element of `inputs_sh` is a modified version of the original input, shuffled
 %                according to the specified rules.
 %
 % Description:
@@ -77,24 +77,24 @@ if nargin < 1
     error('shuffle:notEnoughInput', msg);
 end
 if isempty(varargin)
-    outputs = {'A'};
+    reqOutputs = {'A'};
     opts = struct();
     cond_input = 0;
 elseif length(varargin)==1
     if iscell(varargin{1})
-        outputs = varargin{1};
+        reqOutputs = varargin{1};
         opts = struct();
     else
         opts = varargin{1};
-        outputs = {'A'};
+        reqOutputs = {'A'};
     end
     cond_input = 0;
 elseif length(varargin)==2
-     outputs = varargin{1};
+     reqOutputs = varargin{1};
      opts = varargin{2};
      cond_input = 0;
 else
-    outputs = varargin{1};
+    reqOutputs = varargin{1};
     opts = varargin{2};
     cond_input = varargin{3};
 end
@@ -107,10 +107,10 @@ if ~isfield(opts, 'dim_shuffle')
 end 
 
 nVars = length(inputs);
-inputs_sh = cell(1, length(outputs));
+inputs_sh = cell(1, length(reqOutputs));
 
-for ruleIdx = 1:length(outputs)
-    rule = outputs{ruleIdx};  % e.g., 'AB_C', 'AB', 'A_C'
+for ruleIdx = 1:length(reqOutputs)
+    rule = reqOutputs{ruleIdx};  % e.g., 'AB_C', 'AB', 'A_C'
     
     % Split the rule into shuffle and condition parts
     ruleParts = strsplit(rule, '_');
@@ -245,7 +245,7 @@ for ruleIdx = 1:length(outputs)
     % Store the shuffled data for the current rule
     inputs_sh{ruleIdx} = shuffled_data;
 end
-if length(outputs) == 1
+if length(reqOutputs) == 1
     inputs_sh = inputs_sh{1}; 
 end
 end

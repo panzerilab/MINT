@@ -1,5 +1,5 @@
 function [cTE_values, cTE_naive, cTE_shuff_all] = cTE(inputs, varargin)
-% *function [cTE_values, cTE_naive, cTE_nullDist] = cTE(inputs, outputs, opts)*
+% *function [cTE_values, cTE_naive, cTE_nullDist] = cTE(inputs, reqOutputs, opts)*
 %
 % The cTE function computes transfer entropy (cTE) between two 
 % time series (A and B) conditioned on a third time series (C). The 
@@ -16,8 +16,8 @@ function [cTE_values, cTE_naive, cTE_shuff_all] = cTE(inputs, varargin)
 %             - inputs{3}: Third time series (C) with dimensions
 %                          nDims X nTimepoints X nTrials
 %
-%   - outputs: A cell array of strings specifying which cTE measures to compute.
-%              Possible outputs include:
+%   - reqOutputs: A cell array of strings specifying which cTE measures to compute.
+%              Possible reqOutputs include:
 %               - 'TE(A->B|C)' : Conditional Transfer Entropy from A to B given C
 %               - 'TE(B->A|C)' : Conditional Transfer Entropy from B to A given C
 %
@@ -82,7 +82,7 @@ function [cTE_values, cTE_naive, cTE_shuff_all] = cTE(inputs, varargin)
 %                                  'error'       : (default) Throws an error if NaN values are detected.
 %
 % Outputs:
-%   - cTE_values: A cell array containing the computed cTE values as specified in the outputs argument.
+%   - cTE_values: A cell array containing the computed cTE values as specified in the reqOutputs argument.
 %   - cTE_naive: A cell array containing the naive cTE estimates.
 %   - cTE_shuff_all: Results of the null distribution computation (0 if not performed).
 %
@@ -128,20 +128,20 @@ if length(varargin) > 1
     opts = varargin{2};
     if isfield(opts, 'isChecked')
         if opts.isChecked
-            outputs = varargin{1};
+            reqOutputs = varargin{1};
         end
     else
-        [inputs, outputs, opts] = check_inputs('cTE',inputs,varargin{:});
+        [inputs, reqOutputs, opts] = check_inputs('cTE',inputs,varargin{:});
     end
 else
-    [inputs, outputs, opts] = check_inputs('cTE',inputs,varargin{:});
+    [inputs, reqOutputs, opts] = check_inputs('cTE',inputs,varargin{:});
 end
 
 possibleOutputs = {'TE(A->B|C)', 'TE(B->A|C)'};
-[isMember, indices] = ismember(outputs, possibleOutputs);
+[isMember, indices] = ismember(reqOutputs, possibleOutputs);
 if any(~isMember)
-    nonMembers = outputs(~isMember);
-    msg = sprintf('Invalid Outputs: %s', strjoin(nonMembers, ', '));
+    nonMembers = reqOutputs(~isMember);
+    msg = sprintf('Invalid reqOutputs: %s', strjoin(nonMembers, ', '));
     error('cTE:invalidOutput', msg);
 end
 
@@ -352,9 +352,9 @@ end
 %                  Step 4: Compute requested Output Values                      %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Compute the cTE values
-cTE_values = cell(1, length(outputs));
-cTE_naive = cell(1, length(outputs));
-cTE_shuff_all = cell(1, length(outputs));
+cTE_values = cell(1, length(reqOutputs));
+cTE_naive = cell(1, length(reqOutputs));
+cTE_shuff_all = cell(1, length(reqOutputs));
 nOut = nargout;
 for i = 1:length(indices)
     idx = indices(i);
@@ -434,7 +434,7 @@ end
 if opts.computeNulldist
     nullDist_opts = opts;
     nullDist_opts.computeNulldist = false;
-    cTE_nullDist = create_nullDist(inputs, outputs, @TE, nullDist_opts);
+    cTE_nullDist = create_nullDist(inputs, reqOutputs, @TE, nullDist_opts);
 else
     cTE_nullDist = TE_shuff_all;
 end

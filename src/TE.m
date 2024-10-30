@@ -1,5 +1,5 @@
 function [TE_values, TE_naive, TE_nullDist] = TE(inputs, varargin)
-% *function [TE_values, TE_naive, TE_nullDist] = TE(inputs, outputs, opts)*
+% *function [TE_values, TE_naive, TE_nullDist] = TE(inputs, reqOutputs, opts)*
 %
 % The TE function computes Transfer Entropy (TE) values from time series data.
 % Transfer entropy from a process A to another process B is the amount of uncertainty
@@ -12,7 +12,7 @@ function [TE_values, TE_naive, TE_nullDist] = TE(inputs, varargin)
 %             - inputs{2}: Second input data (B) with dimensions
 %                          nDims X nTimepoints X nTrials
 %
-%   - outputs: A cell array of strings specifying which transfer entropies to compute:
+%   - reqOutputs: A cell array of strings specifying which transfer entropies to compute:
 %              - 'TE(A->B;S)' : Transfer entropy from A to B
 %              - 'TE(B->A;S)' : Transfer entropy from B to A
 %
@@ -75,7 +75,7 @@ function [TE_values, TE_naive, TE_nullDist] = TE(inputs, varargin)
 %                                  'error'       : (default) Throws an error if NaN values are detected.
 %
 % Outputs:
-%   - TE_values: A cell array containing the computed TE values as specified in the outputs argument.
+%   - TE_values: A cell array containing the computed TE values as specified in the reqOutputs argument.
 %   - TE_naive: A cell array containing the naive TE estimates.
 %   - TE_nullDist: Results of the null distribution computation (0 if not performed).
 %
@@ -120,13 +120,13 @@ if length(varargin) > 1
     opts = varargin{2};
     if isfield(opts, 'isChecked')
         if opts.isChecked
-            outputs = varargin{1};
+            reqOutputs = varargin{1};
         end
     else
-        [inputs, outputs, opts] = check_inputs('TE',inputs,varargin{:});
+        [inputs, reqOutputs, opts] = check_inputs('TE',inputs,varargin{:});
     end
 else
-    [inputs, outputs, opts] = check_inputs('TE',inputs,varargin{:});
+    [inputs, reqOutputs, opts] = check_inputs('TE',inputs,varargin{:});
 end
 
 
@@ -268,10 +268,10 @@ for var = 1:length(inputs_b)
 end
 
 possibleOutputs = {'TE(A->B)', 'TE(B->A)'};
-[isMember, indices] = ismember(outputs, possibleOutputs);
+[isMember, indices] = ismember(reqOutputs, possibleOutputs);
 if any(~isMember)
-    nonMembers = outputs(~isMember);
-    msg = sprintf('Invalid Outputs: %s', strjoin(nonMembers, ', '));
+    nonMembers = reqOutputs(~isMember);
+    msg = sprintf('Invalid reqOutputs: %s', strjoin(nonMembers, ', '));
     error('TE:invalidOutput', msg);
 end
 
@@ -319,9 +319,9 @@ end
 %                  Step 4: Compute requested Output Values                      %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Compute the TE values
-TE_values = cell(1, length(outputs));
-TE_naive = cell(1, length(outputs));
-TE_shuff_all = cell(1, length(outputs));
+TE_values = cell(1, length(reqOutputs));
+TE_naive = cell(1, length(reqOutputs));
+TE_shuff_all = cell(1, length(reqOutputs));
 nOut = nargout;
 for i = 1:length(indices)
     idx = indices(i);
@@ -403,7 +403,7 @@ end
 if opts.computeNulldist
     nullDist_opts = opts;
     nullDist_opts.computeNulldist = false;
-    TE_nullDist = create_nullDist(inputs, outputs, @TE, nullDist_opts);
+    TE_nullDist = create_nullDist(inputs, reqOutputs, @TE, nullDist_opts);
 else
     TE_nullDist = TE_shuff_all;
 end

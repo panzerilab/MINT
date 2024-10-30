@@ -1,4 +1,4 @@
-function [corrected_v, naive_v, shuff_all] = correction(inputs, outputs, corr, corefunc, varargin)
+function [corrected_v, naive_v, shuff_all] = correction(inputs, reqOutputs, corr, corefunc, varargin)
 % correction - Compute bias-corrected and naive information-theoretic values
 %
 % The `correction` function computes bias-corrected values for the information measures implemented in the 
@@ -10,7 +10,7 @@ function [corrected_v, naive_v, shuff_all] = correction(inputs, outputs, corr, c
 %             neural activity or other time-dependent signals, structured as:
 %             - nDims [X nTimepoints] X nTrials (can be 2D or 3D).
 %
-%   - outputs: A corresponding matrix or array with the corrected results
+%   -  reqOutputs: A cell array of strings specifying which measures to compute
 %   
 %
 %   - corr: A string specifying the correction method to be used. Possible values include:
@@ -41,7 +41,7 @@ function [corrected_v, naive_v, shuff_all] = correction(inputs, outputs, corr, c
 % Example:
 %   To apply shuffle subtraction bias correction, call the function as:
 %   opts.bias = 'shuffSub'; 
-%   [corrected_v, naive_v, shuff_all] = correction(inputs, outputs, 'shuffSub', @TE, opts);
+%   [corrected_v, naive_v, shuff_all] = correction(inputs, reqOutputs, 'shuffSub', @TE, opts);
 %
 % Note:
 % Users can add their own custom correction functions in the 'tools' folder.
@@ -61,7 +61,7 @@ function [corrected_v, naive_v, shuff_all] = correction(inputs, outputs, corr, c
 % custom strategy.
 %
 % Save this function as `custom_correction.m`. To use it, call:
-%     [corrected_v, naive_v] = correction(inputs, outputs, 'custom_correction', @my_corefunc, opts);
+%     [corrected_v, naive_v] = correction(inputs, reqOutputs, 'custom_correction', @my_corefunc, opts);
 % This allows users to extend the correction process with tailored methods for specific analyses.
 
 % Copyright (C) 2024 Gabriel Matias Lorenz, Nicola Marie Engel
@@ -140,29 +140,21 @@ shuff_all = 0;
 switch corr
     case {'qe','le' 'qe_shuffSub', 'le_shuffSub'}        
         if strcmp(corr, 'qe_shuff') || strcmp(corr, 'le_shuffSub')            
-            [corrected_v, naive_v, shuff_all] = extrapolation(inputs_b, outputs, corr, corefunc, opts);
+            [corrected_v, naive_v, shuff_all] = extrapolation(inputs_b, reqOutputs, corr, corefunc, opts);
         else
-            [corrected_v, naive_v] = extrapolation(inputs_b, outputs, corr, corefunc, opts);
+            [corrected_v, naive_v] = extrapolation(inputs_b, reqOutputs, corr, corefunc, opts);
         end
     case 'shuffSub'
-        [corrected_v, naive_v, shuff_all] = shuffle_subtraction(inputs_b, outputs, corefunc, opts);
-    case 'pt'
-        [corrected_v, naive_v] = pt(inputs_b, outputs, corefunc, opts); % Check Timeseries input for that
-    % case 'bub'
-    %     if strcmp(func2str(corefunc), 'MI') || strcmp(func2str(corefunc), 'cMI') || strcmp(func2str(corefunc), 'H') || strcmp(func2str(corefunc), 'TE') || strcmp(func2str(corefunc), 'cTE')
-    %         [corrected_v, naive_v] = bub(inputs_b, outputs, opts); 
-    %     else 
-    %         warning('bub bias correction is only valid for MI, cMI, H, TE, and cTE');           
-    %     end 
+        [corrected_v, naive_v, shuff_all] = shuffle_subtraction(inputs_b, reqOutputs, corefunc, opts);
     case 'shuffCorr'
         [corrected_v, naive_v] = shuffle_correction(inputs_b, outputs, corefunc, opts);
     otherwise
         func_handle = str2func(corr);
         if exist(corr, 'file') == 2
-            % You can change the outputs and inputs_b of your function here,
+            % You can change the reqOutputs and inputs_b of your function here,
             % but make sure that it fits the output definition of this
             % function.
-            [corrected_v, naive_v] = feval(func_handle, inputs_b, outputs, opts);       
+            [corrected_v, naive_v] = feval(func_handle, inputs_b, reqOutputs, opts);       
         else
            available_functions = {'qe', 'le', 'qe_shuffSub', 'le_shuffSub', 'shuffSub', 'pt', 'bub'};
             msg = sprintf(['The function "%s" is not defined in the tools folder.\n', ...

@@ -1,5 +1,5 @@
 function [FIT_values, FIT_naive, FIT_nullDist, atom1, atom2] = FIT(inputs, varargin)
-% *function [FIT_values, FIT_naive, FIT_nullDist, atom1, atom2] = FIT(inputs, outputs, opts)*
+% *function [FIT_values, FIT_naive, FIT_nullDist, atom1, atom2] = FIT(inputs, reqOutputs, opts)*
 %
 % The FIT function computes the Feature-specific Information Transfer (FIT) values between time series data.
 % Feature-specific Information Transfer quantifies how much information about a specific feature (S)
@@ -14,7 +14,7 @@ function [FIT_values, FIT_naive, FIT_nullDist, atom1, atom2] = FIT(inputs, varar
 %             - inputs{3}:   Feature data (S) with dimensions
 %                            nDims X (nTimepoints X) nTrials  
 %
-%   - outputs: A cell array of strings specifying which FIT values to compute.
+%   - reqOutputs: A cell array of strings specifying which FIT values to compute.
 %              - 'FIT(A->B;S)' 
 %              - 'FIT(B->A;S)'
 %
@@ -65,7 +65,7 @@ function [FIT_values, FIT_naive, FIT_nullDist, atom1, atom2] = FIT(inputs, varar
 %                                  'error'       : (default) Throws an error if NaN values are detected.
 %
 % Outputs:
-%   - FIT_values: A cell array containing the computed FIT values as specified in the outputs argument.
+%   - FIT_values: A cell array containing the computed FIT values as specified in the reqOutputs argument.
 %   - FIT_naive: A cell array containing the naive FIT estimates.
 %   - FIT_nullDist: Results of the null distribution computation (0 if not performed).
 %   - atom1: A cell array containing the first atom values computed during the analysis.
@@ -102,13 +102,13 @@ if length(varargin) > 1
     opts = varargin{2};
     if isfield(opts, 'isChecked')
         if opts.isChecked
-            outputs = varargin{1};
+            reqOutputs = varargin{1};
         end
     else
-        [inputs, outputs, opts] = check_inputs('FIT',inputs,varargin{:});
+        [inputs, reqOutputs, opts] = check_inputs('FIT',inputs,varargin{:});
     end
 else
-    [inputs, outputs, opts] = check_inputs('FIT',inputs,varargin{:});
+    [inputs, reqOutputs, opts] = check_inputs('FIT',inputs,varargin{:});
 end
 
 nullDist_opts = opts;
@@ -250,10 +250,10 @@ end
 
 
 possibleOutputs = {'FIT(A->B;S)', 'FIT(B->A;S)'};
-[isMember, indices] = ismember(outputs, possibleOutputs);
+[isMember, indices] = ismember(reqOutputs, possibleOutputs);
 if any(~isMember)
-    nonMembers = outputs(~isMember);
-    msg = sprintf('Invalid Outputs: %s', strjoin(nonMembers, ', '));
+    nonMembers = reqOutputs(~isMember);
+    msg = sprintf('Invalid reqOutputs: %s', strjoin(nonMembers, ', '));
     error('FIT:invalidOutput', msg);
 end
 
@@ -265,12 +265,12 @@ corr = opts.bias;
 corefunc = @FIT;
 if any(opts.computeNulldist)
         nullDist_opts.recall = false;
-        FIT_nullDist = create_nullDist(inputs, outputs, @FIT, nullDist_opts);
+        FIT_nullDist = create_nullDist(inputs, reqOutputs, @FIT, nullDist_opts);
 end
 if ~strcmp(corr, 'naive')  
     opts.recall = true;
     opts.computeNulldist = false;
-    [FIT_values, FIT_naive] = correction(inputs_1d, outputs, corr, corefunc, opts);
+    [FIT_values, FIT_naive] = correction(inputs_1d, reqOutputs, corr, corefunc, opts);
     return
 end
 
@@ -308,9 +308,9 @@ end
 %                  Step 4.C: Compute requested Output Values                    %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Compute the TE values
-FIT_values = cell(1, length(outputs));
-atom1 = cell(1, length(outputs));
-atom2 = cell(1, length(outputs));
+FIT_values = cell(1, length(reqOutputs));
+atom1 = cell(1, length(reqOutputs));
+atom2 = cell(1, length(reqOutputs));
 for i = 1:length(indices)
     idx = indices(i);
     switch possibleOutputs{idx}

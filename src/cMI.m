@@ -1,5 +1,5 @@
 function [cMI_values, cMI_naive, cMI_nullDist] =  cMI(inputs, varargin)
-% *function [cMI_values, cMI_naive, cMI_nullDist] =  cMI(inputs, outputs, opts)*
+% *function [cMI_values, cMI_naive, cMI_nullDist] =  cMI(inputs, reqOutputs, opts)*
 %
 % This function calculates conditional mutual information (cMI) 
 %
@@ -11,11 +11,11 @@ function [cMI_values, cMI_naive, cMI_nullDist] =  cMI(inputs, varargin)
 %                          nDims X (nTimepoints X) nTrials
 %             - inputs{3}: Condition input data (C) with dimensions
 %                          nDims X (nTimepoints X) nTrials
-%             -> In cases where the input is provided as a time series, the outputs 
+%             -> In cases where the input is provided as a time series, the reqOutputs 
 %                will be computed for each time point, resulting in outputs that are 
 %                also represented as time series
 %
-%   - outputs: A cell array of strings specifying which entropies or cMI measures to compute.
+%   - reqOutputs: A cell array of strings specifying which entropies or cMI measures to compute.
 %               - 'I(A;B|C)'    : Conditional Mutual Information I(A;B|C)
 %               - 'Ish(A;B|C)'  : Shuffled Conditional MI Ish(A;B|C)
 %               - 'Ilin(A;B|C)' : Linear Conditional MI Ilin(A;B|C)
@@ -62,7 +62,7 @@ function [cMI_values, cMI_naive, cMI_nullDist] =  cMI(inputs, varargin)
 %                                  'error'       : (default) Throws an error if NaN values are detected.
 %
 % Outputs:
-%   - cMI_values: A cell array containing the computed cMI values as specified in the outputs argument.
+%   - cMI_values: A cell array containing the computed cMI values as specified in the reqOutputs argument.
 %   - cMI_naive: A cell array containing the naive cMI estimates.
 %   - cMI_shuff_all: Results of the null distribution computation (0 if not performed).
 %
@@ -96,20 +96,20 @@ if length(varargin) > 1
     opts = varargin{2};
     if isfield(opts, 'isChecked')
         if opts.isChecked
-            outputs = varargin{1};
+            reqOutputs = varargin{1};
         end
     else
-        [inputs, outputs, opts] = check_inputs('cMI',inputs,varargin{:});
+        [inputs, reqOutputs, opts] = check_inputs('cMI',inputs,varargin{:});
     end
 else
-    [inputs, outputs, opts] = check_inputs('cMI',inputs,varargin{:});
+    [inputs, reqOutputs, opts] = check_inputs('cMI',inputs,varargin{:});
 end
 
 possibleOutputs = {'I(A;B|C)', 'Ish(A;B|C)', 'Ilin(A;B|C)'};
-[isMember, indices] = ismember(outputs, possibleOutputs);
+[isMember, indices] = ismember(reqOutputs, possibleOutputs);
 if any(~isMember)
-    nonMembers = outputs(~isMember);
-    msg = sprintf('Invalid Outputs: %s', strjoin(nonMembers, ', '));
+    nonMembers = reqOutputs(~isMember);
+    msg = sprintf('Invalid reqOutputs: %s', strjoin(nonMembers, ', '));
     error('cMI:invalidOutput', msg);
 end
 DimsA = size(inputs{1});
@@ -157,9 +157,9 @@ end
 %                  Step 3: Compute requested Output Values                      %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Initialize cell for MI values
-cMI_values = cell(nTimepoints, length(outputs));
-cMI_naive = cell(nTimepoints, length(outputs));
-cMI_shuff_all = cell(nTimepoints, length(outputs));
+cMI_values = cell(nTimepoints, length(reqOutputs));
+cMI_naive = cell(nTimepoints, length(reqOutputs));
+cMI_shuff_all = cell(nTimepoints, length(reqOutputs));
 for t = 1:nTimepoints    
     if iscell(H_shuff_all)
         H_t_shuff_all = H_shuff_all(t, :);

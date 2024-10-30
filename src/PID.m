@@ -2,7 +2,7 @@ function [PID_values, PID_naive, PID_nullDist] = PID(inputs, varargin)
 % PID - Calculate Partial Information Decomposition (PID) and related information-theoretic quantities
 %
 % This function calculates the atoms partial information decomposition
-% (PID) and other related measures based on the provided inputs, outputs,
+% (PID) and other related measures based on the provided inputs, reqOutputs,
 % and optional parameters.
 %
 % Inputs:
@@ -18,7 +18,7 @@ function [PID_values, PID_naive, PID_nullDist] = PID(inputs, varargin)
 %                will be computed for each time point, resulting in outputs that are 
 %                also represented as time series.
 %
-%   - outputs: A cell array of strings specifying which measures to compute:
+%   - reqOutputs: A cell array of strings specifying which measures to compute:
 %               - 'Syn'        : the synergistic component of the source neurons about the target
 %               - 'Red'        : the redundant component of the source neurons about the target
 %               - 'Unq1'       : the unique component of the first source neuron about the target
@@ -90,10 +90,10 @@ function [PID_values, PID_naive, PID_nullDist] = PID(inputs, varargin)
 %                                       'Red' : Redundant information.
 %                                       'Unq1': Unique information from source 1.
 %                                       'Unq2': Unique information from source 2.
-
+%
 %
 % Outputs:
-%   - PID_values: A cell array containing the computed MI values as specified in the outputs argument.
+%   - PID_values: A cell array containing the computed MI values as specified in the reqOutputs argument.
 %   - PID_naive: A cell array containing the naive MI estimates.
 %   - PID_nullDist: Results of the null distribution computation (0 if not performed).
 %
@@ -131,33 +131,33 @@ if length(varargin) > 1
     opts = varargin{2};
     if isfield(opts, 'isChecked')
         if opts.isChecked
-            outputs = varargin{1};
+            reqOutputs = varargin{1};
         end
     else
-        [inputs, outputs, opts] = check_inputs('PID',inputs,varargin{:});
+        [inputs, reqOutputs, opts] = check_inputs('PID',inputs,varargin{:});
     end
 else
-    [inputs, outputs, opts] = check_inputs('PID',inputs,varargin{:});
+    [inputs, reqOutputs, opts] = check_inputs('PID',inputs,varargin{:});
 end
 
 possibleOutputs = {'', 'Syn',  'Red', 'Unq1', 'Unq2', ...
     'Unq', 'PID_atoms', 'Joint', 'Union', 'q_dist'};
-if ismember('', outputs)
-    outputs = {'Syn', 'Red', 'Unq1', 'Unq2'};
-elseif ismember('PID_atoms', outputs)
-    outputs(ismember(outputs, 'PID_atoms')) = [];
-    outputs = [outputs, {'Syn', 'Red', 'Unq1', 'Unq2'}];
-elseif ismember('all', outputs)
+if ismember('', reqOutputs)
+    reqOutputs = {'Syn', 'Red', 'Unq1', 'Unq2'};
+elseif ismember('PID_atoms', reqOutputs)
+    reqOutputs(ismember(reqOutputs, 'PID_atoms')) = [];
+    reqOutputs = [reqOutputs, {'Syn', 'Red', 'Unq1', 'Unq2'}];
+elseif ismember('all', reqOutputs)
     if strcmp(opts.redundancy_measure, 'I_BROJA')
-        outputs = {'Syn', 'Red', 'Unq1', 'Unq2', 'Unq', 'Joint', 'Union'};
+        reqOutputs = {'Syn', 'Red', 'Unq1', 'Unq2', 'Unq', 'Joint', 'Union'};
     else 
-        outputs = {'Syn', 'Red', 'Unq1', 'Unq2', 'Unq', 'Joint', 'Union', 'q_dist'};
+        reqOutputs = {'Syn', 'Red', 'Unq1', 'Unq2', 'Unq', 'Joint', 'Union', 'q_dist'};
     end 
 end
-[isMember, ~] = ismember(outputs, possibleOutputs);
+[isMember, ~] = ismember(reqOutputs, possibleOutputs);
 if any(~isMember)
-    nonMembers = outputs(~isMember);
-    msg = sprintf('Invalid Outputs: %s', strjoin(nonMembers, ', '));
+    nonMembers = reqOutputs(~isMember);
+    msg = sprintf('Invalid reqOutputs: %s', strjoin(nonMembers, ', '));
     error('PID:invalidOutput', msg);
 end
 
@@ -166,12 +166,12 @@ if nSources < 2
     msg = 'At least two sources are required.';
     error('PID:NotEnoughSources', msg);
 end
-if ismember('q_dist', outputs)
+if ismember('q_dist', reqOutputs)
     if ~strcmp(opts.bias, 'naive') || ~strcmp(opts.redundancy_measure, 'I_BROJA') || nSources > 2
-        outputs(ismember(outputs, 'q_dist')) = [];
-        warning('q_dist has been removed from outputs because opts.bias must be ''naive'', redundancy_measure must be ''I_BROJA'' and not more than 2 Sources in the input.');
+        reqOutputs(ismember(reqOutputs, 'q_dist')) = [];
+        warning('q_dist has been removed from reqOutputs because opts.bias must be ''naive'', redundancy_measure must be ''I_BROJA'' and not more than 2 Sources in the input.');
     end
-    if isempty(outputs)
+    if isempty(reqOutputs)
         PID_values = NaN; 
         PID_naive= NaN;  
         PID_nullDist= NaN; 
@@ -245,13 +245,13 @@ nullDist_opts.isBinned = true;
 
 PID_nullDist = 0;
 if opts.computeNulldist
-        PID_nullDist = create_nullDist(inputs_b, outputs, @PID, nullDist_opts);
+        PID_nullDist = create_nullDist(inputs_b, reqOutputs, @PID, nullDist_opts);
 end
 
 corr = opts.bias;
 corefunc = @PID;
 if ~strcmp(corr, 'naive')
-    [PID_values, PID_naive] = correction(inputs_b, outputs, corr, corefunc, opts);
+    [PID_values, PID_naive] = correction(inputs_b, reqOutputs, corr, corefunc, opts);
     return
 end
 
@@ -287,7 +287,7 @@ if opts.pid_constrained
         I2  = MI({inputs_1d{2}, inputs_1d{end}}, {'I(A;B)'}, opts);
         I12 = MI({cat(1, inputs_1d{1}, inputs_1d{2}), inputs_1d{end}}, {'I(A;B)'}, opts);
 end 
-PID_values = cell(1, length(outputs));
+PID_values = cell(1, length(reqOutputs));
 for t = 1:nTimepoints
     if opts.pid_constrained
         if ~isfield(opts, 'chosen_atom')
@@ -307,8 +307,8 @@ for t = 1:nTimepoints
             PID_terms{t} = [I1{1}(t)+I2{1}(t)-I12{1}(t)+syn, I12{1}(t)-I2{1}(t)-syn, I12{1}(t)-I1{1}(t)-syn , syn];
         end
     end
-    for i = 1:length(outputs)
-        output = outputs{i};
+    for i = 1:length(reqOutputs)
+        output = reqOutputs{i};
         switch output
             case 'Syn'
                 PID_values{i}(1,t) = PID_terms{t}(4);

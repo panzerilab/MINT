@@ -1,9 +1,9 @@
 function [MI_values, MI_naive, MI_nullDist] = MI(inputs, varargin)
-% *function [MI_values, MI_naive, MI_nullDist] = MI(inputs, outputs, opts)*
+% *function [MI_values, MI_naive, MI_nullDist] = MI(inputs, reqOutputs, opts)*
 % MI - Calculate Mutual Information (MI) and related information-theoretic quantities
 %
 % This function calculates mutual information (MI) and other related
-% measures based on the provided inputs, outputs, and optional parameters.
+% measures based on the provided inputs, requested outputs (reqOutputs), and optional parameters.
 %
 % Inputs:
 %   - inputs: A cell array containing the data:
@@ -15,7 +15,7 @@ function [MI_values, MI_naive, MI_nullDist] = MI(inputs, varargin)
 %                will be computed for each time point, resulting in outputs that are 
 %                also represented as time series
 %
-%   - outputs: A cell array of strings specifying which entropies to compute.
+%   - reqOutputs: A cell array of strings specifying which entropies to compute.
 %               - 'I(A;B)'    : Mutual Information I(A;B)
 %               - 'Ilin(A;B)' : Linear MI Ilin(A;B)
 %               - 'coI(A;B)'  : Co-information coI(A;B)
@@ -67,7 +67,7 @@ function [MI_values, MI_naive, MI_nullDist] = MI(inputs, varargin)
 %                                  'error'       : (default) Throws an error if NaN values are detected.
 %
 % Outputs:
-%   - MI_values: A cell array containing the computed MI values as specified in the outputs argument.
+%   - MI_values: A cell array containing the computed MI values as specified in the reqOutputs argument.
 %   - MI_naive: A cell array containing the naive MI estimates.
 %   - MI_shuff_all: Results of the null distribution computation (0 if not performed).
 %
@@ -107,20 +107,20 @@ if length(varargin) > 1
     opts = varargin{2};
     if isfield(opts, 'isChecked')
         if opts.isChecked
-            outputs = varargin{1};
+            reqOutputs = varargin{1};
         end
     else
-        [inputs, outputs, opts] = check_inputs('MI',inputs,varargin{:});
+        [inputs, reqOutputs, opts] = check_inputs('MI',inputs,varargin{:});
     end
 else
-    [inputs, outputs, opts] = check_inputs('MI',inputs,varargin{:});
+    [inputs, reqOutputs, opts] = check_inputs('MI',inputs,varargin{:});
 end
 possibleOutputs = {'I(A;B)', 'Ish(A;B)',  'Ilin(A;B)', 'coI(A;B)', 'coIsh(A;B)', ...
     'Iss(A)', 'Ic(A;B)', 'Icsh(A;B)', 'Ici(A;B)', 'Icd(A;B)', 'Icdsh(A;B)'};
-[isMember, indices] = ismember(outputs, possibleOutputs);
+[isMember, indices] = ismember(reqOutputs, possibleOutputs);
 if any(~isMember)
-    nonMembers = outputs(~isMember);
-    msg = sprintf('Invalid Outputs: %s', strjoin(nonMembers, ', '));
+    nonMembers = reqOutputs(~isMember);
+    msg = sprintf('Invalid reqOutputs: %s', strjoin(nonMembers, ', '));
     error('MI:invalidOutput', msg);
 end
 
@@ -188,7 +188,7 @@ opts_entropies = opts;
 opts_entropies.computeNulldist = false;
 %opts_entropies.isBinned = false;
 if strcmp(opts.bias, 'shuffCorr')
-    [MI_values, MI_naive, MI_nullDist] = correction(inputs, outputs, corr, @MI, opts_entropies);
+    [MI_values, MI_naive, MI_nullDist] = correction(inputs, reqOutputs, corr, @MI, opts_entropies);
     return
 else 
     MI_nullDist = 0;
@@ -199,8 +199,8 @@ end
 %                  Step 3: Compute requested Output Values                      %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Initialize cell for MI values
-MI_values = cell(1, length(outputs));
-MI_naive = cell(1, length(outputs));
+MI_values = cell(1, length(reqOutputs));
+MI_naive = cell(1, length(reqOutputs));
 
 for t = 1:nTimepoints
     if iscell(H_shuff_all)
@@ -545,7 +545,7 @@ for t = 1:nTimepoints
         if opts.computeNulldist
             nullDist_opts = opts;
             nullDist_opts.computeNulldist = false;
-            MI_nullDist = create_nullDist(inputs, outputs, @MI, nullDist_opts);
+            MI_nullDist = create_nullDist(inputs, reqOutputs, @MI, nullDist_opts);
         end
     end
 end

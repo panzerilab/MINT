@@ -1,5 +1,5 @@
-function prob_dists = prob_estimator(inputs, outputs, opts)
-% *function prob_dists = prob_estimator(inputs, outputs, opts)*
+function prob_dists = prob_estimator(inputs, reqOutputs, opts)
+% *function prob_dists = prob_estimator(inputs, reqOutputs, opts)*
 %
 % The prob_estimator function calculates various probability distributions based on
 % inputs A and B. It computes joint and conditional probabilities, as well
@@ -17,8 +17,8 @@ function prob_dists = prob_estimator(inputs, outputs, opts)
 %             - inputs{N}: data input N with dimensions
 %                          nDims [X nTimepoints] X nTrials)
 %
-%   - outputs: A cell array of strings specifying which probability distributions
-%              to compute. Possible outputs include:
+%   - reqOutputs: A cell array of strings specifying which probability distributions
+%              to compute. Possible reqOutputs include:
 %               - 'P(A)'         : Joint probability distribution of A.
 %               - 'P(B)'         : Joint probability distribution of B.
 %               - 'P(A,B)'       : Joint probability distribution of A and B.
@@ -34,7 +34,7 @@ function prob_dists = prob_estimator(inputs, outputs, opts)
 %
 % Outputs:
 %   - prob_dists: A cell array containing the estimated probability distributions
-%                 as specified in the outputs argument.
+%                 as specified in the reqOutputs argument.
 %
 % Note:
 % Input A and B can represent multiple trials and dimensions concatenated along the
@@ -68,8 +68,8 @@ function prob_dists = prob_estimator(inputs, outputs, opts)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses
 
-if any(strcmp(outputs,'Plin(A)')) || any(strcmp(outputs,'Pind(A|B)')) || any(strcmp(outputs,'Pind(A)')) || any(strcmp(outputs,'Psh(A|B)')) || any(strcmp(outputs,'Psh(A)'))
-    if (length(inputs)>2 && ~any(strcmp(outputs,'P(A,B,C)'))) || (length(inputs)>3 && any(strcmp(outputs,'P(A,B,C)')))
+if any(strcmp(reqOutputs,'Plin(A)')) || any(strcmp(reqOutputs,'Pind(A|B)')) || any(strcmp(reqOutputs,'Pind(A)')) || any(strcmp(reqOutputs,'Psh(A|B)')) || any(strcmp(reqOutputs,'Psh(A)'))
+    if (length(inputs)>2 && ~any(strcmp(reqOutputs,'P(A,B,C)'))) || (length(inputs)>3 && any(strcmp(reqOutputs,'P(A,B,C)')))
         A_nd = inputs{end};
     else
         A_nd =inputs{1};
@@ -80,7 +80,7 @@ else
 end
 
 % Preallocate cell array for the results
-prob_dists = cell(size(outputs));
+prob_dists = cell(size(reqOutputs));
 nTimepoints = 0;
 for var = 1:length(inputs)
     letter = char(64 + var);
@@ -108,7 +108,7 @@ end
  
 % Initialize output for each timepoint if necessary
 if nTimepoints > 1
-    prob_dists_time = cell(nTimepoints, length(outputs));  % Preallocate for each timepoint
+    prob_dists_time = cell(nTimepoints, length(reqOutputs));  % Preallocate for each timepoint
 end
 
 % Loop over each timepoint if nTimepoints > 1
@@ -144,7 +144,7 @@ for t = 1:max(1, nTimepoints)
 
     A_t = data_t.A;
 
-    if any(strcmp(outputs, 'P(all)'))
+    if any(strcmp(reqOutputs, 'P(all)'))
         bins = [];
         all_t = A_t;
         for var = 2:length(inputs)
@@ -165,7 +165,7 @@ for t = 1:max(1, nTimepoints)
         p_all = prob_dist_tmp / sum(prob_dist_tmp(:));
     end
 
-    if any(strcmp(outputs,'P(A,B,C)'))
+    if any(strcmp(reqOutputs,'P(A,B,C)'))
         bins = [];
         B_t = data_t.B;
         C_t = data_t.C;
@@ -185,14 +185,14 @@ for t = 1:max(1, nTimepoints)
 
     
     %% Joint Probability Distribution of B (p_B)
-    if any(strcmp(outputs,'Pind(A|B)')) || any(strcmp(outputs,'Psh(A|B)')) || any(strcmp(outputs,'Psh(A)'))|| any(strcmp(outputs,'P(B)'))|| any(strcmp(outputs,'P(A|B)'))
+    if any(strcmp(reqOutputs,'Pind(A|B)')) || any(strcmp(reqOutputs,'Psh(A|B)')) || any(strcmp(reqOutputs,'Psh(A)'))|| any(strcmp(reqOutputs,'P(B)'))|| any(strcmp(reqOutputs,'P(A|B)'))
         B_t = data_t.B;
         p_B = prob_estimator_simple(B_t);
     end
 
     %% Independent Joint Probability Distribution of A (plin_A)
     % Compute independent joint probability as the product of marginal distributions
-    if any(strcmp(outputs,'Plin(A)')) || any(strcmp(outputs,'Pind(A)'))
+    if any(strcmp(reqOutputs,'Plin(A)')) || any(strcmp(reqOutputs,'Pind(A)'))
         % Marginal Probability Distributions of A (pmarg_A)
         % plin_A = cell(1, nDimA);  % Cell array to store marginal distributions of each dimension of A
         Ac = mat2cell(FullA_t', ones(1,size(FullA_t',1)), size(FullA_t',2));                 % Split Matrix Into Cells By Row
@@ -209,19 +209,19 @@ for t = 1:max(1, nTimepoints)
 
 
     %% Joint Probability Distribution of A given B (p_A_B)
-    if any(strcmp(outputs,'P(A,B)')) ||any(strcmp(outputs,'P(A|B)')) || any(strcmp(outputs,'Psh(A|B)')) || any(strcmp(outputs,'Pind(A|B)')) || any(strcmp(outputs,'Psh(A)'))
+    if any(strcmp(reqOutputs,'P(A,B)')) ||any(strcmp(reqOutputs,'P(A|B)')) || any(strcmp(reqOutputs,'Psh(A|B)')) || any(strcmp(reqOutputs,'Pind(A|B)')) || any(strcmp(reqOutputs,'Psh(A)'))
         B_t = data_t.B;
         p_AB = prob_estimator_simple([A_t, B_t]);
     end
 
     %% Conditional Joint Probability Distribution of A given B (p_A_B)
-    if any(strcmp(outputs,'P(A|B)'))
+    if any(strcmp(reqOutputs,'P(A|B)'))
         %p_A_B = (p_AB'./p_B)';
         p_A_B = p_AB ./ sum(p_AB, 1);
     end
 
     %% Joint Probability Distribution of A (p_A)
-    if any(strcmp(outputs,'P(A)')) || any(strcmp(outputs,'Pind(A)'))
+    if any(strcmp(reqOutputs,'P(A)')) || any(strcmp(reqOutputs,'Pind(A)'))
         if exist('p_AB','var') == 1
             p_A = sum(p_AB,2);
         else
@@ -229,7 +229,7 @@ for t = 1:max(1, nTimepoints)
         end
     end
     %% Independent Conditional Joint Probability Distribution of A (pind_A)
-    % if any(strcmp(outputs,'Pind(A)'))
+    % if any(strcmp(reqOutputs,'Pind(A)'))
     %     num_shuffles = 10;
     %     pind_A_sum = 0;
     %
@@ -256,7 +256,7 @@ for t = 1:max(1, nTimepoints)
     % end
 
     %% Shuffled Joint Probability Distribution of A given B (psh_A_B)
-    if any(strcmp(outputs,'Psh(A|B)')) || any(strcmp(outputs,'Pind(A|B)')) || any(strcmp(outputs,'Psh(A)')) ||  any(strcmp(outputs,'Pind(A)'))
+    if any(strcmp(reqOutputs,'Psh(A|B)')) || any(strcmp(reqOutputs,'Pind(A|B)')) || any(strcmp(reqOutputs,'Psh(A)')) ||  any(strcmp(reqOutputs,'Pind(A)'))
         shuffled_A = shuffle_core(B_t, FullA_t, 1, [1 0]);  % Initialize a shuffled version of A
         if  size(shuffled_A,2) > 1
             shuffled_A_1d = reduce_dim(shuffled_A',1);
@@ -270,7 +270,7 @@ for t = 1:max(1, nTimepoints)
     end
 
     %% Independent Conditional Joint Probability Distribution of A given B (pind_A_B)
-    if any(strcmp(outputs,'Pind(A|B)')) || any(strcmp(outputs,'Pind(A)'))
+    if any(strcmp(reqOutputs,'Pind(A|B)')) || any(strcmp(reqOutputs,'Pind(A)'))
         % num_shuffles = 30;
         % psh_AB_sum = 0;  % Initialisierung der Summe für psh_AB
         % for i = 1:num_shuffles
@@ -345,8 +345,8 @@ for t = 1:max(1, nTimepoints)
 
 
     %% Collate all results
-    for outidx = 1:length(outputs)
-        switch outputs{outidx}
+    for outidx = 1:length(reqOutputs)
+        switch reqOutputs{outidx}
             case 'P(A)', prob_dist_result = p_A;
             case 'Plin(A)', prob_dist_result = plin_A;
             case 'P(A,B)', prob_dist_result = p_AB;

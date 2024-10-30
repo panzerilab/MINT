@@ -2,7 +2,7 @@ function [II_values, II_naive, II_nullDist, atom1, atom2] = II(inputs, varargin)
 % II - Intersection Information (II) and related information-theoretic quantities
 %
 % This function calculates the intersection information (II) based on the provided inputs, 
-% outputs, and optional parameters.
+% reqOutputs, and optional parameters.
 %
 % Inputs:
 %   - inputs: A cell array containing the data:
@@ -16,7 +16,7 @@ function [II_values, II_naive, II_nullDist, atom1, atom2] = II(inputs, varargin)
 %                will be computed for each time point, resulting in outputs that are 
 %                also represented as time series
 %
-%   - outputs: A cell array of strings specifying which measures to compute:
+%   - reqOutputs: A cell array of strings specifying which measures to compute:
 %               - 'II(A,B,C)'    :information between A and B that is readout for C
 %               - 'II(B,C,A)'    :information between B and C that is readout for A
 %               - 'II(A,C,B)'    :information between A and C that is readout for B
@@ -68,7 +68,7 @@ function [II_values, II_naive, II_nullDist, atom1, atom2] = II(inputs, varargin)
 %                                  'error'       : (default) Throws an error if NaN values are detected.
 % 
 % Outputs:
-%   - II_values: A cell array containing the computed II values as specified in the outputs argument.
+%   - II_values: A cell array containing the computed II values as specified in the reqOutputs argument.
 %   - II_naive: A cell array containing the naive II estimates.
 %   - II_nullDist: Results of the null distribution computation (0 if not performed).
 %   - atom1, atom2: The redundancy atoms between A and B about C (atom1), and between C and B about A (atom2).
@@ -95,13 +95,13 @@ if length(varargin) > 1
     opts = varargin{2};
     if isfield(opts, 'isChecked')
         if opts.isChecked
-            outputs = varargin{1};
+            reqOutputs = varargin{1};
         end
     else
-        [inputs, outputs, opts] = check_inputs('II',inputs,varargin{:});
+        [inputs, reqOutputs, opts] = check_inputs('II',inputs,varargin{:});
     end
 else
-    [inputs, outputs, opts] = check_inputs('II',inputs,varargin{:});
+    [inputs, reqOutputs, opts] = check_inputs('II',inputs,varargin{:});
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -163,10 +163,10 @@ for var = 1:length(inputs)
 end
 
 possibleOutputs = {'II(A,B,C)','II(B,C,A)', 'II(A,C,B)'};
-[isMember, indices] = ismember(outputs, possibleOutputs);
+[isMember, indices] = ismember(reqOutputs, possibleOutputs);
 if any(~isMember)
-    nonMembers = outputs(~isMember);
-    msg = sprintf('Invalid Outputs: %s', strjoin(nonMembers, ', '));
+    nonMembers = reqOutputs(~isMember);
+    msg = sprintf('Invalid reqOutputs: %s', strjoin(nonMembers, ', '));
     error('II:invalidOutput', msg);
 end
 
@@ -181,11 +181,11 @@ nullDist_opts.computeNulldist = false;
 
 if any(opts.computeNulldist)
         nullDist_opts.isBinned=true;
-        II_nullDist = create_nullDist(inputs_b, outputs, @II, nullDist_opts);
+        II_nullDist = create_nullDist(inputs_b, reqOutputs, @II, nullDist_opts);
 end
 if ~strcmp(corr, 'naive')  
     opts.computeNulldist = false;
-    [II_values, II_naive] = correction(inputs_1d, outputs, corr, corefunc, opts);
+    [II_values, II_naive] = correction(inputs_1d, reqOutputs, corr, corefunc, opts);
     return
 end
 
@@ -236,9 +236,9 @@ end
 %                  Step 3.C: Compute requested Output Values                    %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Compute the TE values
-II_values = cell(1, length(outputs));
-atom1 = cell(1, length(outputs));
-atom2 = cell(1, length(outputs));
+II_values = cell(1, length(reqOutputs));
+atom1 = cell(1, length(reqOutputs));
+atom2 = cell(1, length(reqOutputs));
 for t = 1:nTimepoints
     for i = 1:length(indices)
         idx = indices(i);
