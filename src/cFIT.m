@@ -99,6 +99,11 @@ function [cFIT_values, cFIT_naive, cFIT_nullDist, atom1, atom2] = cFIT(inputs, v
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 1: Check Inputs, Check OutputList, Fill missing opts with default values %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if nargin < 1
+    msg = 'Please input your data.';
+    error('cFIT:notEnoughInput', msg);
+end
+
 if length(varargin) > 1
     opts = varargin{2};
     if isfield(opts, 'isChecked')

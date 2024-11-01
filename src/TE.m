@@ -116,6 +116,12 @@ function [TE_values, TE_naive, TE_nullDist] = TE(inputs, varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 1: Check Inputs, Check OutputList, Fill missing opts with default values %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if nargin < 1
+    msg = 'Please input your data.';
+    error('TE:notEnoughInput', msg);
+end
+
+
 if length(varargin) > 1
     opts = varargin{2};
     if isfield(opts, 'isChecked')

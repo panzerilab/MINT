@@ -24,8 +24,8 @@ defaultOutputs_TE      = {'TE(A->B)'};
 defaultOutputs_cTE     = {'TE(A->B|C)'};
 defaultOutputs_II      = {'II(A,B,C)'};
 defaultOutputs_PID     = {'PID_atoms'};
-defaultOutputs_FIT     = {'FIT(A->B;C)'};
-defaultOutputs_cFIT    = {'FIT(A->B;C|D)'};
+defaultOutputs_FIT     = {'FIT(A->B;S)'};
+defaultOutputs_cFIT    = {'cFIT(A->B;S|C)'};
 defaultOutputs_H       = {'H(A)', 'H(A|B)'};
 
 if strcmp(corefunc, 'MI')|| strcmp(corefunc, 'cMI') || strcmp(corefunc, 'H')

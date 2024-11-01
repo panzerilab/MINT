@@ -98,6 +98,11 @@ function [FIT_values, FIT_naive, FIT_nullDist, atom1, atom2] = FIT(inputs, varar
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 1: Check Inputs, Check OutputList, Fill missing opts with default values %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if nargin < 1
+    msg = 'Please input your data.';
+    error('FIT:notEnoughInput', msg);
+end
+
 if length(varargin) > 1
     opts = varargin{2};
     if isfield(opts, 'isChecked')

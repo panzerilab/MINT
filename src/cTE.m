@@ -1,4 +1,4 @@
-function [cTE_values, cTE_naive, cTE_shuff_all] = cTE(inputs, varargin)
+function [cTE_values, cTE_naive, cTE_nullDist] = cTE(inputs, varargin)
 % *function [cTE_values, cTE_naive, cTE_nullDist] = cTE(inputs, reqOutputs, opts)*
 %
 % The cTE function computes transfer entropy (cTE) between two 
@@ -124,6 +124,11 @@ function [cTE_values, cTE_naive, cTE_shuff_all] = cTE(inputs, varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 1: Check Inputs, Check OutputList, Fill missing opts with default values %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if nargin < 1
+    msg = 'Please input your data.';
+    error('cTE:notEnoughInput', msg);
+end
+
 if length(varargin) > 1
     opts = varargin{2};
     if isfield(opts, 'isChecked')
@@ -227,7 +232,7 @@ if ~opts.singleTimepoint
     B_pres = B_delayed(:, 1, :);
     B_past = B_delayed(:, 2:end, :);
     A_past = A_delayed(:, 2:end, :);
-    C_past = C_delayed;
+    C_past = C_delayed(:,:,:);
     S = inputs{end};
 else   
     A_delayed = zeros(DimsA(1), length(Atau), nTrials); %(nDims x nTaus x nTrials)
@@ -436,7 +441,7 @@ if opts.computeNulldist
     nullDist_opts.computeNulldist = false;
     cTE_nullDist = create_nullDist(inputs, reqOutputs, @TE, nullDist_opts);
 else
-    cTE_nullDist = TE_shuff_all;
+    cTE_nullDist = cTE_shuff_all;
 end
 
 end

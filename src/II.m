@@ -91,6 +91,11 @@ function [II_values, II_naive, II_nullDist, atom1, atom2] = II(inputs, varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 1: Check Inputs, Check OutputList, Fill missing opts with default values %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if nargin < 1
+    msg = 'Please input your data.';
+    error('II:notEnoughInput', msg);
+end
+
 if length(varargin) > 1
     opts = varargin{2};
     if isfield(opts, 'isChecked')

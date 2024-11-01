@@ -53,7 +53,6 @@ classdef test_PID < matlab.unittest.TestCase
             opts.bin_method = {'eqspace', 'eqpop', 'none'};
             opts.n_bins = {2, 2};
             testCase.verifyError(@()PID({X1, X2, Y}, opts), 'Correction:UndefinedFunction');
-
             opts.bias = 'naive';
             opts.bin_method  = {'invalid'};
             testCase.verifyError(@()PID({X1, X2, Y}, opts), 'Binning:UndefinedFunction');
