@@ -10,8 +10,8 @@ function output_values = svm_wrapper(input,varargin)
 %
 % Inputs:
 %   - input: A cell array where:
-%       - input{1}: Feature matrix (data), where rows represent observations and columns represent features.
-%       - input{2}: Label vector (labels) corresponding to the observations in the feature matrix.
+%       - input{1}: Feature matrix (data), nFeatures X nObservations
+%       - input{2}: Label vector (labels), 1 X nObservations
 %
 %   - varargin: Optional arguments, which can include:
 %       - outputs: A cell array specifying which outputs to return (default is {'all'}). 
@@ -73,8 +73,6 @@ function output_values = svm_wrapper(input,varargin)
 defaultOpts.libsvm = false;
 defaultOpts.optimize_params = struct();
 defaultOpts.svm_family = 'linear';
-defaultOpts.cv_type = 'KFold';
-defaultOpts.K_folds = 5;
 defaultOpts.NaN_handling = 'error';
 
 if nargin < 1
