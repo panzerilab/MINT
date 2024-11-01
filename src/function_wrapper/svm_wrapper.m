@@ -350,7 +350,7 @@ for i = 1:length(indices)
         case 'mean_betaWeigths'
             if isstruct(partition_betaWeights)
                 for part = 1:cvPartition.NumTestSets
-                    partition_betaWeights_all(:,:,part) = partition_betaWeights.part;                    
+                    partition_betaWeights_all(:,:,part) = partition_betaWeights.partition{partition};                    
                 end 
                 output_values{i} = mean(partition_betaWeights_all,3);
             else 
