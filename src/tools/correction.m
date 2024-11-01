@@ -147,7 +147,7 @@ switch corr
     case 'shuffSub'
         [corrected_v, naive_v, shuff_all] = shuffle_subtraction(inputs_b, reqOutputs, corefunc, opts);
     case 'shuffCorr'
-        [corrected_v, naive_v] = shuffle_correction(inputs_b, outputs, corefunc, opts);
+        [corrected_v, naive_v] = shuffle_correction(inputs_b, reqOutputs, corefunc, opts);
     otherwise
         func_handle = str2func(corr);
         if exist(corr, 'file') == 2
