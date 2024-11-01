@@ -17,9 +17,7 @@ function [cMI_values, cMI_naive, cMI_nullDist] =  cMI(inputs, varargin)
 %
 %   - reqOutputs: A cell array of strings specifying which entropies or cMI measures to compute.
 %               - 'I(A;B|C)'    : Conditional Mutual Information I(A;B|C)
-%               - 'Ish(A;B|C)'  : Shuffled Conditional MI Ish(A;B|C)
-%               - 'Ilin(A;B|C)' : Linear Conditional MI Ilin(A;B|C)
-%
+%             
 %   - varargin: Optional arguments, passed as a structure. Fields may include:
 %              - bias:             Specifies the bias correction method to be used.
 %                                  'naive'                      :(default) - No correction applied.
@@ -92,6 +90,11 @@ function [cMI_values, cMI_naive, cMI_nullDist] =  cMI(inputs, varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 1: Check Inputs, Check OutputList, Fill missing opts with default values %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if nargin < 1
+    msg = 'Please input your data.';
+    error('cMI:notEnoughInput', msg);
+end
+
 if length(varargin) > 1
     opts = varargin{2};
     if isfield(opts, 'isChecked')
@@ -105,7 +108,7 @@ else
     [inputs, reqOutputs, opts] = check_inputs('cMI',inputs,varargin{:});
 end
 
-possibleOutputs = {'I(A;B|C)', 'Ish(A;B|C)', 'Ilin(A;B|C)'};
+possibleOutputs = {'I(A;B|C)'};
 [isMember, indices] = ismember(reqOutputs, possibleOutputs);
 if any(~isMember)
     nonMembers = reqOutputs(~isMember);
@@ -174,7 +177,7 @@ for t = 1:nTimepoints
                 if strcmp(opts.bias, 'shuffSub')
                     H_AC_naive = H_naive{strcmp(required_entropies, 'H(A|C)')}(t);
                     H_ABC_naive = H_naive{strcmp(required_entropies, 'H(A|B,C)')}(t);
-                    cMI_naive{t, i} =  H_AC_naive - H_ABC_naive;
+                    cMI_naive{t, i} =  H_AC_naive{1} - H_ABC_naive{1};
                     H_AC_shuff_all = cell2mat(H_t_shuff_all{strcmp(required_entropies, 'H(A|C)')});
                     H_ABC_shuff_all = cell2mat(H_t_shuff_all{strcmp(required_entropies, 'H(A|B,C)')});
                     for shuffIdx = 1:opts.shuff
@@ -187,16 +190,21 @@ for t = 1:nTimepoints
                 else
                     H_AC = H_values{strcmp(required_entropies, 'H(A|C)')}(t);
                     H_ABC = H_values{strcmp(required_entropies, 'H(A|B,C)')}(t);
-                    cMI_values{t, i} = H_AC -  H_ABC;
+                    cMI_values{t, i} = H_AC{1} -  H_ABC{1};
                 end
                 %____________________________________________________________________________________________%
                 if nOut > 1
                     H_AC_naive = H_naive{strcmp(required_entropies, 'H(A|C)')}(t);
                     H_ABC_naive = H_naive{strcmp(required_entropies, 'H(A|B,C)')}(t);
-                    cMI_naive{t, i} =  H_AC_naive - H_ABC_naive;
+                    cMI_naive{t, i} =  H_AC_naive{1} - H_ABC_naive{1};
                     H_AC_shuff_all = cell2mat(H_t_shuff_all{strcmp(required_entropies, 'H(A|C)')});
                     H_ABC_shuff_all = cell2mat(H_t_shuff_all{strcmp(required_entropies, 'H(A|B,C)')});
                 end
+        end
+         if opts.computeNulldist
+            nullDist_opts = opts;
+            nullDist_opts.computeNulldist = false;
+            cMI_nullDist = create_nullDist(inputs, reqOutputs, @cMI, nullDist_opts);
         end
     end
 end
