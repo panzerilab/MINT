@@ -51,6 +51,10 @@ function R_1d = reduce_dim(R_Nd, dim_to_collapse)
 %
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses
+if nargin < 1
+    msg = 'Please input your data.';
+    error('reduce_dim:notEnoughInput', msg);
+end
 
 if nargin < 2
     warning('reduce_dim:notEnoughInput', 'Not enough input arguments. Collapsing the first dimension by default.');

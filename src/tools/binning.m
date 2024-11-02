@@ -138,14 +138,25 @@ end
 if length(opts.n_bins) < nVars && opts.computeOptimBins == false
      opts.n_bins((end+1):nVars) = repmat(opts.n_bins(end), 1, nVars - length(opts.n_bins));
 end
+if strcmp(opts.bin_method, 'userEdges')  
+    if ~isfield(opts, 'edges')
+        error("binning.m: specify the edges in opts.edges for bin_method userEdges.");
+    end
+end 
+if strcmp(opts.bin_method, 'userEdges')  
+    if length(opts.edges) < nVars
+        opts.edges((end+1):nVars) = repmat(opts.edges(end), 1, nVars - length(opts.edges));
+    end
+end 
 inputs_b = inputs;
 
 
 for var = 1:nVars
     unique_vals = unique(inputs{var})';
-    if strcmp(opts.bin_method{var}, 'none') && size(unique_vals,2) > 100
+    if strcmp(opts.bin_method{var}, 'none') && length(unique_vals) > 100
         opts.bin_method{var} = 'eqpop';
         opts.n_bins{var} = 100;
+        warning('No binning procedure defined for a variable with more than 100 unique values. Binning method is set to eqpop and n_bins to 100');
     end
     if ~strcmp(opts.bin_method{var}, 'none')
         data = inputs{var};
@@ -171,6 +182,9 @@ for var = 1:nVars
         nbins = opts.n_bins{var};
         bin_method = opts.bin_method{var};
         nbins_length = length(nbins);
+        if strcmp(bin_method, 'userEdges')
+            edges = opts.edges{var};
+        end
         if nbins_length ~= nDims
             if nbins_length == 1
                 nbins = repmat(nbins, nDims, 1);  
@@ -210,14 +224,8 @@ for var = 1:nVars
                     end
                     edg = linspace(leftEdg, rightEdg, nbins(dim)+1);
                     edg(nbins(dim)+1) = edg(nbins(dim)+1) + 1;
-                case 'userEdges'
-                    if ~isfield(opts, 'edges')
-                        error('binningUserEdges:Missing specified edges. edgess must be specified for var (%d) in dimension (%d).', var, dim);
-                    end
-                    edges = opts.userEdges;
-                    if ~isvector(edges) || length(edges) < 2
-                        error('binningUserEdges:InvalidEdges. At least two edges must be specified for var (%d) in dimension (%d).', var, dim);
-                    end
+                case 'userEdges'                                      
+                    
                     minValue = min(data_dim(:));
                     maxValue = max(data_dim(:));
                     if any(edges < minValue) || any(edges > maxValue)

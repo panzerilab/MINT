@@ -38,7 +38,7 @@ function shuffled_data = shuffle_core(behav_data, neural_data, consistency, inde
 
 if nargin < 4
     msg = "not enough input arguments.";
-    error('shuffle:notEnoughInput', msg);
+    error('shuffle_core:notEnoughInput', msg);
 end 
 
 nObjects = size(neural_data, 2);
