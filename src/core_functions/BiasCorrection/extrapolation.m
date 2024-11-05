@@ -28,7 +28,7 @@ if opts.timeseries
 else
     nTimepoints = 1;
 end
-shuff_all = cell(nTimepoints, length(outputs));
+shuff_all = 0;
 corrected_v = repmat({zeros(1,nTimepoints)}, 1, length(outputs));
 xtrp = opts.xtrp;
 
@@ -527,13 +527,14 @@ elseif strcmp(func2str(corefunc), 'H')
     naive_opts.computeNulldist = 'false';
     naive_v = feval(corefunc, inputs, outputs, naive_opts);
     nTrials = size(inputs{1},length(size(inputs{1})));
-    if strcmp(corr, 'qe_shuffSub') || strcmp(corr, 'le_shuffSub')
-        H2_shuff = repmat({zeros(opts.shuff,nTimepoints)}, 1, length(outputs));
-        H4_shuff = repmat({zeros(opts.shuff,nTimepoints)}, 1, length(outputs));
-        H_shuff_corrected = repmat({zeros(opts.shuff,nTimepoints)}, 1, length(outputs));
-    end
+
     if opts.parallel == false || ((opts.parallel == true) && (opts.shuff > 0))
         for i=1:opts.xtrp
+            if strcmp(corr, 'qe_shuffSub') || strcmp(corr, 'le_shuffSub')
+                H2_shuff = repmat({zeros(opts.shuff,nTimepoints)}, 1, length(outputs));
+                H4_shuff = repmat({zeros(opts.shuff,nTimepoints)}, 1, length(outputs));
+                H_shuff_corrected = repmat({zeros(opts.shuff,nTimepoints)}, 1, length(outputs));
+            end
             randidx = randperm(nTrials, nTrials);
             npartition = [1 2 4];
             part2 = repmat({zeros(1,nTimepoints)}, 1, length(outputs));
@@ -603,9 +604,7 @@ elseif strcmp(func2str(corefunc), 'H')
         end
     end
     if strcmp(corr, 'qe_shuffSub') || strcmp(corr, 'le_shuffSub')
-        for outIdx = 1:length(outputs)
-            corrected_v{outIdx}(1,t) =  corrected_v{outIdx}(1,t) - mean(H_shuff_corrected{outIdx}(:,t)) ;
-        end
+       shuff_all = H_shuff_corrected;
     end 
 end
 

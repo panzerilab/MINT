@@ -142,7 +142,7 @@ switch corr
         if strcmp(corr, 'qe_shuff') || strcmp(corr, 'le_shuffSub')            
             [corrected_v, naive_v, shuff_all] = extrapolation(inputs_b, reqOutputs, corr, corefunc, opts);
         else
-            [corrected_v, naive_v] = extrapolation(inputs_b, reqOutputs, corr, corefunc, opts);
+            [corrected_v, naive_v, shuff_all] = extrapolation(inputs_b, reqOutputs, corr, corefunc, opts);
         end
     case 'shuffSub'
         [corrected_v, naive_v, shuff_all] = shuffle_subtraction(inputs_b, reqOutputs, corefunc, opts);

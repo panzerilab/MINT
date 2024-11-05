@@ -221,7 +221,7 @@ for t = 1:nTimepoints
             case 'I(A;B)'
                 % I(A;B) = H(A) - H(A|B)
                 %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub')
+                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
                     H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
                     H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
                     MI_naive{i}(1,t) = H_A_naive - H_A_B_naive;
@@ -248,7 +248,7 @@ for t = 1:nTimepoints
             case 'Ish(A;B)'
                 % Ish(A;B) = H(A) - Hind(A|B) + Hsh(A|B) - H(A|B)
                 %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub')
+                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
                     H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
                     Hind_A_B_naive = H_naive{strcmp(required_entropies, 'Hind(A|B)')}(t);
                     Hsh_A_B_naive = H_naive{strcmp(required_entropies, 'Hsh(A|B)')}(t);
@@ -282,7 +282,7 @@ for t = 1:nTimepoints
             case 'Ilin(A;B)'
                 % I_lin(A;B) = Hlin(A) - Hind(A|B)
                 %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub')
+                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
                     Hlin_A_naive = H_naive{strcmp(required_entropies, 'Hlin(A)')}(t);
                     Hind_A_B_naive = H_naive{strcmp(required_entropies, 'Hind(A|B)')}(t);
                     MI_naive{i}(1,t) = Hlin_A_naive - Hind_A_B_naive;
@@ -308,7 +308,7 @@ for t = 1:nTimepoints
             case 'coI(A;B)'
                 % coI(A;B) = H(A) - H(A|B) - Hlin(A) + Hind(A|B)
                 %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub')
+                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
                     H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
                     H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
                     Hlin_A_naive = H_naive{strcmp(required_entropies, 'Hlin(A)')}(t);
@@ -340,7 +340,7 @@ for t = 1:nTimepoints
             case 'coIsh(A;B)'
                 % coIsh(A;B) = H(A) + Hsh(A|B) - H(A|B) - Hlin(A)
                 %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub')
+                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
                     H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
                     Hsh_A_B_naive = H_naive{strcmp(required_entropies, 'Hsh(A|B)')}(t);
                     H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
@@ -372,7 +372,7 @@ for t = 1:nTimepoints
             case 'Iss(A)'
                 % Iss(A) = Hind(A) - Hlin(A)
                 %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub')
+                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
                     Hind_A_naive = H_naive{strcmp(required_entropies, 'Hind(A)')}(t);
                     Hlin_A_naive = H_naive{strcmp(required_entropies, 'Hlin(A)')}(t);
                     MI_naive{i}(1,t) = Hind_A_naive - Hlin_A_naive;
@@ -396,7 +396,7 @@ for t = 1:nTimepoints
             case 'Ic(A;B)'% possibleOutputs = { 'H(A|B)', 'Hind(A|B)', 'Hsh(A|B)'};
                 % Ic(A;B) = H(A) - H(A|B) + Hind(A|B) - Hind(A)
                 %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub')
+                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
                     H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
                     H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
                     Hind_A_B_naive = H_naive{strcmp(required_entropies, 'Hind(A|B)')}(t);
@@ -428,7 +428,7 @@ for t = 1:nTimepoints
             case 'Icsh(A;B)'
                 % Icsh(A;B) = H(A) + Hsh(A|B) - H(A|B) - Hind(A)
                 %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub')
+                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
                     H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
                     Hsh_A_B_naive = H_naive{strcmp(required_entropies, 'Hsh(A|B)')}(t);
                     H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
@@ -460,7 +460,7 @@ for t = 1:nTimepoints
             case 'Ici(A;B)'
                 % Ici(A;B) = Chi(A) - Hind(A)
                 %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub')
+                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
                     Chi_A_naive = H_naive{strcmp(required_entropies, 'Chi(A)')}(t);
                     Hind_A_naive = H_naive{strcmp(required_entropies, 'Hind(A)')}(t);
                     MI_naive{i}(1,t) = Chi_A_naive - Hind_A_naive;
@@ -485,7 +485,7 @@ for t = 1:nTimepoints
             case 'Icd(A;B)'
                 % Icd(A;B) = H(A) - H(A|B) - Chi(A) + Hind(A|B)
                 %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub')
+                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
                     H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
                     H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
                     Chi_A_naive = H_naive{strcmp(required_entropies, 'Chi(A)')}(t);
@@ -517,7 +517,7 @@ for t = 1:nTimepoints
             case 'Icdsh(A;B)'
                 % Icdsh(A;B) = H(A) + Hsh(A|B) - H(A|B) - Chi(A)
                 %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub')
+                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
                     H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
                     Hsh_A_B_naive = H_naive{strcmp(required_entropies, 'Hsh(A|B)')}(t);
                     H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
