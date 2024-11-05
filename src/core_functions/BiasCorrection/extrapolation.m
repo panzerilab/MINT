@@ -44,8 +44,8 @@ if strcmp(func2str(corefunc), 'PID')
             opts.pid_constrained = false;
         end
     end
-    PID_naive = feval(corefunc, inputs, outputs, naive_opts);
-    PID_corrected = repmat({zeros(1,nTimepoints)}, 1, length(outputs));
+    naive_v = feval(corefunc, inputs, outputs, naive_opts);
+    corrected_v = repmat({zeros(1,nTimepoints)}, 1, length(outputs));
     if opts.pid_constrained
         I1_naive  = cell2mat(MI({inputs{1}, inputs{end}}, {'I(A;B)'}, naive_opts));
         I2_naive  = cell2mat(MI({inputs{2}, inputs{end}}, {'I(A;B)'}, naive_opts));
@@ -94,26 +94,26 @@ if strcmp(func2str(corefunc), 'PID')
             for np=2:length(npartition)
                 for pidx = 1:npartition(np)
                     inputs_p = partition(inputs_s, npartition(np), pidx,0);
-                    PID_value = feval(corefunc, inputs_p, outputs, naive_opts);
+                    PID_p = feval(corefunc, inputs_p, outputs, naive_opts);
                     for outIdx = 1:length(outputs)
                         if npartition(np)==2
-                            PID2{outIdx} = PID2{outIdx} + PID_value{outIdx}/2;
+                            PID2{outIdx} = PID2{outIdx} + PID_p{outIdx}/2;
                         elseif npartition(np)==4
-                            PID4{outIdx} =  PID4{outIdx} + PID_value{outIdx}/4;
+                            PID4{outIdx} =  PID4{outIdx} + PID_p{outIdx}/4;
                         end
                     end
                     if opts.pid_constrained
-                        I1 = MI({inputs_p{1}, inputs_p{end}}, {'I(A;B)'}, naive_opts);
-                        I2 = MI({inputs_p{2}, inputs_p{end}}, {'I(A;B)'}, naive_opts);
-                        I12 = MI({cat(1, inputs_p{1}, inputs_p{2}), inputs_p{end}}, {'I(A;B)'}, naive_opts);
+                        I1_p = MI({inputs_p{1}, inputs_p{end}}, {'I(A;B)'}, naive_opts);
+                        I2_p = MI({inputs_p{2}, inputs_p{end}}, {'I(A;B)'}, naive_opts);
+                        I12_p = MI({cat(1, inputs_p{1}, inputs_p{2}), inputs_p{end}}, {'I(A;B)'}, naive_opts);
                         if npartition(np)==2
-                            I1_2 = I1_2 + I1{1}/2;
-                            I2_2 = I2_2 + I2{1}/2;
-                            I12_2 = I12_2 + I12{1}/2;
+                            I1_2 = I1_2 + I1_p{1}/2;
+                            I2_2 = I2_2 + I2_p{1}/2;
+                            I12_2 = I12_2 + I12_p{1}/2;
                         elseif npartition(np)==4
-                            I1_4 = I1_4 + I1{1}/4;
-                            I2_4 = I2_4 + I2{1}/4;
-                            I12_4 = I12_4 + I12{1}/4;
+                            I1_4 = I1_4 + I1_p{1}/4;
+                            I2_4 = I2_4 + I2_p{1}/4;
+                            I12_4 = I12_4 + I12_p{1}/4;
                         end
                     end
 
@@ -155,9 +155,9 @@ if strcmp(func2str(corefunc), 'PID')
             if strcmp(opts.bias,'qe') ||strcmp(opts.bias,'qe_shuffSub')
                 for t = 1:nTimepoints
                     for outIdx = 1:length(outputs)
-                        y = [PID_naive{outIdx}(t), PID2{outIdx}(t), PID4{outIdx}(t)];
+                        y = [naive_v{outIdx}(t), PID2{outIdx}(t), PID4{outIdx}(t)];
                         p = polyfit(x_extrap, y, 2);
-                        PID_corrected{outIdx}(1,t)  =  PID_corrected{outIdx}(t) + p(3)/xtrp;
+                        corrected_v{outIdx}(1,t)  =  corrected_v{outIdx}(t) + p(3)/xtrp;
                     end
                 end
                 if strcmp(opts.bias,'qe_shuffSub')
@@ -188,9 +188,9 @@ if strcmp(func2str(corefunc), 'PID')
                 elseif strcmp(opts.bias,'le')||strcmp(opts.bias,'le_shuffSub')
                     for t = 1:nTimepoints
                         for outIdx = 1:length(outputs)
-                            y = [PID_naive{outIdx}(t), PID2{outIdx}(t)];
+                            y = [naive_v{outIdx}(t), PID2{outIdx}(t)];
                             p = polyfit(x_extrap, y, 1);
-                            PID_corrected{outIdx}(1,t) = PID_corrected{outIdx}(t) + p(2)/xtrp;
+                            corrected_v{outIdx}(1,t) = corrected_v{outIdx}(t) + p(2)/xtrp;
                         end
                     end
                     if strcmp(opts.bias,'le_shuffSub')
@@ -255,7 +255,7 @@ if strcmp(func2str(corefunc), 'PID')
     if strcmp(opts.bias,'qe_shuffSub') || strcmp(opts.bias,'le_shuffSub')
         for t = 1:nTimepoints
             for outIdx = 1:length(outputs)
-                PID_corrected{outIdx}(1,t) =  PID_corrected{outIdx}(1,t) - mean(PID_shuff_corrected{outIdx}(:,t)) ;
+                corrected_v{outIdx}(1,t) =  corrected_v{outIdx}(1,t) - mean(PID_shuff_corrected{outIdx}(:,t)) ;
             end
             if opts.pid_constrained
                 I12_corrected(t) = I12_corrected(t) - mean(I12_shuff_corrected{1}(:,t));
@@ -270,42 +270,42 @@ if strcmp(func2str(corefunc), 'PID')
             pos = find(strcmp(opts.chosen_atom, outputs));
             switch opts.chosen_atom
                 case'Red'
-                    red = PID_corrected{pos};
+                    red = corrected_v{pos};
                     syn = I12_corrected-I1_corrected-I2_corrected+red;
                     unq1 = I1_corrected-red;
                     unq2 = I2_corrected-red;
                     %naive
-                    red_naive = PID_naive{pos};
+                    red_naive = naive_v{pos};
                     syn_naive  = I12_naive-I1_naive-I2_naive+red_naive;
                     unq1_naive  = I1_naive-red_naive;
                     unq2_naive  = I2_naive-red_naive;
                 case 'Unq1'
-                    unq1 = PID_corrected{pos};
+                    unq1 = corrected_v{pos};
                     red = I1_corrected-unq1;
                     syn =  I12_corrected-I2_corrected-unq1;
                     unq2 = I2_corrected-I1_corrected+unq1;
                     %naive
-                    unq1_naive = PID_naive{pos};
+                    unq1_naive = naive_v{pos};
                     red_naive = I1_naive-unq1_naive;
                     syn_naive =  I12_naive-I2_naive-unq1_naive;
                     unq2_naive = I2_naive-I1_naive+unq1_naive;
                 case 'Unq2'
-                    unq2 = PID_corrected{pos};
+                    unq2 = corrected_v{pos};
                     red = I2_corrected-unq2;
                     syn =  I12_corrected-I1_corrected-unq2;
                     unq1 = I1_corrected-I2_corrected+unq2;
                     %naive
-                    unq2_naive = PID_naive{pos};
+                    unq2_naive = naive_v{pos};
                     red_naive = I2_naive-unq2_naive;
                     syn_naive =  I12_naive-I1_naive-unq2_naive;
                     unq1_naive = I1_naive-I2_naive+unq2_naive;
                 case 'Syn'
-                    syn = PID_corrected{pos};
+                    syn = corrected_v{pos};
                     red = I1_corrected+I2_corrected-I12_corrected+syn;
                     unq1 = I12_corrected-I2_corrected-syn;
                     unq2 = I12_corrected-I1_corrected-syn;
                     %naive
-                    syn_naive  = PID_naive{pos};
+                    syn_naive  = naive_v{pos};
                     red_naive  = I1_naive+I2_naive-I12_naive+syn_naive;
                     unq1_naive  = I12_naive-I2_naive-syn_naive;
                     unq2_naive  = I12_naive-I1_naive-syn_naive;
@@ -314,38 +314,33 @@ if strcmp(func2str(corefunc), 'PID')
             for i = 1:length(outputs)
                 switch outputs{i}
                     case 'Syn'
-                        PID_corrected{i} = syn;
+                        corrected_v{i} = syn;
                         naive_v{i}       = syn_naive;
                     case 'Red'
-                        PID_corrected{i} = red;
+                        corrected_v{i} = red;
                         naive_v{i}       = red_naive;
                     case 'Unq1'
-                        PID_corrected{i} = unq1;
+                        corrected_v{i} = unq1;
                         naive_v{i}       = unq1_naive;
                     case 'Unq2'
-                        PID_corrected{i} = unq2;
+                        corrected_v{i} = unq2;
                         naive_v{i}       = unq2_naive;
                     case 'Unq'
-                        PID_corrected{i} = unq1 + unq2;
+                        corrected_v{i} = unq1 + unq2;
                         naive_v{i}       = unq1_naive + unq2_naive;
                     case 'Joint'
-                        PID_corrected{i} = red+syn+unq1+unq2;
+                        corrected_v{i} = red+syn+unq1+unq2;
                         naive_v{i}       = red_naive+syn_naive+unq1_naive+unq2_naive;
                     case 'Union'
-                        PID_corrected{i} = (red+syn+unq1+unq2) - syn;
+                        corrected_v{i} = (red+syn+unq1+unq2) - syn;
                         naive_v{i}       = (red_naive+syn_naive+unq1_naive+unq2_naive) - syn_naive;
                     otherwise
-                        PID_corrected{i} = NaN;
+                        corrected_v{i} = NaN;
                         naive_v{i}       = NaN;
                 end
             end
-        else
-            naive_v = PID_naive;
         end
-    else
-        naive_v = PID_naive;
     end
-    corrected_v = PID_corrected;
 elseif strcmp(func2str(corefunc), 'FIT') || strcmp(func2str(corefunc), 'cFIT')
     atom1_corr = repmat({0}, 1, length(outputs));
     atom2_corr = repmat({0}, 1, length(outputs));
@@ -532,6 +527,11 @@ elseif strcmp(func2str(corefunc), 'H')
     naive_opts.computeNulldist = 'false';
     naive_v = feval(corefunc, inputs, outputs, naive_opts);
     nTrials = size(inputs{1},length(size(inputs{1})));
+    if strcmp(corr, 'qe_shuffSub') || strcmp(corr, 'le_shuffSub')
+        H2_shuff = repmat({zeros(opts.shuff,nTimepoints)}, 1, length(outputs));
+        H4_shuff = repmat({zeros(opts.shuff,nTimepoints)}, 1, length(outputs));
+        H_shuff_corrected = repmat({zeros(opts.shuff,nTimepoints)}, 1, length(outputs));
+    end
     if opts.parallel == false || ((opts.parallel == true) && (opts.shuff > 0))
         for i=1:opts.xtrp
             randidx = randperm(nTrials, nTrials);
@@ -548,17 +548,27 @@ elseif strcmp(func2str(corefunc), 'H')
             for np=2:length(npartition)
                 for pidx = 1:npartition(np)
                     inputs_p = partition(inputs_s, npartition(np), pidx, 0);
-                    if strcmp(corr, 'qe_shuffSub') || strcmp(corr, 'le_shuffSub')
-                        shuffle_subtraction(inputs_p, outputs, corefunc, naive_opts);
-                    else
-                        value_tmp = feval(corefunc, inputs_p, outputs, naive_opts);
-                    end
+                    value_tmp = feval(corefunc, inputs_p, outputs, naive_opts);
                     for outIdx = 1:length(outputs)
                         for t = 1:nTimepoints
                             if npartition(np)==2
                                 part2{outIdx}(1,t) = part2{outIdx}(1,t) + value_tmp{outIdx}(1,t)/2;
                             elseif npartition(np)==4
                                 part4{outIdx}(1,t) = part4{outIdx}(1,t) + value_tmp{outIdx}(1,t)/4;
+                            end
+                        end
+                    end
+                    if strcmp(corr, 'qe_shuffSub') || strcmp(corr, 'le_shuffSub')
+                        naive_opts.bias = 'shuffSub';
+                        naive_opts.shuff = opts.shuff;
+                        [~,~,H_shuff_all] = feval(corefunc, inputs_p, outputs, naive_opts);
+                        for shuffIdx = 1:opts.shuff
+                            for outIdx = 1:length(outputs)
+                                if npartition(np)==2
+                                    H2_shuff{outIdx}(shuffIdx,:) =  H2_shuff{outIdx}(shuffIdx,:) + H_shuff_all{outIdx}(shuffIdx,:)/2;
+                                elseif npartition(np)==4
+                                    H4_shuff{outIdx}(shuffIdx,:) =  H4_shuff{outIdx}(shuffIdx,:) + H_shuff_all{outIdx}(shuffIdx,:)/4;
+                                end
                             end
                         end
                     end
@@ -570,15 +580,33 @@ elseif strcmp(func2str(corefunc), 'H')
                     if strcmp(opts.bias,'qe') ||strcmp(opts.bias,'qe_shuffSub')
                         p = polyfit(x_extrap, [naive_v{outIdx}(1,t), part2{outIdx}(1,t), part4{outIdx}(1,t)], 2);
                         corrected_v{outIdx}(1,t) = corrected_v{outIdx}(1,t) +(p(3)/xtrp);
+                        if strcmp(opts.bias,'qe_shuffSub')
+                            for shuffIdx = 1:opts.shuff
+                                y = [H_shuff_all{outIdx}(shuffIdx,t),  H2_shuff{outIdx}(shuffIdx,t),  H4_shuff{outIdx}(shuffIdx,t)];
+                                p = polyfit(x_extrap, y, 2);
+                                H_shuff_corrected{outIdx}(shuffIdx,t)  =  H_shuff_corrected{outIdx}(shuffIdx,t) + p(3)/xtrp;
+                            end
+                        end
                     elseif strcmp(opts.bias,'le')||strcmp(opts.bias,'le_shuffSub')
                         p = polyfit(x_extrap(1:2), [naive_v{outIdx}(1,t), part2{outIdx}(1,t)], 1);
                         corrected_v{outIdx}(1,t) = corrected_v{outIdx}(1,t) +(p(2)/xtrp);
+                        if strcmp(opts.bias,'le_shuffSub')
+                            for shuffIdx = 1:opts.shuff
+                                y = [H_shuff_all{outIdx}(shuffIdx,t),  H2_shuff{outIdx}(shuffIdx,t)];
+                                p = polyfit(x_extrap, y, 1);
+                                H_shuff_corrected{outIdx}(shuffIdx,t)  =  H_shuff_corrected{outIdx}(t) + p(2)/xtrp;
+                            end
+                        end
                     end
                 end
             end
         end
     end
-end
+    if strcmp(corr, 'qe_shuffSub') || strcmp(corr, 'le_shuffSub')
+        for outIdx = 1:length(outputs)
+            corrected_v{outIdx}(1,t) =  corrected_v{outIdx}(1,t) - mean(H_shuff_corrected{outIdx}(:,t)) ;
+        end
+    end 
 end
 
 

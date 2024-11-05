@@ -268,7 +268,6 @@ elseif strcmp(func2str(corefunc), 'II')
 elseif strcmp(func2str(corefunc), 'MI')
     [corrected_v, naive_v] =  MI(inputs, outputs, opts);
 elseif strcmp(func2str(corefunc), 'H')
-    possibleOutputs = { 'H(A|B)', 'Hind(A|B)', 'Hsh(A|B)', 'Chi(A)','Hind(A)'};
     shuff_all = repmat({zeros(opts.shuff, nTimepoints)},1, length(outputs));
     naive_v = feval(corefunc, inputs, outputs, naive_opts);
     for sIdx = 1:opts.shuff
