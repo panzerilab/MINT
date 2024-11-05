@@ -4,8 +4,8 @@ function [corrected_v, naive_v, shuff_all, addOut] = shuffle_subtraction(inputs,
 % Inputs:
 %   - inputs: A cell array containing the input variables, where each cell corresponds to a different input source. 
 %             The data can be structured as either:
-%             - nDims [X nTrials] 
-%             - nDims [X nTimepoints] X nTrials
+%             - nDims X nTrials 
+%             - nDims X nTimepoints X nTrials
 %
 %   - outputs: A cell array specifying the information measures to compute.
 %
@@ -129,9 +129,9 @@ if strcmp(func2str(corefunc), 'PID')
                 unq2 = I2_corrected-red;
                 %naive
                 red_naive = PID_naive{pos};
-                syn_naive  = I12_naive-I1_naive-I2_naive+red;
-                unq1_naive  = I1_naive-red;
-                unq2_naive  = I2_naive-red;
+                syn_naive  = I12_naive-I1_naive-I2_naive+red_naive;
+                unq1_naive  = I1_naive-red_naive;
+                unq2_naive  = I2_naive-red_naive;
             case 'Unq1'
                 unq1 = PID_corrected{pos};
                 red = I1_corrected-unq1;
@@ -139,9 +139,9 @@ if strcmp(func2str(corefunc), 'PID')
                 unq2 = I2_corrected-I1_corrected+unq1;
                 %naive
                 unq1_naive = PID_naive{pos};
-                red_naive = I1_naive-unq1;
-                syn_naive =  I12_naive-I2_naive-unq1;
-                unq2_naive = I2_naive-I1_naive+unq1;
+                red_naive = I1_naive-unq1_naive;
+                syn_naive =  I12_naive-I2_naive-unq1_naive;
+                unq2_naive = I2_naive-I1_naive+unq1_naive;
             case 'Unq2'
                 unq2 = PID_corrected{pos};
                 red = I2_corrected-unq2;
@@ -149,9 +149,9 @@ if strcmp(func2str(corefunc), 'PID')
                 unq1 = I1_corrected-I2_corrected+unq2;
                 %naive
                 unq2_naive = PID_naive{pos};
-                red_naive = I2_naive-unq2;
-                syn_naive =  I12_naive-I1_naive-unq2;
-                unq1_naive = I1_naive-I2_naive+unq2;
+                red_naive = I2_naive-unq2_naive;
+                syn_naive =  I12_naive-I1_naive-unq2_naive;
+                unq1_naive = I1_naive-I2_naive+unq2_naive;
             case 'Syn'
                 syn = PID_corrected{pos};
                 red = I1_corrected+I2_corrected-I12_corrected+syn;
@@ -159,9 +159,9 @@ if strcmp(func2str(corefunc), 'PID')
                 unq2 = I12_corrected-I1_corrected-syn;
                 %naive
                 syn_naive  = PID_naive{pos};
-                red_naive  = I1_naive+I2_naive-I12_naive+syn;
-                unq1_naive  = I12_naive-I2_naive-syn;
-                unq2_naive  = I12_naive-I1_naive-syn;
+                red_naive  = I1_naive+I2_naive-I12_naive+syn_naive;
+                unq1_naive  = I12_naive-I2_naive-syn_naive;
+                unq2_naive  = I12_naive-I1_naive-syn_naive;
         end
         for i = 1:length(outputs)
             switch outputs{i}

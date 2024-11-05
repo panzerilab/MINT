@@ -245,13 +245,16 @@ nullDist_opts.isBinned = true;
 
 PID_nullDist = 0;
 if opts.computeNulldist
-        PID_nullDist = create_nullDist(inputs_b, reqOutputs, @PID, nullDist_opts);
+    PID_nullDist = create_nullDist(inputs_b, reqOutputs, @PID, nullDist_opts);
 end
 
 corr = opts.bias;
 corefunc = @PID;
 if ~strcmp(corr, 'naive')
-    [PID_values, PID_naive] = correction(inputs_b, reqOutputs, corr, corefunc, opts);
+    [PID_values, PID_naive, PID_shuff_all] = correction(inputs_b, reqOutputs, corr, corefunc, opts);
+    if ~opts.computeNulldist
+        PID_nullDist = PID_shuff_all;
+    end
     return
 end
 
@@ -334,4 +337,9 @@ for t = 1:nTimepoints
     end
 end
 PID_naive = PID_values;
+if strcmp(opts.bias, 'shuffSub') && ~opts.computeNulldist
+    PID_nullDist = MI_shuff_all;
+else
+    PID_nullDist = 0;
+end
 end
