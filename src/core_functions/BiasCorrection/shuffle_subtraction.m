@@ -64,6 +64,7 @@ for var = 1:nVars
     end
 end
 nTimepoints = max(nTimepoints_all);
+corrected_v = cell(1, length(outputs));
 if strcmp(func2str(corefunc), 'PID')
     naive_v = repmat({zeros(1,nTimepoints)}, 1, length(outputs));
     shuff_all = repmat({zeros(opts.shuff, nTimepoints)},1, length(outputs));
@@ -196,7 +197,6 @@ if strcmp(func2str(corefunc), 'PID')
 elseif strcmp(func2str(corefunc), 'FIT') || strcmp(func2str(corefunc), 'cFIT')
     atom1_corrected = cell(1, length(outputs));
     atom2_corrected = cell(1, length(outputs));
-    corrected_v = cell(1, length(outputs));
     shuff_all = cell(1, length(outputs));
     [naive_v,~,~,atom1_naive, atom2_naive] = feval(corefunc, inputs, outputs, naive_opts);
     addOut = cell(2,length(outputs));
@@ -234,7 +234,6 @@ elseif strcmp(func2str(corefunc), 'FIT') || strcmp(func2str(corefunc), 'cFIT')
 elseif strcmp(func2str(corefunc), 'II')
     atom1_corrected = cell(1, length(outputs));
     atom2_corrected = cell(1, length(outputs));
-    corrected_v = cell(1, length(outputs));
     shuff_all = 0;
     atom1_shuffall = repmat({zeros(opts.shuff, nTimepoints)},1, length(outputs));
     atom2_shuffall = repmat({zeros(opts.shuff, nTimepoints)},2, length(outputs));
@@ -265,9 +264,7 @@ elseif strcmp(func2str(corefunc), 'II')
          addOut{1,outIdx} = atom2_shuffall{outIdx};
          corrected_v{outIdx} = min(atom1_corrected{outIdx},atom2_corrected{outIdx});
      end
-elseif strcmp(func2str(corefunc), 'MI')
-    [corrected_v, naive_v] =  MI(inputs, outputs, opts);
-elseif strcmp(func2str(corefunc), 'H')
+elseif strcmp(func2str(corefunc), 'MI') || strcmp(func2str(corefunc), 'TE') || strcmp(func2str(corefunc), 'cTE') || strcmp(func2str(corefunc), 'cMI')
     shuff_all = repmat({zeros(opts.shuff, nTimepoints)},1, length(outputs));
     naive_v = feval(corefunc, inputs, outputs, naive_opts);
     for sIdx = 1:opts.shuff
@@ -286,6 +283,8 @@ elseif strcmp(func2str(corefunc), 'H')
             shuff_all{outIdx}(sIdx,:) = shuff_v{outIdx};
         end
     end
-    corrected_v = naive_v;
+     for outIdx = 1:length(outputs)      
+        corrected_v{outIdx} = naive_v{outIdx} - mean(shuff_all{outIdx},1);
+     end 
 end
 

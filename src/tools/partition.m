@@ -110,7 +110,7 @@ else
         bin_edges = (partidx-1)*round(nTrials/nparts)+1:partidx*round(nTrials/nparts);
     end
 
-
+    
     partitioned_data = cell(1,nVars);
     if length(shape_data)==2
         for varidx =1:nVars

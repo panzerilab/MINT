@@ -116,13 +116,71 @@ if any(~isMember)
     error('cMI:invalidOutput', msg);
 end
 DimsA = size(inputs{1});
-if length(DimsA) > 2
-    nTimepoints = DimsA(2);
+DimsB = size(inputs{2});
+DimsC = size(inputs{3});
+nTrials = DimsA(end);
+if DimsA(end) ~= DimsB(end) || DimsA(end) ~= DimsC(end)
+    msg = sprintf('The number of trials for A (%d), B (%d) and C(%d) are not consistent. Ensure both variables have the same number of trials.',DimsA(end),DimsB(end), DimsC(end));
+    error('cMI:InvalidInput', msg);
+end
+
+
+maxDimLength = max([length(DimsA), length(DimsB), length(DimsC)]);
+if maxDimLength == 3
+    if length(DimsA) == maxDimLength
+        if length(DimsB) <= 2
+            inputs{2} = reshape(inputs{2}, [DimsB(1), 1, DimsB(2)]);
+            inputs{2} = repmat(inputs{2}, [1, DimsA(2), 1]);
+        end
+        if length(DimsC) <= 2
+            inputs{3} = reshape(inputs{3}, [DimsC(1), 1, DimsC(2)]);
+            inputs{3} = repmat(inputs{3}, [1, DimsA(2), 1]);
+        end
+    elseif length(DimsB) == maxDimLength
+        if length(DimsA) <= 2
+            inputs{1} = reshape(inputs{1}, [DimsA(1), 1, DimsA(2)]);
+            inputs{1} = repmat(inputs{1}, [1, DimsB(2), 1]);
+        end
+        if length(DimsC) <= 2
+            inputs{3} = reshape(inputs{3}, [DimsC(1), 1, DimsC(2)]);
+            inputs{3} = repmat(inputs{3}, [1, DimsB(2), 1]);
+        end     
+    elseif length(DimsC) == maxDimLength
+        if length(DimsA) <= 2
+            inputs{1} = reshape(inputs{1}, [DimsA(1), 1, DimsA(2)]);
+            inputs{1} = repmat(inputs{1}, [1, DimsC(2), 1]);
+        end
+        if length(DimsB) <= 2
+            inputs{2} = reshape(inputs{2}, [DimsB(1), 1, DimsB(2)]);
+            inputs{2} = repmat(inputs{2}, [1, DimsC(2), 1]);
+        end
+    end
+    opts.timeseries = true;
+    nTimepoints = size(inputs{1}, 2);
 else
     nTimepoints = 1;
 end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%        Step 2: Compute required Entropies for the requested Outputs           %
+%                    Step 2: Bias correction if requested                     %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+corr = opts.bias;
+if opts.computeNulldist == true
+    nullDist_opts = opts;
+    nullDist_opts.computeNulldist = false;
+    cMI_nullDist = create_nullDist(inputs_b, reqOutputs, @cMI, nullDist_opts);
+else
+    cMI_nullDist = 0;
+end
+
+if ~strcmp(corr, 'naive')
+    [cMI_values, cMI_naive] = correction(inputs, reqOutputs, corr,  @cMI, opts);
+    return
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%        Step 3A: Compute required Entropies for the requested Outputs          %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 entropy_dependencies = struct( ...
     'I_AB_C', {{'H(A|C)', 'H(A|B,C)'}} ...
@@ -133,11 +191,7 @@ for ind = 1:length(indices)
     idx = indices(ind);
     switch possibleOutputs{idx}
         case 'I(A;B|C)'
-            required_entropies = [required_entropies, entropy_dependencies.I_AB_C{:}];
-            % case 'Ish(A;B|C)'
-            %     required_entropies = [required_entropies, entropy_dependencies.Ish_AB_C{:}];
-            % case 'Ilin(A;B|C)'
-            %     required_entropies = [required_entropies, entropy_dependencies.Ilin_AB_C{:}];
+            required_entropies = [required_entropies, entropy_dependencies.I_AB_C{:}];            
     end
 end
 required_entropies = unique(required_entropies);
@@ -156,55 +210,22 @@ for i = 1:length(required_entropies)
     end
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%H_naiv
-%                  Step 3: Compute requested Output Values                      %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                  Step 3B: Compute requested Output Values                      %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Initialize cell for MI values
-cMI_values = cell(nTimepoints, length(reqOutputs));
-cMI_naive = cell(nTimepoints, length(reqOutputs));
-cMI_shuff_all = cell(nTimepoints, length(reqOutputs));
-for t = 1:nTimepoints    
-    if iscell(H_shuff_all)
-        H_t_shuff_all = H_shuff_all(t, :);
-    end
+cMI_values = cell(1, length(reqOutputs));
+cMI_naive = cell(1, length(reqOutputs));
+
+for t = 1:nTimepoints
     for i = 1:length(indices)
         idx = indices(i);
-        nOut = nargout;
         switch possibleOutputs{idx}
             case 'I(A;B|C)'
                 % I(A;B|C) = H(A|C) - H(A|B,C)
-                %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub')
-                    H_AC_naive = H_naive{strcmp(required_entropies, 'H(A|C)')}(t);
-                    H_ABC_naive = H_naive{strcmp(required_entropies, 'H(A|B,C)')}(t);
-                    cMI_naive{t, i} =  H_AC_naive{1} - H_ABC_naive{1};
-                    H_AC_shuff_all = cell2mat(H_t_shuff_all{strcmp(required_entropies, 'H(A|C)')});
-                    H_ABC_shuff_all = cell2mat(H_t_shuff_all{strcmp(required_entropies, 'H(A|B,C)')});
-                    for shuffIdx = 1:opts.shuff
-                        H_AC_shuff = H_AC_shuff_all(shuffIdx);
-                        H_ABC_shuff = H_ABC_shuff_all(shuffIdx);
-                        cMI_shuff_all{t, i} =  H_AC_shuff - H_ABC_shuff;
-                    end
-                    cMI_values{t, i} = cMI_naive{t, i} - mean(cMI_shuff_all{t, i});
-                    nOut = 1;
-                else
-                    H_AC = H_values{strcmp(required_entropies, 'H(A|C)')}(t);
-                    H_ABC = H_values{strcmp(required_entropies, 'H(A|B,C)')}(t);
-                    cMI_values{t, i} = H_AC{1} -  H_ABC{1};
-                end
-                %____________________________________________________________________________________________%
-                if nOut > 1
-                    H_AC_naive = H_naive{strcmp(required_entropies, 'H(A|C)')}(t);
-                    H_ABC_naive = H_naive{strcmp(required_entropies, 'H(A|B,C)')}(t);
-                    cMI_naive{t, i} =  H_AC_naive{1} - H_ABC_naive{1};
-                    H_AC_shuff_all = cell2mat(H_t_shuff_all{strcmp(required_entropies, 'H(A|C)')});
-                    H_ABC_shuff_all = cell2mat(H_t_shuff_all{strcmp(required_entropies, 'H(A|B,C)')});
-                end
-        end
-         if opts.computeNulldist
-            nullDist_opts = opts;
-            nullDist_opts.computeNulldist = false;
-            cMI_nullDist = create_nullDist(inputs, reqOutputs, @cMI, nullDist_opts);
+                H_AC = H_values{strcmp(required_entropies, 'H(A|C)')};
+                H_ABC = H_values{strcmp(required_entropies, 'H(A|B,C)')};
+                cMI_values{i}(1,t) = H_AC{1}(t) -  H_ABC{1}(t);
         end
     end
 end

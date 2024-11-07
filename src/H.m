@@ -30,10 +30,6 @@ function [entropies, entropies_naive, entropies_nullDist, prob_dists] = H(inputs
 %              - bias:             Specifies the bias correction method to be used.
 %                                  'naive'                      :(default) - No correction applied.
 %                                  'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
-%                                  'ShuffSub'                   :Shuffle Substraction (need to specify shuff as number of shufflings).
-%                                  'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
-%                                  'pt'                         :Panzeri-Treves bias correction (Panzeri and Treves 1996).
-%                                  'bub'                        :best upper bound(Paninsky, 2003)
 %                                  Users can also define their own custom bias correction method
 %                                  (type 'help correction' for more information)
 %  
@@ -197,7 +193,7 @@ else
     entropies_nullDist = 0;
 end 
 
-if ~strcmp(corr, 'naive') &&  ~strcmp(corr, 'bub')
+if ~strcmp(corr, 'naive') &&  ~strcmp(corr, 'bub') &&  ~strcmp(corr, 'pt')
     [entropies, entropies_naive, entropies_shuffAll] = correction(inputs_1d, reqOutputs, corr, corefunc, opts);
     if ~iscell(entropies_nullDist)
         entropies_nullDist = entropies_shuffAll;

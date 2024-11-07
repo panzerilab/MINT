@@ -61,7 +61,7 @@ classdef test_FIT < matlab.unittest.TestCase
             Y(:,1:(nTimepoints/2),:) = noiseStr*randn(1,nTimepoints/2, nTrials);
             Y(:, (nTimepoints/2 + 1):nTimepoints, :) = X(:, (nTimepoints/2 + 1):nTimepoints, :) + noiseStr * randn(1, nTimepoints/2, nTrials);          
             opts.supressWarnings = true;
-            opts.bias = 'qe';
+            opts.bias = 'qe_shuffSub';
             opts.xtrp = 10;
             opts.bin_method = {'eqpop','eqpop', 'none'};
             opts.n_bins = {3, 3};

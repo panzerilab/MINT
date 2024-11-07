@@ -241,7 +241,7 @@ for var = 1:nVars
                         error('binningUserEdges:Invalidedges. At least one valid userEdges must be specified for var (%d) in dimension (%d).', var, dim);
                     end
 
-                case 'eqpop'
+                case 'eqpop'                    
                     data_tmp = data(dim, :);
                     unique_vals_dim = unique(data_tmp);
                     N = size(data_tmp,2);
@@ -259,7 +259,7 @@ for var = 1:nVars
                         elseif length(size(data))== 2
                             data_binned(dim,:) = data_tmp;
                         elseif length(size(data))== 3
-                            data_binned(dim,:,:) = data_tmp;
+                            data_binned(dim,:,:) = data(dim, :,:);
                         end
                         continue;
                     end

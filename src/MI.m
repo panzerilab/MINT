@@ -11,8 +11,8 @@ function [MI_values, MI_naive, MI_nullDist] = MI(inputs, varargin)
 %                          nDims X (nTimepoints X) nTrials
 %             - inputs{2}: Second input data (B) with dimensions
 %                          nDims X (nTimepoints X) nTrials
-%             -> In cases where the input is provided as a time series, the outputs 
-%                will be computed for each time point, resulting in outputs that are 
+%             -> In cases where the input is provided as a time series, the outputs
+%                will be computed for each time point, resulting in outputs that are
 %                also represented as time series
 %
 %   - reqOutputs: A cell array of strings specifying which entropies to compute.
@@ -35,7 +35,7 @@ function [MI_values, MI_naive, MI_nullDist] = MI(inputs, varargin)
 %                                  'shuffCorr'                  :correction using stimulus-conditioned shuffling (Panzeri et al., 2007)
 %                                  Users can also define their own custom bias correction method
 %                                  (type 'help correction' for more information)
-%  
+%
 %              - bin_method:       Cell array specifying the binning method to be applied.
 %                                  'none'      : (default) - No binning applied.
 %                                  'eqpop'     : Equal population binning.
@@ -44,7 +44,7 @@ function [MI_values, MI_naive, MI_nullDist] = MI(inputs, varargin)
 %                                  Users can also define their own custom binning method
 %                                  If one entry is provided, it will be applied to both A and B.
 %                                  (type 'help binning' for more information).
-%  
+%
 %              - n_bins:           Specifies the number of bins to use for binning.
 %                                  It can be a single integer or a cell array with one or two entries.
 %                                  Default number of bins is {3}.
@@ -53,16 +53,16 @@ function [MI_values, MI_naive, MI_nullDist] = MI(inputs, varargin)
 %                                  based on the specified inputs and core function.
 %                                  When this option is enabled, the following can be specified:
 %                                   - `n_samples`: The number of null samples to generate (default: 100).
-%                                   - 'shuffling': Additional shuffling options to determine the variables to be 
+%                                   - 'shuffling': Additional shuffling options to determine the variables to be
 %                                      shuffled during the computation of the null distribution (default: {'A'}).
 %                                      (type 'help hShuffle' for more information).
-% 
+%
 %              - suppressWarnings:  Boolean (true/false) to suppress warning messages.
 %                                   Default is false, meaning warnings will be shown.
 %
 %              - NaN_handling:     Specifies how NaN values should be handled in the data.
 %                                  Options include:
-%                                  'removeTrial' : Removes trials containing NaN in any variable 
+%                                  'removeTrial' : Removes trials containing NaN in any variable
 %                                                  from all input data.
 %                                  'error'       : (default) Throws an error if NaN values are detected.
 %
@@ -129,22 +129,72 @@ if any(~isMember)
     error('MI:invalidOutput', msg);
 end
 
+
 DimsA = size(inputs{1});
-if length(DimsA) > 2
-    nTimepointsA = DimsA(2);
-else
-    nTimepointsA = 1;
-end
 DimsB = size(inputs{2});
-if length(DimsB) > 2
-    nTimepointsB = DimsB(2);
-else
-    nTimepointsB = 1;
+nTrials = DimsA(end);
+if DimsA(end) ~= DimsB(end)
+    msg = sprintf('The number of trials for A (%d) and B (%d) are not consistent. Ensure both variables have the same number of trials.',DimsA(end),DimsB(end));
+    error('MI:InvalidInput', msg);
 end
-nTimepoints = max(nTimepointsA, nTimepointsB);
+
+if length(DimsA) > 2 || length(DimsB) > 2
+    if length(DimsA) > 2 && length(DimsB) <= 2
+        inputs{2} = reshape(inputs{2}, [DimsB(1), 1, DimsB(2)]);
+        inputs{2} = repmat(inputs{2}, [1, DimsA(2), 1]);
+    elseif length(DimsB) > 2 && length(DimsA) <= 2
+        inputs{1} = reshape(inputs{1}, [DimsA(1), 1, DimsA(2)]);
+        inputs{1} = repmat(inputs{1}, [1, DimsB(2), 1]);
+    end
+    opts.timeseries = true;
+    nTimepoints = size(inputs{1},2);
+else
+    nTimepoints = 1;
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%               Step 2: Prepare Data (binning/reduce dimensions)                %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~opts.isBinned 
+    inputs_b = binning(inputs,opts);
+    opts.isBinned = true;
+else
+    inputs_b = inputs;
+end
+
+inputs_1d = inputs_b;
+if DimsA(1) > 1
+    inputs_1d{1} = reduce_dim(inputs_b{1}, 1);
+    if  any(strcmp(reqOutputs,'Hlin(A)')) || any(strcmp(reqOutputs,'Hind(A)')) || any(strcmp(reqOutputs, 'Hind(A|B)'))
+        inputs_1d{3} = inputs_b{1};
+    end 
+end
+if DimsB(1) > 1
+    inputs_1d{2} = reduce_dim(inputs_b{2}, 1);
+end
+if DimsA(2:end) ~= DimsB(2:end)
+    msg = 'Inconsistent sizes of A and B';
+    error('H:inconsistentSizes', msg);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%        Step 2: Compute required Entropies for the requested Outputs           %
+%                    Step 3: Bias correction if requested                     %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+corr = opts.bias;
+if opts.computeNulldist == true
+    nullDist_opts = opts;
+    nullDist_opts.computeNulldist = false;
+    MI_nullDist = create_nullDist(inputs_b, reqOutputs, @MI, nullDist_opts);
+else
+    MI_nullDist = 0;
+end
+
+if ~strcmp(corr, 'naive') && ~strcmp(corr, 'bub') && ~strcmp(corr, 'pt')
+    [MI_values, MI_naive] = correction(inputs_b, reqOutputs, corr,  @MI, opts);
+    return
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%        Step 4: Compute required Entropies for the requested Outputs           %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 entropy_dependencies = struct( ...
     'I_A_B', {{'H(A)', 'H(A|B)'}}, ...
@@ -187,376 +237,91 @@ for ind = 1:length(indices)
             required_entropies = [required_entropies, entropy_dependencies.Icdsh_A_B{:}];
     end
 end
-required_entropies = unique(required_entropies);
-corr = opts.bias;
 opts_entropies = opts;
 opts_entropies.computeNulldist = false;
-%opts_entropies.isBinned = false;
-if strcmp(opts.bias, 'shuffCorr')
-    [MI_values, MI_naive, MI_nullDist] = correction(inputs, reqOutputs, corr, @MI, opts_entropies);
-    return
-else 
-    MI_nullDist = 0;
-end 
-[H_values, H_naive, H_shuff_all] = H(inputs, required_entropies, opts_entropies);
+required_entropies = unique(required_entropies);
+[H_values] = H(inputs_b, required_entropies, opts_entropies);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                  Step 3: Compute requested Output Values                      %
+%                  Step 5: Compute requested Output Values                      %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 % Initialize cell for MI values
 MI_values = cell(1, length(reqOutputs));
 MI_naive = cell(1, length(reqOutputs));
-
-
 for t = 1:nTimepoints
-    if iscell(H_shuff_all)
-        for i = 1:length(H_values)
-             H_t_shuff_all{i} = H_shuff_all{i}(:, t);
-        end
-    end
     for i = 1:length(indices)
         idx = indices(i);
-        nOut = nargout;
         switch possibleOutputs{idx}
             case 'I(A;B)'
-                % I(A;B) = H(A) - H(A|B)
-                %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
-                    H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
-                    H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
-                    MI_naive{i}(1,t) = H_A_naive - H_A_B_naive;
-
-                    % Loop through shuffled values for this timepoint
-                    for shuffIdx = 1:opts.shuff
-                        H_A_B_shuff = H_t_shuff_all{strcmp(required_entropies, 'H(A|B)')}(shuffIdx);
-                        MI_shuff_all{i}(shuffIdx, t) = H_A_naive - H_A_B_shuff;
-                    end
-                    MI_values{i}(1,t) = MI_naive{i}(1,t) - mean(MI_shuff_all{i}(:, t));
-                    nOut = 1;
-                else
-                    H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
-                    H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
-                    MI_values{i}(1,t) = H_A - H_A_B;
-                end
-                %____________________________________________________________________________________________%
-                if nOut > 1
-                    H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
-                    H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
-                    MI_naive{i}(1,t) = H_A_naive - H_A_B_naive;
-
-                end
+                H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
+                H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
+                MI_values{i}(1,t) = H_A - H_A_B;
             case 'Ish(A;B)'
                 % Ish(A;B) = H(A) - Hind(A|B) + Hsh(A|B) - H(A|B)
-                %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
-                    H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
-                    Hind_A_B_naive = H_naive{strcmp(required_entropies, 'Hind(A|B)')}(t);
-                    Hsh_A_B_naive = H_naive{strcmp(required_entropies, 'Hsh(A|B)')}(t);
-                    H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
-                    MI_naive{i}(1,t) = H_A_naive - Hind_A_B_naive + Hsh_A_B_naive - H_A_B_naive;
-                    for shuffIdx = 1:opts.shuff
-                        Hind_A_B_shuff = H_t_shuff_all{strcmp(required_entropies, 'Hind(A|B)')}(shuffIdx);
-                        Hsh_A_B_shuff = H_t_shuff_all{strcmp(required_entropies, 'Hsh(A|B)')}(shuffIdx);
-                        H_A_B_shuff = H_t_shuff_all{strcmp(required_entropies, 'H(A|B)')}(shuffIdx);
-                        MI_shuff_all{i}(shuffIdx, t) = H_A_naive - Hind_A_B_shuff + Hsh_A_B_shuff - H_A_B_shuff;
-                    end
-                    MI_values{i}(1,t) = MI_naive{i}(1,t) - mean(MI_shuff_all{i}(:, t));
-                    nOut = 1;
-                else
-                    H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
-                    Hind_A_B = H_values{strcmp(required_entropies, 'Hind(A|B)')}(t);
-                    Hsh_A_B = H_values{strcmp(required_entropies, 'Hsh(A|B)')}(t);
-                    H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
-                    MI_values{i}(1,t) = H_A - Hind_A_B + Hsh_A_B - H_A_B;
-                end
-                %____________________________________________________________________________________________%
-                if nOut > 1
-                    H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
-                    Hind_A_B_naive = H_naive{strcmp(required_entropies, 'Hind(A|B)')}(t);
-                    Hsh_A_B_naive = H_naive{strcmp(required_entropies, 'Hsh(A|B)')}(t);
-                    H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
-                    MI_naive{i}(1,t) = H_A_naive - Hind_A_B_naive + Hsh_A_B_naive - H_A_B_naive;
-
-                end
-
+                H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
+                Hind_A_B = H_values{strcmp(required_entropies, 'Hind(A|B)')}(t);
+                Hsh_A_B = H_values{strcmp(required_entropies, 'Hsh(A|B)')}(t);
+                H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
+                MI_values{i}(1,t) = H_A - Hind_A_B + Hsh_A_B - H_A_B;
             case 'Ilin(A;B)'
                 % I_lin(A;B) = Hlin(A) - Hind(A|B)
-                %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
-                    Hlin_A_naive = H_naive{strcmp(required_entropies, 'Hlin(A)')}(t);
-                    Hind_A_B_naive = H_naive{strcmp(required_entropies, 'Hind(A|B)')}(t);
-                    MI_naive{i}(1,t) = Hlin_A_naive - Hind_A_B_naive;
-                    for shuffIdx = 1:opts.shuff
-                        Hind_A_B_shuff = H_t_shuff_all{strcmp(required_entropies, 'Hind(A|B)')}(shuffIdx);
-                        MI_shuff_all{i}(shuffIdx, t) = Hlin_A_naive - Hind_A_B_shuff;
-                    end
-                    MI_values{i}(1,t) = MI_naive{i}(1,t) - mean(MI_shuff_all{i}(:, t));
-                    nOut = 1;
-                else
-                    Hlin_A = H_values{strcmp(required_entropies, 'Hlin(A)')}(t);
-                    Hind_A_B = H_values{strcmp(required_entropies, 'Hind(A|B)')}(t);
-                    MI_values{i}(1,t) = Hlin_A - Hind_A_B;
-                end
-                %____________________________________________________________________________________________%
-                if nOut > 1
-                    Hlin_A_naive = H_naive{strcmp(required_entropies, 'Hlin(A)')}(t);
-                    Hind_A_B_naive = H_naive{strcmp(required_entropies, 'Hind(A|B)')}(t);
-                    MI_naive{i}(1,t) = Hlin_A_naive - Hind_A_B_naive;
-
-                end
-
+                Hlin_A = H_values{strcmp(required_entropies, 'Hlin(A)')}(t);
+                Hind_A_B = H_values{strcmp(required_entropies, 'Hind(A|B)')}(t);
+                MI_values{i}(1,t) = Hlin_A - Hind_A_B;
             case 'coI(A;B)'
                 % coI(A;B) = H(A) - H(A|B) - Hlin(A) + Hind(A|B)
-                %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
-                    H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
-                    H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
-                    Hlin_A_naive = H_naive{strcmp(required_entropies, 'Hlin(A)')}(t);
-                    Hind_A_B_naive = H_naive{strcmp(required_entropies, 'Hind(A|B)')}(t);
-                    MI_naive{i}(1,t) = H_A_naive - H_A_B_naive - Hlin_A_naive + Hind_A_B_naive;
-                    for shuffIdx = 1:opts.shuff
-                        H_A_B_shuff = H_t_shuff_all{strcmp(required_entropies, 'H(A|B)')}(shuffIdx);
-                        Hind_A_B_shuff = H_t_shuff_all{strcmp(required_entropies, 'Hind(A|B)')}(shuffIdx);
-                        MI_shuff_all{i}(shuffIdx, t) = H_A_naive - H_A_B_shuff - Hlin_A_naive + Hind_A_B_shuff;
-                    end
-                    MI_values{i}(1,t) = MI_naive{i}(1,t) - mean(MI_shuff_all{i}(:, t));
-                    nOut = 1;
-                else
-                    H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
-                    Hlin_A = H_values{strcmp(required_entropies, 'Hlin(A)')}(t);
-                    H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
-                    Hind_A_B = H_values{strcmp(required_entropies, 'Hind(A|B)')}(t);
-                    MI_values{i}(1,t) = H_A - H_A_B - Hlin_A + Hind_A_B;
-                end
-                %____________________________________________________________________________________________%
-                if nOut > 1
-                    H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
-                    H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
-                    Hlin_A_naive = H_naive{strcmp(required_entropies, 'Hlin(A)')}(t);
-                    Hind_A_B_naive = H_naive{strcmp(required_entropies, 'Hind(A|B)')}(t);
-                    MI_naive{i}(1,t) = H_A_naive - H_A_B_naive - Hlin_A_naive + Hind_A_B_naive;
-
-                end
+                H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
+                Hlin_A = H_values{strcmp(required_entropies, 'Hlin(A)')}(t);
+                H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
+                Hind_A_B = H_values{strcmp(required_entropies, 'Hind(A|B)')}(t);
+                MI_values{i}(1,t) = H_A - H_A_B - Hlin_A + Hind_A_B;
             case 'coIsh(A;B)'
                 % coIsh(A;B) = H(A) + Hsh(A|B) - H(A|B) - Hlin(A)
-                %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
-                    H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
-                    Hsh_A_B_naive = H_naive{strcmp(required_entropies, 'Hsh(A|B)')}(t);
-                    H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
-                    Hlin_A_naive = H_naive{strcmp(required_entropies, 'Hlin(A)')}(t);
-                    MI_naive{i}(1,t) = H_A_naive + Hsh_A_B_naive - H_A_B_naive - Hlin_A_naive;
-                    for shuffIdx = 1:opts.shuff
-                        Hsh_A_B_shuff = H_t_shuff_all{strcmp(required_entropies, 'Hsh(A|B)')}(shuffIdx);
-                        H_A_B_shuff = H_t_shuff_all{strcmp(required_entropies, 'H(A|B)')}(shuffIdx);
-                        MI_shuff_all{i}(shuffIdx, t) = H_A_naive + Hsh_A_B_shuff - H_A_B_shuff - Hlin_A_naive;
-                    end
-                    MI_values{i}(1,t) = MI_naive{i}(1,t) - mean(MI_shuff_all{i}(:, t));
-                    nOut = 1;
-                else
-                    H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
-                    Hlin_A = H_values{strcmp(required_entropies, 'Hlin(A)')}(t);
-                    Hsh_A_B = H_values{strcmp(required_entropies, 'Hsh(A|B)')}(t);
-                    H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
-                    MI_values{i}(1,t) = H_A + Hsh_A_B - H_A_B - Hlin_A;
-                end
-                %____________________________________________________________________________________________%
-                if nOut > 1
-                    H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
-                    Hsh_A_B_naive = H_naive{strcmp(required_entropies, 'Hsh(A|B)')}(t);
-                    H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
-                    Hlin_A_naive = H_naive{strcmp(required_entropies, 'Hlin(A)')}(t);
-                    MI_naive{i}(1,t) = H_A_naive + Hsh_A_B_naive - H_A_B_naive - Hlin_A_naive;
-
-                end
+                H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
+                Hlin_A = H_values{strcmp(required_entropies, 'Hlin(A)')}(t);
+                Hsh_A_B = H_values{strcmp(required_entropies, 'Hsh(A|B)')}(t);
+                H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
+                MI_values{i}(1,t) = H_A + Hsh_A_B - H_A_B - Hlin_A;
             case 'Iss(A)'
                 % Iss(A) = Hind(A) - Hlin(A)
-                %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
-                    Hind_A_naive = H_naive{strcmp(required_entropies, 'Hind(A)')}(t);
-                    Hlin_A_naive = H_naive{strcmp(required_entropies, 'Hlin(A)')}(t);
-                    MI_naive{i}(1,t) = Hind_A_naive - Hlin_A_naive;
-                    for shuffIdx = 1:opts.shuff
-                        Hind_A_shuff= H_t_shuff_all{strcmp(required_entropies, 'Hind(A)')}(shuffIdx);
-                        MI_shuff_all{i}(shuffIdx, t) = Hind_A_shuff - Hlin_A_naive;
-                    end
-                    MI_values{i}(1,t) = MI_naive{i}(1,t) - mean(MI_shuff_all{i}(:, t));
-                    nOut = 1;
-                else
-                    Hind_A = H_values{strcmp(required_entropies, 'Hind(A)')}(t);
-                    Hlin_A = H_values{strcmp(required_entropies, 'Hlin(A)')}(t);
-                    MI_values{i}(1,t) = Hind_A - Hlin_A;
-                end
-                %____________________________________________________________________________________________%
-                if nOut > 1
-                    Hind_A_naive = H_naive{strcmp(required_entropies, 'Hind(A)')}(t);
-                    Hlin_A_naive = H_naive{strcmp(required_entropies, 'Hlin(A)')}(t);
-                    MI_naive{i}(1,t) = Hind_A_naive - Hlin_A_naive;
-                end
+                Hind_A = H_values{strcmp(required_entropies, 'Hind(A)')}(t);
+                Hlin_A = H_values{strcmp(required_entropies, 'Hlin(A)')}(t);
+                MI_values{i}(1,t) = Hind_A - Hlin_A;
             case 'Ic(A;B)'% possibleOutputs = { 'H(A|B)', 'Hind(A|B)', 'Hsh(A|B)'};
                 % Ic(A;B) = H(A) - H(A|B) + Hind(A|B) - Hind(A)
-                %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
-                    H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
-                    H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
-                    Hind_A_B_naive = H_naive{strcmp(required_entropies, 'Hind(A|B)')}(t);
-                    Hind_A_naive = H_naive{strcmp(required_entropies, 'Hind(A)')}(t);
-                    MI_naive{i}(1,t) = H_A_naive - H_A_B_naive + Hind_A_B_naive - Hind_A_naive;
-                    for shuffIdx = 1:opts.shuff
-                        Hind_A_shuff = H_t_shuff_all{strcmp(required_entropies, 'Hind(A)')}(shuffIdx);
-                        H_A_B_shuff = H_t_shuff_all{strcmp(required_entropies, 'H(A|B)')}(shuffIdx);
-                        Hind_A_B_shuff = H_t_shuff_all{strcmp(required_entropies, 'Hind(A|B)')}(shuffIdx);
-                        MI_shuff_all{i}(shuffIdx, t) = H_A_naive - H_A_B_shuff + Hind_A_B_shuff - Hind_A_shuff;
-                    end
-                    MI_values{i}(1,t) = MI_naive{i}(1,t) - mean(MI_shuff_all{i}(:, t));
-                    nOut = 1;
-                else
-                    H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
-                    H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
-                    Hind_A_B = H_values{strcmp(required_entropies, 'Hind(A|B)')}(t);
-                    Hind_A = H_values{strcmp(required_entropies, 'Hind(A)')}(t);
-                    MI_values{i}(1,t) = H_A - H_A_B + Hind_A_B - Hind_A;
-                end
-                %____________________________________________________________________________________________%
-                if nOut > 1
-                    H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
-                    H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
-                    Hind_A_B_naive = H_naive{strcmp(required_entropies, 'Hind(A|B)')}(t);
-                    Hind_A_naive = H_naive{strcmp(required_entropies, 'Hind(A)')}(t);
-                    MI_naive{i}(1,t) = H_A_naive - H_A_B_naive + Hind_A_B_naive - Hind_A_naive;
-                end
+                H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
+                H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
+                Hind_A_B = H_values{strcmp(required_entropies, 'Hind(A|B)')}(t);
+                Hind_A = H_values{strcmp(required_entropies, 'Hind(A)')}(t);
+                MI_values{i}(1,t) = H_A - H_A_B + Hind_A_B - Hind_A;
             case 'Icsh(A;B)'
                 % Icsh(A;B) = H(A) + Hsh(A|B) - H(A|B) - Hind(A)
-                %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
-                    H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
-                    Hsh_A_B_naive = H_naive{strcmp(required_entropies, 'Hsh(A|B)')}(t);
-                    H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
-                    Hind_A_naive = H_naive{strcmp(required_entropies, 'Hind(A)')}(t);
-                    MI_naive{i}(1,t) = H_A_naive + Hsh_A_B_naive - H_A_B_naive - Hind_A_naive;
-                    for shuffIdx = 1:opts.shuff
-                        Hind_A_shuff = H_t_shuff_all{strcmp(required_entropies, 'Hind(A)')}(shuffIdx);
-                        Hsh_A_B_shuff = H_t_shuff_all{strcmp(required_entropies, 'Hsh(A|B)')}(shuffIdx);
-                        H_A_B_shuff = H_t_shuff_all{strcmp(required_entropies, 'H(A|B)')}(shuffIdx);
-                        MI_shuff_all{i}(shuffIdx, t) = H_A_naive + Hsh_A_B_shuff - H_A_B_shuff - Hind_A_shuff;
-                    end
-                    MI_values{i}(1,t) = MI_naive{i}(1,t) - mean(MI_shuff_all{i}(:, t));
-                    nOut = 1;
-                else
-                    H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
-                    Hsh_A_B = H_values{strcmp(required_entropies, 'Hsh(A|B)')}(t);
-                    H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
-                    Hind_A = H_values{strcmp(required_entropies, 'Hind(A)')}(t);
-                    MI_values{i}(1,t) = H_A + Hsh_A_B - H_A_B - Hind_A;
-                end
-                %____________________________________________________________________________________________%
-                if nOut > 1
-                    H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
-                    Hsh_A_B_naive = H_naive{strcmp(required_entropies, 'Hsh(A|B)')}(t);
-                    H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
-                    Hind_A_naive = H_naive{strcmp(required_entropies, 'Hind(A)')}(t);
-                    MI_naive{i}(1,t) = H_A_naive + Hsh_A_B_naive - H_A_B_naive - Hind_A_naive;
-                end
+                H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
+                Hsh_A_B = H_values{strcmp(required_entropies, 'Hsh(A|B)')}(t);
+                H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
+                Hind_A = H_values{strcmp(required_entropies, 'Hind(A)')}(t);
+                MI_values{i}(1,t) = H_A + Hsh_A_B - H_A_B - Hind_A;
             case 'Ici(A;B)'
                 % Ici(A;B) = Chi(A) - Hind(A)
-                %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
-                    Chi_A_naive = H_naive{strcmp(required_entropies, 'Chi(A)')}(t);
-                    Hind_A_naive = H_naive{strcmp(required_entropies, 'Hind(A)')}(t);
-                    MI_naive{i}(1,t) = Chi_A_naive - Hind_A_naive;
-                    for shuffIdx = 1:opts.shuff
-                        Hind_A_shuff = H_t_shuff_all{strcmp(required_entropies, 'Hind(A)')}(shuffIdx);
-                        Chi_A_shuff = H_t_shuff_all{strcmp(required_entropies, 'Chi(A)')}(shuffIdx);
-                        MI_shuff_all{i}(shuffIdx, t) = Chi_A_shuff - Hind_A_shuff;
-                    end
-                    MI_values{i}(1,t) = MI_naive{i}(1,t) - mean(MI_shuff_all{i}(:, t));
-                    nOut = 1;
-                else
-                    Chi_A = H_values{strcmp(required_entropies, 'Chi(A)')}(t);
-                    Hind_A = H_values{strcmp(required_entropies, 'Hind(A)')}(t);
-                    MI_values{i}(1,t) = Chi_A - Hind_A;
-                end
-                %____________________________________________________________________________________________%
-                if nOut > 1
-                    Chi_A_naive = H_naive{strcmp(required_entropies, 'Chi(A)')}(t);
-                    Hind_A_naive = H_naive{strcmp(required_entropies, 'Hind(A)')}(t);
-                    MI_naive{i}(1,t) = Chi_A_naive - Hind_A_naive;
-                end
+                Chi_A = H_values{strcmp(required_entropies, 'Chi(A)')}(t);
+                Hind_A = H_values{strcmp(required_entropies, 'Hind(A)')}(t);
+                MI_values{i}(1,t) = Chi_A - Hind_A;
             case 'Icd(A;B)'
                 % Icd(A;B) = H(A) - H(A|B) - Chi(A) + Hind(A|B)
-                %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
-                    H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
-                    H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
-                    Chi_A_naive = H_naive{strcmp(required_entropies, 'Chi(A)')}(t);
-                    Hind_A_B_naive = H_naive{strcmp(required_entropies, 'Hind(A|B)')}(t);
-                    MI_naive{i}(1,t) = H_A_naive - H_A_B_naive - Chi_A_naive + Hind_A_B_naive;
-                    for shuffIdx = 1:opts.shuff
-                        Chi_A_shuff = H_t_shuff_all{strcmp(required_entropies, 'Chi(A)')}(shuffIdx);
-                        H_A_B_shuff = H_t_shuff_all{strcmp(required_entropies, 'H(A|B)')}(shuffIdx);
-                        Hind_A_B_shuff = H_t_shuff_all{strcmp(required_entropies, 'Hind(A|B)')}(shuffIdx);
-                        MI_shuff_all{i}(shuffIdx, t)= H_A_naive - H_A_B_shuff - Chi_A_shuff+ Hind_A_B_shuff;
-                    end
-                    MI_values{i}(1,t) = MI_naive{i}(1,t) - mean(MI_shuff_all{i}(:, t));
-                    nOut = 1;
-                else
-                    H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
-                    H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
-                    Chi_A = H_values{strcmp(required_entropies, 'Chi(A)')}(t);
-                    Hind_A_B = H_values{strcmp(required_entropies, 'Hind(A|B)')}(t);
-                    MI_values{i}(1,t) = H_A - H_A_B - Chi_A + Hind_A_B;
-                end
-                %____________________________________________________________________________________________%
-                if nOut > 1
-                    H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
-                    H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
-                    Chi_A_naive = H_naive{strcmp(required_entropies, 'Chi(A)')}(t);
-                    Hind_A_B_naive = H_naive{strcmp(required_entropies, 'Hind(A|B)')}(t);
-                    MI_naive{i}(1,t) = H_A_naive - H_A_B_naive - Chi_A_naive + Hind_A_B_naive;
-                end
+                H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
+                H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
+                Chi_A = H_values{strcmp(required_entropies, 'Chi(A)')}(t);
+                Hind_A_B = H_values{strcmp(required_entropies, 'Hind(A|B)')}(t);
+                MI_values{i}(1,t) = H_A - H_A_B - Chi_A + Hind_A_B;
             case 'Icdsh(A;B)'
                 % Icdsh(A;B) = H(A) + Hsh(A|B) - H(A|B) - Chi(A)
-                %____________________________________________________________________________________________%
-                if strcmp(opts.bias, 'shuffSub') ||strcmp(opts.bias,'qe_shuffSub') ||strcmp(opts.bias,'le_shuffSub')
-                    H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
-                    Hsh_A_B_naive = H_naive{strcmp(required_entropies, 'Hsh(A|B)')}(t);
-                    H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
-                    Chi_A_naive = H_naive{strcmp(required_entropies, 'Chi(A)')}(t);
-                    MI_naive{i}(1,t) = H_A_naive + Hsh_A_B_naive - H_A_B_naive - Chi_A_naive;
-                    for shuffIdx = 1:opts.shuff
-                        Hsh_A_B_shuff = H_t_shuff_all{strcmp(required_entropies, 'Hsh(A|B)')}(shuffIdx);
-                        H_A_B_shuff = H_t_shuff_all{strcmp(required_entropies, 'H(A|B)')}(shuffIdx);
-                        Chi_A_shuff = H_t_shuff_all{strcmp(required_entropies, 'Chi(A)')}(shuffIdx);
-                        MI_shuff_all{i}(shuffIdx, t) = H_A_naive + Hsh_A_B_shuff - H_A_B_shuff - Chi_A_shuff;
-                    end
-                    MI_values{i}(1,t) = MI_naive{i}(1,t) - mean(MI_shuff_all{i}(:, t));
-                    nOut = 1;
-                else
-                    H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
-                    Hsh_A_B = H_values{strcmp(required_entropies, 'Hsh(A|B)')}(t);
-                    H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
-                    Chi_A = H_values{strcmp(required_entropies, 'Chi(A)')}(t);
-                    MI_values{i}(1,t) = H_A + Hsh_A_B - H_A_B - Chi_A;
-                end
-                %____________________________________________________________________________________________%
-                if nOut > 1
-                    H_A_naive = H_naive{strcmp(required_entropies, 'H(A)')}(t);
-                    Hsh_A_B_naive = H_naive{strcmp(required_entropies, 'Hsh(A|B)')}(t);
-                    H_A_B_naive = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
-                    Chi_A_naive = H_naive{strcmp(required_entropies, 'Chi(A)')}(t);
-                    MI_naive{i}(1,t) = H_A_naive + Hsh_A_B_naive - H_A_B_naive - Chi_A_naive;
-                end
+                H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
+                Hsh_A_B = H_values{strcmp(required_entropies, 'Hsh(A|B)')}(t);
+                H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
+                Chi_A = H_values{strcmp(required_entropies, 'Chi(A)')}(t);
+                MI_values{i}(1,t) = H_A + Hsh_A_B - H_A_B - Chi_A;
         end
-
-        if opts.computeNulldist
-            nullDist_opts = opts;
-            nullDist_opts.computeNulldist = false;
-            MI_nullDist = create_nullDist(inputs, reqOutputs, @MI, nullDist_opts);
-        elseif strcmp(opts.bias, 'shuffSub') && ~opts.computeNulldist
-            MI_nullDist = MI_shuff_all;
-        else
-            MI_nullDist = 0;
-        end 
     end
 end
 

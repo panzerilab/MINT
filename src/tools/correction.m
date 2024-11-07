@@ -129,40 +129,33 @@ end
 if nargin > 5
     inputs_nD = varargin{2};
 end
-if ~opts.isBinned
-    inputs_b = binning(inputs, opts);
-    opts.isBinned = true;
-else
-    inputs_b = inputs;
-end
+
+
 shuff_all = 0;
 
 switch corr
-    case {'qe','le' 'qe_shuffSub', 'le_shuffSub'}        
-        if strcmp(corr, 'qe_shuff') || strcmp(corr, 'le_shuffSub')            
-            [corrected_v, naive_v, shuff_all] = extrapolation(inputs_b, reqOutputs, corr, corefunc, opts);
-        else
-            [corrected_v, naive_v, shuff_all] = extrapolation(inputs_b, reqOutputs, corr, corefunc, opts);
-        end
+    case {'qe','le' }
+        [corrected_v, naive_v] = extrapolation(inputs, reqOutputs, corr, corefunc, opts);
+    case {'qe_shuffSub', 'le_shuffSub'}
+        [corrected_v, naive_v] = shuffSub_extrapolation(inputs, reqOutputs, corr, corefunc, opts);
     case 'shuffSub'
-        [corrected_v, naive_v, shuff_all] = shuffle_subtraction(inputs_b, reqOutputs, corefunc, opts);
+        [corrected_v, naive_v, shuff_all] = shuffle_subtraction(inputs, reqOutputs, corefunc, opts);
     case 'shuffCorr'
-        [corrected_v, naive_v] = shuffle_correction(inputs_b, reqOutputs, corefunc, opts);
+        [corrected_v, naive_v] = shuffle_correction(inputs, reqOutputs, corefunc, opts);
     otherwise
         func_handle = str2func(corr);
         if exist(corr, 'file') == 2
             % You can change the reqOutputs and inputs_b of your function here,
             % but make sure that it fits the output definition of this
             % function.
-            [corrected_v, naive_v] = feval(func_handle, inputs_b, reqOutputs, opts);       
+            [corrected_v, naive_v] = feval(func_handle, inputs, reqOutputs, opts);
         else
-           available_functions = {'qe', 'le', 'qe_shuffSub', 'le_shuffSub', 'shuffSub', 'pt', 'bub'};
+            available_functions = {'qe', 'le', 'qe_shuffSub', 'le_shuffSub', 'shuffSub', 'pt', 'bub'};
             msg = sprintf(['The function "%s" is not defined in the tools folder.\n', ...
                 'Available options are: %s.\n', ...
                 'You can define additional functions by defining your own correction function in a "%s" file in the tools folder.'], ...
                 corr, strjoin(available_functions, ', '), corr);
-
-            error('Correction:UndefinedFunction', msg);    
+            error('Correction:UndefinedFunction', msg);
         end
 end
 
