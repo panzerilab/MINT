@@ -33,6 +33,23 @@
 1. Before starting the installation make sure that all software requirements described above are satisfied.
 2. After this, open MATLAB, navigate to the main MINT directory, and run the script `BuildMINT.m`.
     - The script compiles the code that needs compiling, adds the required source files to MATLAB search path by adding a `StartupMINT.m` file in the MATLAB user home folder and by editing the default user `Startup.m` file and performs the required install tests. If all software requirements are satisfied the process should seamlessly finish without errors.
+    
+### Build with Docker
+1. If you have Docker installed, you can build the Dockerfile in this package by running 
+``` 
+docker build --build-arg ADDITIONAL_PRODUCTS="Statistics_and_Machine_Learning_Toolbox Optimization_Toolbox Parallel_Computing_Toolbox Communications_Toolbox DSP_System_Toolbox" -t matlab4mint:R2024b .
+```
+2. After the Docker image has been built with all the necessary toolboxes, run 
+```
+docker run --init -v /path/on/host:/home/matlab/shared -e MLM_LICENSE_FILE=27000@MyServerName matlab4mint:R2024b 
+``` 
+Where /path/on/host can be replaced with the directory in your computer where you can work persistently after the Docker image is used. If you do not know your license hostname, you can skip -e MLM_LICENSE_FILE=27000@MyServerName and you can login with your username and password when you are inside the container.
+3. Once inside the container, write
+```
+cd /home/matlab/MINT
+addpath(genpath('MINT'))
+run('BuildMINT.m')
+``` 
 
 ## License
 MINT is licensed under the GNU General Public License (GPL), version 3 or later.
