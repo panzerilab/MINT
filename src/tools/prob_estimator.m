@@ -185,7 +185,7 @@ for t = 1:max(1, nTimepoints)
 
     
     %% Joint Probability Distribution of B (p_B)
-    if any(strcmp(reqOutputs,'Pind(A|B)')) || any(strcmp(reqOutputs,'Psh(A|B)')) || any(strcmp(reqOutputs,'Psh(A)'))|| any(strcmp(reqOutputs,'P(B)'))|| any(strcmp(reqOutputs,'P(A|B)'))
+    if any(strcmp(reqOutputs,'Pind(A|B)')) || any(strcmp(reqOutputs,'Pind(A)')) ||any(strcmp(reqOutputs,'Psh(A|B)')) || any(strcmp(reqOutputs,'Psh(A)'))|| any(strcmp(reqOutputs,'P(B)'))|| any(strcmp(reqOutputs,'P(A|B)'))
         B_t = data_t.B;
         p_B = prob_estimator_simple(B_t);
     end
@@ -294,52 +294,52 @@ for t = 1:max(1, nTimepoints)
         % pind_A_Btest = (pind_AB' ./ p_B)';
         % pind_Atest = sum(pind_AB, 2);
         %
-        % UniqueA = unique(A_t);
-        % UniqueB = unique(B_t);
-        % plin_A_B = [];
-        % [~,edgesall] = histcounts(FullA_t, 'BinMethod','integers');
-        %
-        % nbinsA = {};
-        % for i=1:size(FullA_t,2)
-        %     nbinsA{i} =  1:length(unique(FullA_t(:,i)));
-        % end
-        % dim_to_collapse = size(FullA_t,2);
-        % [resps_grid{1:dim_to_collapse}] = ndgrid(nbinsA{:});
-        % resps_grid = reshape(cat(dim_to_collapse+1, resps_grid{:}), [], dim_to_collapse);
-        % resps_gridc = mat2cell(resps_grid', ones(1,size(resps_grid',1)), size(resps_grid',2));
-        % pind_A_B= [];
-        % for i=1:length(UniqueB)
-        %     stimA_t = FullA_t(B_t==UniqueB(i),:);
-        %     Ac = mat2cell(stimA_t', ones(1,size(stimA_t',1)), size(stimA_t',2));                 % Split Matrix Into Cells By Row
-        %     [hcell,~] = cellfun(@(X) histcounts(X',edgesall, 'Normalization', 'probability'), Ac, 'Uni',0);   % Do ‘histcounts’ On Each Column
-        %     hcell2 =cellfun(@(X, Y) X(Y), hcell, resps_gridc, 'Uni', 0);
-        %     condprob = cell2mat(hcell2);
-        %     pind_Ared_b = prod(condprob,1);
-        %     pind_A_B = [pind_A_B pind_Ared_b'];
-        % end
-        % % pind_A_B = plin_A_B;
-        % pind_AB = pind_A_B * p_B(p_B>0);
-        % zero_positions = find(p_B == 0);
-        % if length(p_B) > size(pind_A_B,2)
-        %     for zp=length(zero_positions)
-        %         % Define the row of zeros
-        %         new_col = zeros(size(pind_AB, 1),1);  % A col of zeros with the same number of rows as A
-        %         % Specify the location where you want to insert the new col
-        %         col_to_insert = zero_positions(zp);
-        %         % Insert the new col
-        %         if col_to_insert ==1
-        %             pind_AB = [new_col, pind_AB];
-        %         elseif col_to_insert == length(p_B)
-        %             pind_AB = [pind_AB, new_col];
-        %         else
-        %             pind_AB = [pind_AB(:, 1:col_to_insert-1), new_col, pind_AB(:, col_to_insert:end)];
-        %         end
-        %
-        %     end
-        % end
-        % pind_A = sum(pind_AB, 2);
-        pind_A = psh_A;
-        pind_A_B = psh_A_B;
+        UniqueA = unique(A_t);
+        UniqueB = unique(B_t);
+        plin_A_B = [];
+        [~,edgesall] = histcounts(FullA_t, 'BinMethod','integers');
+
+        nbinsA = {};
+        for k=1:size(FullA_t,2)
+            nbinsA{k} =  1:length(unique(FullA_t(:,k)));
+        end
+        dim_to_collapse = size(FullA_t,2);
+        [resps_grid{1:dim_to_collapse}] = ndgrid(nbinsA{:});
+        resps_grid = reshape(cat(dim_to_collapse+1, resps_grid{:}), [], dim_to_collapse);
+        resps_gridc = mat2cell(resps_grid', ones(1,size(resps_grid',1)), size(resps_grid',2));
+        pind_A_B= [];
+        for k=1:length(UniqueB)
+            stimA_t = FullA_t(B_t==UniqueB(k),:);
+            Ac = mat2cell(stimA_t', ones(1,size(stimA_t',1)), size(stimA_t',2));                 % Split Matrix Into Cells By Row
+            [hcell,~] = cellfun(@(X) histcounts(X',edgesall, 'Normalization', 'probability'), Ac, 'Uni',0);   % Do ‘histcounts’ On Each Column
+            hcell2 =cellfun(@(X, Y) X(Y), hcell, resps_gridc, 'Uni', 0);
+            condprob = cell2mat(hcell2);
+            pind_Ared_b = prod(condprob,1);
+            pind_A_B = [pind_A_B pind_Ared_b'];
+        end
+        % pind_A_B = plin_A_B;
+        pind_AB = pind_A_B * p_B(p_B>0);
+        zero_positions = find(p_B == 0);
+        if length(p_B) > size(pind_A_B,2)
+            for zp=length(zero_positions)
+                % Define the row of zeros
+                new_col = zeros(size(pind_AB, 1),1);  % A col of zeros with the same number of rows as A
+                % Specify the location where you want to insert the new col
+                col_to_insert = zero_positions(zp);
+                % Insert the new col
+                if col_to_insert ==1
+                    pind_AB = [new_col, pind_AB];
+                elseif col_to_insert == length(p_B)
+                    pind_AB = [pind_AB, new_col];
+                else
+                    pind_AB = [pind_AB(:, 1:col_to_insert-1), new_col, pind_AB(:, col_to_insert:end)];
+                end
+
+            end
+        end
+        pind_A = sum(pind_AB, 2);
+        % pind_A = psh_A;
+        % pind_A_B = psh_A_B;
     end
 
 
