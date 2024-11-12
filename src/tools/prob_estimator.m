@@ -187,6 +187,11 @@ for t = 1:max(1, nTimepoints)
     %% Joint Probability Distribution of B (p_B)
     if any(strcmp(reqOutputs,'Pind(A|B)')) || any(strcmp(reqOutputs,'Pind(A)')) ||any(strcmp(reqOutputs,'Psh(A|B)')) || any(strcmp(reqOutputs,'Psh(A)'))|| any(strcmp(reqOutputs,'P(B)'))|| any(strcmp(reqOutputs,'P(A|B)'))
         B_t = data_t.B;
+        unique_values = unique(B_t);
+        ranks = 1:length(unique_values); % Rank values in ascending order
+        ranked_B = arrayfun(@(x) ranks(unique_values == x), B_t);
+        B_t = ranked_B;
+
         p_B = prob_estimator_simple(B_t);
     end
 
@@ -210,7 +215,8 @@ for t = 1:max(1, nTimepoints)
 
     %% Joint Probability Distribution of A given B (p_A_B)
     if any(strcmp(reqOutputs,'P(A,B)')) ||any(strcmp(reqOutputs,'P(A|B)')) || any(strcmp(reqOutputs,'Psh(A|B)')) || any(strcmp(reqOutputs,'Pind(A|B)')) || any(strcmp(reqOutputs,'Psh(A)'))
-        B_t = data_t.B;
+        % B_t = data_t.B;
+        
         p_AB = prob_estimator_simple([A_t, B_t]);
     end
 
@@ -271,9 +277,9 @@ for t = 1:max(1, nTimepoints)
 
     %% Independent Conditional Joint Probability Distribution of A given B (pind_A_B)
     if any(strcmp(reqOutputs,'Pind(A|B)')) || any(strcmp(reqOutputs,'Pind(A)'))
-        % num_shuffles = 30;
+        % num_shuffles = 100;
         % psh_AB_sum = 0;  % Initialisierung der Summe für psh_AB
-        % for i = 1:num_shuffles
+        % for k = 1:num_shuffles
         %     shuffled_A = shuffle_core(B_t, FullA_t, 1, [1 0]);
         %     if size(shuffled_A, 2) > 1
         %         shuffled_A_1d = reduce_dim(shuffled_A', 1);
@@ -282,17 +288,17 @@ for t = 1:max(1, nTimepoints)
         %         shuffled_A_1d = shuffled_A;
         %     end
         %     psh_AB_tmp = prob_estimator_simple([shuffled_A_1d, B_t]);
-        %     if i > 1 && size(psh_AB_tmp,1)<size(psh_AB_sum,1)
+        %     if k > 1 && size(psh_AB_tmp,1)<size(psh_AB_sum,1)
         %         psh_AB_tmp = [psh_AB_tmp; zeros(size(psh_AB_sum,1)-size(psh_AB_tmp,1),size(psh_AB_tmp,2))];
         %     end
-        %     if i > 1 && size(psh_AB_tmp,1)>size(psh_AB_sum,1)
+        %     if k > 1 && size(psh_AB_tmp,1)>size(psh_AB_sum,1)
         %         psh_AB_sum = [psh_AB_sum; zeros(size(psh_AB_tmp,1)-size(psh_AB_sum,1),size(psh_AB_tmp,2))];
         %     end
         %     psh_AB_sum = psh_AB_sum + psh_AB_tmp;
         % end
-        % pind_AB = psh_AB_sum ./ num_shuffles;
-        % pind_A_Btest = (pind_AB' ./ p_B)';
-        % pind_Atest = sum(pind_AB, 2);
+        % pind_ABtest = psh_AB_sum ./ num_shuffles;
+        % pind_A_Btest = (pind_ABtest' ./ p_B)';
+        % pind_Atest = sum(pind_ABtest, 2);
         %
         UniqueA = unique(A_t);
         UniqueB = unique(B_t);
@@ -318,7 +324,10 @@ for t = 1:max(1, nTimepoints)
             pind_A_B = [pind_A_B pind_Ared_b'];
         end
         % pind_A_B = plin_A_B;
-        pind_AB = pind_A_B * p_B(p_B>0);
+        pind_AB = pind_A_B;% * p_B(p_B>0);
+        for rowi=1:length(UniqueA)
+            pind_AB(rowi,:) = pind_A_B(rowi,:) .* p_B(p_B>0)';
+        end
         zero_positions = find(p_B == 0);
         if length(p_B) > size(pind_A_B,2)
             for zp=length(zero_positions)
@@ -338,8 +347,7 @@ for t = 1:max(1, nTimepoints)
             end
         end
         pind_A = sum(pind_AB, 2);
-        % pind_A = psh_A;
-        % pind_A_B = psh_A_B;
+
     end
 
 
