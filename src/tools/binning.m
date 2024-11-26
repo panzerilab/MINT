@@ -255,11 +255,11 @@ for var = 1:nVars
                             warning('binningEqpop:Already (%d) bins at var (%d) in dimension (%d).', nbins(dim), var, dim);
                         end
                         if isscalar(size(data))
-                            data_binned(dim) = data_tmp;
+                            data_binned(dim) = replace_with_rank(data_tmp);
                         elseif length(size(data))== 2
-                            data_binned(dim,:) = data_tmp;
+                            data_binned(dim,:) = replace_with_rank(data_tmp);
                         elseif length(size(data))== 3
-                            data_binned(dim,:,:) = data(dim, :,:);
+                            data_binned(dim,:,:) = replace_with_rank(data(dim, :,:));
                         end
                         continue;
                     end
@@ -333,4 +333,14 @@ for var = 1:nVars
         inputs_b{var} = data_binned;
     end
 end
+end
+
+function rankElements = replace_with_rank(M)
+
+% Sort the elements
+sorted = sort(M(:));
+% Find the index from M to the sorted elements
+[~,index] = ismember(M(:),sorted);
+% Reshape to the original size
+rankElements = reshape(index,size(M));
 end
