@@ -99,8 +99,8 @@ else
     cond_input = varargin{3};
 end
 
-if ~isfield(opts, 'supressWarnings')
-    opts.supressWarnings = false;
+if ~isfield(opts, 'suppressWarnings')
+    opts.suppressWarnings = false;
 end
 if ~isfield(opts, 'dim_shuffle')
     opts.dim_shuffle = {'Trials'};

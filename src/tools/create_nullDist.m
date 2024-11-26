@@ -28,7 +28,7 @@ function null_distribution = create_nullDist(inputs, outputs, corefunc, varargin
 %               - 'shuffling': Cell with string specifiying what to shuffle (can be also more than one)(for help type "help hShuffle" function)(default: {'A'})
 %               - `parallel_sampling`: Boolean for enabling parallel sampling (default: false).
 %               - `dim_shuffle`: Specifies the dimension along which shuffling occurs (default: {'Trials'}).
-%               - `supressWarnings`: Boolean flag to suppress warnings during execution (default: false).
+%               - `suppressWarnings`: Boolean flag to suppress warnings during execution (default: false).
 %
 % Outputs:
 %   - null_distribution: A cell array containing the generated null distribution of outputs.
@@ -70,8 +70,8 @@ if nargin < 1
     error('createNullDistribution:notEnoughInput', msg);
 end
 opts = varargin{1};
-if ~isfield(opts, 'supressWarnings')
-    opts.supressWarnings = false;
+if ~isfield(opts, 'suppressWarnings')
+    opts.suppressWarnings = false;
 end
 default_fields= fieldnames(default_opts);
 is_field_present = ismember(default_fields, fieldnames(opts));
@@ -79,7 +79,7 @@ missing_fields = default_fields(~is_field_present);
 for i=1:size(missing_fields,1)
     missing_field_name = missing_fields{i};
     opts.(missing_fields{i}) = default_opts.(missing_fields{i});
-    if ~opts.supressWarnings
+    if ~opts.suppressWarnings
         if iscell(default_opts.(missing_field_name))
 
             numericValue = cell2mat(default_opts.(missing_field_name));

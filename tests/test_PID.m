@@ -21,7 +21,7 @@ classdef test_PID < matlab.unittest.TestCase
             Y = rand(3, 100);
             Y(2, 5) = NaN;
             opts.NaN_handling = 'error';
-            opts.supressWarnings = true;
+            opts.suppressWarnings = true;
             testCase.verifyError(@()PID({X1 X2, Y}, opts), 'checkInputs:NaNDetected'); 
         end
       
@@ -33,7 +33,7 @@ classdef test_PID < matlab.unittest.TestCase
             X2 = rand(1, 100);
             opts.bias = 'qe';
             opts.xtrp= 20;
-            opts.supressWarnings = true;
+            opts.suppressWarnings = true;
             opts.bin_method = {'eqspace', 'eqpop', 'none'};
             opts.n_bins = {2, 2};
             PID_out = PID({X1, X2, Y}, opts); 
@@ -49,7 +49,7 @@ classdef test_PID < matlab.unittest.TestCase
             X2 = rand(1, 100);
             opts.bias = 'invalid';
             opts.xtrp= 20;
-            opts.supressWarnings = true;
+            opts.suppressWarnings = true;
             opts.bin_method = {'eqspace', 'eqpop', 'none'};
             opts.n_bins = {2, 2};
             testCase.verifyError(@()PID({X1, X2, Y}, opts), 'Correction:UndefinedFunction');
@@ -68,7 +68,7 @@ classdef test_PID < matlab.unittest.TestCase
             outputs = {'q_dist'};
             opts.redundancy_measure = 'I_BROJA';
             opts.bias = 'naive';            
-            opts.supressWarnings = true;
+            opts.suppressWarnings = true;
             opts.bin_method = {'eqspace', 'eqpop', 'none'};
             opts.n_bins = {2, 2};
             PID_out = PID({X1, X2, Y}, outputs, opts); 

@@ -26,7 +26,7 @@ classdef test_cFIT < matlab.unittest.TestCase
             Z = zeros(1, 100, 100);
             Y(2, 5) = NaN;
             opts.NaN_handling = 'error';
-            opts.supressWarnings = true;
+            opts.suppressWarnings = true;
             testCase.verifyError(@()cFIT({X, Y, Z, S}, opts), 'checkInputs:NaNDetected'); 
         end
 
@@ -43,7 +43,7 @@ classdef test_cFIT < matlab.unittest.TestCase
             Y(:,1:(nTimepoints/2),:) = noiseStr*randn(1,nTimepoints/2, nTrials);
             Y(:, (nTimepoints/2 + 1):nTimepoints, :) = X(:, (nTimepoints/2 + 1):nTimepoints, :) + noiseStr * randn(1, nTimepoints/2, nTrials);
             Z = noiseStr * randn(1, nTimepoints, nTrials);
-            opts.supressWarnings = true;            
+            opts.suppressWarnings = true;            
             opts.bin_method = {'eqpop','eqpop', 'eqpop', 'none'};
             opts.n_bins = {3, 3};
             opts.tau = {12};
@@ -65,7 +65,7 @@ classdef test_cFIT < matlab.unittest.TestCase
             Y(:,1:(nTimepoints/2),:) = noiseStr*randn(1,nTimepoints/2, nTrials);
             Y(:, (nTimepoints/2 + 1):nTimepoints, :) = X(:, (nTimepoints/2 + 1):nTimepoints, :) + noiseStr * randn(1, nTimepoints/2, nTrials);
             Z = noiseStr * randn(1, nTimepoints, nTrials);
-            opts.supressWarnings = true;
+            opts.suppressWarnings = true;
             opts.bias = 'qe';
             opts.xtrp = 10;
             opts.bin_method = {'eqpop','eqpop', 'eqpop', 'none'};
@@ -86,7 +86,7 @@ classdef test_cFIT < matlab.unittest.TestCase
             Z = zeros(1, 100, 100);
             opts.bias = 'invalid';
             opts.xtrp= 20;
-            opts.supressWarnings = true;
+            opts.suppressWarnings = true;
             opts.bin_method = {'eqpop','eqpop', 'eqpop', 'none'};
             opts.n_bins = {2, 2};
             testCase.verifyError(@()cFIT({X, Y, Z, S}, opts), 'Correction:UndefinedFunction');
