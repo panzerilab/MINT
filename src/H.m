@@ -331,7 +331,18 @@ for t = 1:nTimepoints
                 P_lin_log = P_indA .* log2(P_indA);
                 P_lin_log(isnan(P_lin_log)) = 0;
                 entropies_naive{i}(1,t) = -sum(P_lin_log(:));
-                bias = 0;
+                % bias = 0;
+                if strcmp(opts.bias, 'pt')
+                    bias = 0;
+                    uniqueB = unique(inputs_1d{2});
+                    nb = length(uniqueB);
+                    for b_i=1:nb
+                        A_tmp = inputs_1d{1}(inputs_1d{2} == uniqueB(b_i));
+                        bias = bias + pt(A_tmp, length(unique(A_tmp)), nTrials);
+                    end
+                else
+                    bias = 0;
+                end
                 entropies{i}(1,t) = entropies_naive{i}(1,t) - bias;
             case 'Hind(A|B)'
                 P_indAB = prob_dists{t, strcmp(required_distributions, 'Pind(A|B)')};
