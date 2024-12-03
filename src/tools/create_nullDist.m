@@ -125,21 +125,24 @@ end
 for shIdx = 1:length(opts.shuffling)
     field_name = opts.shuffling{shIdx};
     null_distribution_tmp = cell(opts.n_samples, length(outputs));
+    shuffOutputs = {opts.shuffling{shIdx}};
+    nOutputs = length(outputs);
     if ~opts.parallel_sampling
         for shuffIdx = 1:opts.n_samples
-            shuffOutputs = {opts.shuffling{shIdx}};
             inputs_sh = hShuffle(inputs, shuffOutputs,opts);
             values = feval(corefunc, inputs_sh, outputs, opts_funcCall);
-            for outIdx = 1:length(outputs)
+            for outIdx = 1:nOutputs
                 null_distribution_tmp{shuffIdx, outIdx} = values{outIdx};
             end
         end
     else
         parfor shuffIdx = 1:opts.n_samples
-            shuffOutputs = {opts.shuffling{shIdx}};
             inputs_sh = hShuffle(inputs, shuffOutputs, opts);           
             values = feval(corefunc, inputs_sh, outputs, opts_funcCall);
-            null_distribution_tmp(shuffIdx, :) = values;
+            % null_distribution_tmp(shuffIdx, :) = values;
+            for outIdx = 1:nOutputs
+                null_distribution_tmp{shuffIdx, outIdx} = values{outIdx};
+            end
         end
     end
     if nTimepoints == 1 || isequal(corefunc, @FIT) || isequal(corefunc, @cFIT) || isequal(corefunc, @TE) || isequal(corefunc, @cTE)
