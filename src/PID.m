@@ -145,8 +145,10 @@ possibleOutputs = {'', 'Syn',  'Red', 'Unq1', 'Unq2', ...
 if ismember('', reqOutputs)
     reqOutputs = {'Syn', 'Red', 'Unq1', 'Unq2'};
 elseif ismember('PID_atoms', reqOutputs)
-    reqOutputs(ismember(reqOutputs, 'PID_atoms')) = [];
-    reqOutputs = [reqOutputs, {'Syn', 'Red', 'Unq1', 'Unq2'}];
+    pid_idx = find(strcmp(reqOutputs, 'PID_atoms'));
+    reqOutputs(pid_idx) = [];
+    new_atoms = {'Syn', 'Red', 'Unq1', 'Unq2'};
+    reqOutputs = [reqOutputs(1:pid_idx-1), new_atoms, reqOutputs(pid_idx:end)];
 elseif ismember('all', reqOutputs)
     if strcmp(opts.redundancy_measure, 'I_BROJA')
         reqOutputs = {'Syn', 'Red', 'Unq1', 'Unq2', 'Unq', 'Joint', 'Union'};
