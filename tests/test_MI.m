@@ -20,7 +20,7 @@ classdef test_MI < matlab.unittest.TestCase
             S(2, 5) = NaN;
             R = zeros(1, 100);           
             opts.NaN_handling = 'error';
-            opts.supressWarnings = true;
+            opts.suppressWarnings = true;
             testCase.verifyError(@()MI({R, S}, opts), 'checkInputs:NaNDetected'); 
         end
 
@@ -60,7 +60,7 @@ classdef test_MI < matlab.unittest.TestCase
             end
             opts.bias = 'naive';
             opts.bin_method = {'eqpop'};
-            opts.supressWarnings  = true;
+            opts.suppressWarnings  = true;
             opts.n_bins = {2, 3};
             MI_out = MI({R, S},opts);
             assert((MI_out{1} - 0.6205) < 0.01);

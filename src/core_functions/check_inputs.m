@@ -56,7 +56,7 @@ if isempty(varargin)
     opts.isChecked = false;
     opts.parallel = false;
     opts.n_bins = {3};
-    opts.supressWarnings = false;
+    opts.suppressWarnings = false;
     reqOutputs = eval(['defaultOutputs_' corefunc]);
 elseif isscalar(varargin)
     if iscell(varargin{1})
@@ -66,14 +66,14 @@ elseif isscalar(varargin)
         opts.n_bins = {3};
         opts.isChecked = false;
         opts.parallel = false;
-        opts.supressWarnings = false;
-        if ~opts.supressWarnings
+        opts.suppressWarnings = false;
+        if ~opts.suppressWarnings
             fprintf("No opts provided in %s. The function will use the default opts.", corefunc)
         end
     elseif  isstruct(varargin{1})
         opts = varargin{1};
-        if ~isfield(opts, 'supressWarnings')
-            opts.supressWarnings = false;
+        if ~isfield(opts, 'suppressWarnings')
+            opts.suppressWarnings = false;
         end
         if ~isfield(opts, 'isBinned')
             opts.isBinned = false;
@@ -85,7 +85,7 @@ elseif isscalar(varargin)
             opts.isChecked = false;
         end
         reqOutputs = eval(['defaultOutputs_' corefunc]);
-        if ~opts.supressWarnings
+        if ~opts.suppressWarnings
             warning("No reqOutputs list provided in %s. The function will compute the default output.", corefunc)
         end
         if ~opts.isChecked
@@ -95,7 +95,7 @@ elseif isscalar(varargin)
             for i=1:size(missing_fields,1)
                 missing_field_name = missing_fields{i};
                 opts.(missing_fields{i}) = defaultOpts.(missing_fields{i});
-                if ~opts.supressWarnings
+                if ~opts.suppressWarnings
                     if iscell(defaultOpts.(missing_field_name))
                         numericValue = cell2mat(defaultOpts.(missing_field_name));
                     elseif isa(defaultOpts.(missing_field_name), 'function_handle')
@@ -120,8 +120,8 @@ elseif isscalar(varargin)
 else
     reqOutputs =  varargin{1};
     opts = varargin{2};
-    if ~isfield(opts, 'supressWarnings')
-        opts.supressWarnings = false;
+    if ~isfield(opts, 'suppressWarnings')
+        opts.suppressWarnings = false;
     end
     if ~isfield(opts, 'isBinned')
         opts.isBinned = false;
@@ -139,7 +139,7 @@ else
         for i=1:size(missing_fields,1)
             missing_field_name = missing_fields{i};
             opts.(missing_fields{i}) = defaultOpts.(missing_fields{i});
-            if ~opts.supressWarnings
+            if ~opts.suppressWarnings
                 if iscell(defaultOpts.(missing_field_name))
                     numericValue = cell2mat(defaultOpts.(missing_field_name));
                 elseif isa(defaultOpts.(missing_field_name), 'function_handle')

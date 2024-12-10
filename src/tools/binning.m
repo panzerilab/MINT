@@ -29,7 +29,7 @@ function [inputs_b, edg] = binning(inputs, varargin)
 %                                   either 'Scott' or 'Freedman' (default is 'Scott' 
 %                                   if computeOptimBins is true).
 %
-%              - supressWarnings: Boolean (true/false) to suppress warning messages. 
+%              - suppressWarnings: Boolean (true/false) to suppress warning messages. 
 %                                 Default is false, meaning warnings will be shown.
 %
 % Outputs:
@@ -93,7 +93,7 @@ end
 
 default_opts.bin_method = 'none';
 default_opts.n_bins = {3};
-default_opts.supressWarnings = false;
+default_opts.suppressWarnings = false;
 
 
 if nargin == 1
@@ -102,8 +102,8 @@ if nargin == 1
     warning('binning:undefinedOpts.',msg);
 else
     opts = varargin{1};
-    if ~isfield(opts, 'supressWarnings')
-        opts.supressWarnings = false;
+    if ~isfield(opts, 'suppressWarnings')
+        opts.suppressWarnings = false;
     end
     default_fields= fieldnames(default_opts);
     is_field_present = ismember(default_fields, fieldnames(opts));
@@ -111,7 +111,7 @@ else
     for i=1:length(missing_fields)
         missing_field_name = missing_fields{i};
         opts.(missing_fields{i}) = default_opts.(missing_fields{i});
-        if ~opts.supressWarnings
+        if ~opts.suppressWarnings
             if iscell(default_opts.(missing_field_name))
 
                 numericValue = cell2mat(default_opts.(missing_field_name));
@@ -229,7 +229,7 @@ for var = 1:nVars
                     minValue = min(data_dim(:));
                     maxValue = max(data_dim(:));
                     if any(edges < minValue) || any(edges > maxValue)
-                        if ~opts.supressWarnings
+                        if ~opts.suppressWarnings
                             warning('binningUserEdges:OutOfRange. Some edges are out of the range of data for var (%d) in dimension (%d).', var, dim);
                         end
                     end
@@ -251,20 +251,20 @@ for var = 1:nVars
                         nbins(dim) = length(unique_vals_dim);
                     end
                     if length(unique_vals_dim)==nbins(dim)
-                        if ~opts.supressWarnings
+                        if ~opts.suppressWarnings
                             warning('binningEqpop:Already (%d) bins at var (%d) in dimension (%d).', nbins(dim), var, dim);
                         end
                         if isscalar(size(data))
-                            data_binned(dim) = data_tmp;
+                            data_binned(dim) = replace_with_rank(data_tmp);
                         elseif length(size(data))== 2
-                            data_binned(dim,:) = data_tmp;
+                            data_binned(dim,:) = replace_with_rank(data_tmp);
                         elseif length(size(data))== 3
-                            data_binned(dim,:,:) = data(dim, :,:);
+                            data_binned(dim,:,:) = replace_with_rank(data(dim, :,:));
                         end
                         continue;
                     end
                     if sum(data_tmp == mode(data_tmp)) > binSize
-                        if ~opts.supressWarnings
+                        if ~opts.suppressWarnings
                             warning('binningEqpop:tooFrequentResponse',"Using equally populated bins with a response array showing at least one response that is more frequent than nSamples/nBins. Therefore the bins are not exactly equipopulated")
                         end
                     end
@@ -289,7 +289,7 @@ for var = 1:nVars
                     edg = unique(edg);
                     if length(edg) < nbins(dim)+1
                         reducedBins = length(edg)-1;
-                        if ~opts.supressWarnings
+                        if ~opts.suppressWarnings
                             warning(sprintf('binningEqpop: Bin number reduced to %d', reducedBins));
                         end
                     end
@@ -302,7 +302,7 @@ for var = 1:nVars
                         if endsWith(nonZeroStr, ',')
                             nonZeroStr = nonZeroStr(1:end-1);
                         end
-                        if ~opts.supressWarnings
+                        if ~opts.suppressWarnings
                             warning('binningEqpop:unequalSpacing', 'Bin Sizes: %s', nonZeroStr);
                         end
                     end
@@ -333,4 +333,14 @@ for var = 1:nVars
         inputs_b{var} = data_binned;
     end
 end
+end
+
+function rankElements = replace_with_rank(M)
+
+% Sort the elements
+sorted = sort(M(:));
+% Find the index from M to the sorted elements
+[~,index] = ismember(M(:),sorted);
+% Reshape to the original size
+rankElements = reshape(index,size(M));
 end

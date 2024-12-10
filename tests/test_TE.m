@@ -21,7 +21,7 @@ classdef test_TE < matlab.unittest.TestCase
             Y = rand(3, 100, 100);           
             Y(2, 5) = NaN;
             opts.NaN_handling = 'error';
-            opts.supressWarnings = true;
+            opts.suppressWarnings = true;
             testCase.verifyError(@()TE({X, Y}, opts), 'checkInputs:NaNDetected'); 
         end
 
@@ -37,7 +37,7 @@ classdef test_TE < matlab.unittest.TestCase
             Y = noiseStr * randn(1, nTimepoints, nTrials);
             Y(:,1:(nTimepoints/2),:) = noiseStr*randn(1,nTimepoints/2, nTrials);
             Y(:, (nTimepoints/2 + 1):nTimepoints, :) = X(:, (nTimepoints/2 + 1):nTimepoints, :) + noiseStr * randn(1, nTimepoints/2, nTrials);
-            opts.supressWarnings = true;            
+            opts.suppressWarnings = true;            
             opts.bin_method = {'eqpop','eqpop'};
             opts.n_bins = {3, 3};
             opts.tau = {12};
@@ -57,7 +57,7 @@ classdef test_TE < matlab.unittest.TestCase
             Y = noiseStr * randn(1, nTimepoints, nTrials);
             Y(:,1:(nTimepoints/2),:) = noiseStr*randn(1,nTimepoints/2, nTrials);
             Y(:, (nTimepoints/2 + 1):nTimepoints, :) = X(:, (nTimepoints/2 + 1):nTimepoints, :) + noiseStr * randn(1, nTimepoints/2, nTrials);          
-            opts.supressWarnings = true;
+            opts.suppressWarnings = true;
             opts.bias = 'qe';
             opts.xtrp = 10;
             opts.bin_method = {'eqpop','eqpop'};
@@ -75,7 +75,7 @@ classdef test_TE < matlab.unittest.TestCase
             Y = zeros(1, 100, 100);
             opts.bias = 'invalid';
             opts.xtrp= 20;
-            opts.supressWarnings = true;
+            opts.suppressWarnings = true;
             opts.bin_method = {'eqspace', 'eqpop', 'none'};
             opts.n_bins = {2, 2};
             testCase.verifyError(@()TE({X, Y}, opts), 'Correction:UndefinedFunction');

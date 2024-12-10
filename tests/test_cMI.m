@@ -22,7 +22,7 @@ classdef test_cMI < matlab.unittest.TestCase
             R1 = zeros(1, 100);
             R2 = zeros(1, 100);       
             opts.NaN_handling = 'error';
-            opts.supressWarnings = true;
+            opts.suppressWarnings = true;
             testCase.verifyError(@()cMI({R1, S, R2}, opts), 'checkInputs:NaNDetected'); 
         end
 
@@ -63,7 +63,7 @@ classdef test_cMI < matlab.unittest.TestCase
             R2 = randi([1,3],1, 40);
             opts.bias = 'naive';
             opts.bin_method = {'eqpop', 'none', 'eqpop'};
-            opts.supressWarnings  = true;
+            opts.suppressWarnings  = true;
             opts.n_bins = {2, 3};
             cMI_out = cMI({R1, S, R2},opts);
             assert((cMI_out{1} - 0.6833) < 0.01);

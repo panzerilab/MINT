@@ -104,8 +104,8 @@ else
     defaultOpts = struct();
 end
 
-if ~isfield(opts, 'supressWarnings')
-    opts.supressWarnings = false;       % Default is not supress warnings
+if ~isfield(opts, 'suppressWarnings')
+    opts.suppressWarnings = false;       % Default is not suppress warnings
 end
 if ~isfield(opts, 'isBinned')
     opts.isBinned = false;              % Default assumption data is not binned
@@ -116,7 +116,7 @@ missing_fields = default_fields(~is_field_present);
 for i=1:size(missing_fields,1)
     missing_field_name = missing_fields{i};
     opts.(missing_fields{i}) = defaultOpts.(missing_fields{i});
-    if ~opts.supressWarnings
+    if ~opts.suppressWarnings
         if iscell(defaultOpts.(missing_field_name))
             numericValue = cell2mat(defaultOpts.(missing_field_name));
         else

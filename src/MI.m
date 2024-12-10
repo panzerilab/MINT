@@ -240,7 +240,11 @@ end
 opts_entropies = opts;
 opts_entropies.computeNulldist = false;
 required_entropies = unique(required_entropies);
-[H_values] = H(inputs_b, required_entropies, opts_entropies);
+if strcmp(corr, 'pt')
+    [H_values, H_naive] = H(inputs_b, required_entropies, opts_entropies);
+else
+    [H_values] = H(inputs_b, required_entropies, opts_entropies);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                  Step 5: Compute requested Output Values                      %
@@ -257,6 +261,11 @@ for t = 1:nTimepoints
                 H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
                 H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
                 MI_values{i}(1,t) = H_A - H_A_B;
+                if strcmp(corr, 'pt')
+                    H_A_n = H_naive{strcmp(required_entropies, 'H(A)')}(t);
+                    H_A_B_n = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
+                    MI_naive{i}(1,t) = H_A_n - H_A_B_n;
+                end
             case 'Ish(A;B)'
                 % Ish(A;B) = H(A) - Hind(A|B) + Hsh(A|B) - H(A|B)
                 H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
@@ -264,11 +273,23 @@ for t = 1:nTimepoints
                 Hsh_A_B = H_values{strcmp(required_entropies, 'Hsh(A|B)')}(t);
                 H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
                 MI_values{i}(1,t) = H_A - Hind_A_B + Hsh_A_B - H_A_B;
+                if strcmp(corr, 'pt')
+                    H_A_n = H_naive{strcmp(required_entropies, 'H(A)')}(t);
+                    Hind_A_B_n = H_naive{strcmp(required_entropies, 'Hind(A|B)')}(t);
+                    Hsh_A_B_n = H_naive{strcmp(required_entropies, 'Hsh(A|B)')}(t);
+                    H_A_B_n = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
+                    MI_naive{i}(1,t) = H_A_n - Hind_A_B_n + Hsh_A_B_n - H_A_B_n;
+                end
             case 'Ilin(A;B)'
                 % I_lin(A;B) = Hlin(A) - Hind(A|B)
                 Hlin_A = H_values{strcmp(required_entropies, 'Hlin(A)')}(t);
                 Hind_A_B = H_values{strcmp(required_entropies, 'Hind(A|B)')}(t);
                 MI_values{i}(1,t) = Hlin_A - Hind_A_B;
+                if strcmp(corr, 'pt')
+                    Hlin_A_n = H_naive{strcmp(required_entropies, 'Hlin(A)')}(t);
+                    Hind_A_B_n = H_naive{strcmp(required_entropies, 'Hind(A|B)')}(t);
+                    MI_naive{i}(1,t) = Hlin_A_n - Hind_A_B_n;
+                end
             case 'coI(A;B)'
                 % coI(A;B) = H(A) - H(A|B) - Hlin(A) + Hind(A|B)
                 H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
@@ -276,6 +297,13 @@ for t = 1:nTimepoints
                 H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
                 Hind_A_B = H_values{strcmp(required_entropies, 'Hind(A|B)')}(t);
                 MI_values{i}(1,t) = H_A - H_A_B - Hlin_A + Hind_A_B;
+                if strcmp(corr, 'pt')
+                    H_A_n = H_naive{strcmp(required_entropies, 'H(A)')}(t);
+                    Hlin_A_n = H_naive{strcmp(required_entropies, 'Hlin(A)')}(t);
+                    H_A_B_n = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
+                    Hind_A_B_n = H_naive{strcmp(required_entropies, 'Hind(A|B)')}(t);
+                    MI_naive{i}(1,t) = H_A_n - H_A_B_n - Hlin_A_n + Hind_A_B_n;
+                end
             case 'coIsh(A;B)'
                 % coIsh(A;B) = H(A) + Hsh(A|B) - H(A|B) - Hlin(A)
                 H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
@@ -283,11 +311,23 @@ for t = 1:nTimepoints
                 Hsh_A_B = H_values{strcmp(required_entropies, 'Hsh(A|B)')}(t);
                 H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
                 MI_values{i}(1,t) = H_A + Hsh_A_B - H_A_B - Hlin_A;
+                if strcmp(corr, 'pt')
+                    H_A_n = H_naive{strcmp(required_entropies, 'H(A)')}(t);
+                    Hlin_A_n = H_naive{strcmp(required_entropies, 'Hlin(A)')}(t);
+                    Hsh_A_B_n = H_naive{strcmp(required_entropies, 'Hsh(A|B)')}(t);
+                    H_A_B_n = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
+                    MI_naive{i}(1,t) = H_A_n + Hsh_A_B_n - H_A_B_n - Hlin_A_n;
+                end
             case 'Iss(A)'
                 % Iss(A) = Hind(A) - Hlin(A)
                 Hind_A = H_values{strcmp(required_entropies, 'Hind(A)')}(t);
                 Hlin_A = H_values{strcmp(required_entropies, 'Hlin(A)')}(t);
                 MI_values{i}(1,t) = Hind_A - Hlin_A;
+                if strcmp(corr, 'pt')
+                    Hind_A_n = H_naive{strcmp(required_entropies, 'Hind(A)')}(t);
+                    Hlin_A_n = H_naive{strcmp(required_entropies, 'Hlin(A)')}(t);
+                    MI_naive{i}(1,t) = Hind_A_n - Hlin_A_n;
+                end
             case 'Ic(A;B)'% possibleOutputs = { 'H(A|B)', 'Hind(A|B)', 'Hsh(A|B)'};
                 % Ic(A;B) = H(A) - H(A|B) + Hind(A|B) - Hind(A)
                 H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
@@ -295,6 +335,13 @@ for t = 1:nTimepoints
                 Hind_A_B = H_values{strcmp(required_entropies, 'Hind(A|B)')}(t);
                 Hind_A = H_values{strcmp(required_entropies, 'Hind(A)')}(t);
                 MI_values{i}(1,t) = H_A - H_A_B + Hind_A_B - Hind_A;
+                if strcmp(corr, 'pt')
+                    H_A_n = H_naive{strcmp(required_entropies, 'H(A)')}(t);
+                    H_A_B_n = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
+                    Hind_A_B_n = H_naive{strcmp(required_entropies, 'Hind(A|B)')}(t);
+                    Hind_A_n = H_naive{strcmp(required_entropies, 'Hind(A)')}(t);
+                    MI_naive{i}(1,t) = H_A_n - H_A_B_n + Hind_A_B_n - Hind_A_n;
+                end
             case 'Icsh(A;B)'
                 % Icsh(A;B) = H(A) + Hsh(A|B) - H(A|B) - Hind(A)
                 H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
@@ -302,11 +349,23 @@ for t = 1:nTimepoints
                 H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
                 Hind_A = H_values{strcmp(required_entropies, 'Hind(A)')}(t);
                 MI_values{i}(1,t) = H_A + Hsh_A_B - H_A_B - Hind_A;
+                if strcmp(corr, 'pt')
+                    H_A_n = H_naive{strcmp(required_entropies, 'H(A)')}(t);
+                    Hsh_A_B_n = H_naive{strcmp(required_entropies, 'Hsh(A|B)')}(t);
+                    H_A_B_n = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
+                    Hind_A_n = H_naive{strcmp(required_entropies, 'Hind(A)')}(t);
+                    MI_naive{i}(1,t) = H_A_n + Hsh_A_B_n - H_A_B_n - Hind_A_n;
+                end
             case 'Ici(A;B)'
                 % Ici(A;B) = Chi(A) - Hind(A)
                 Chi_A = H_values{strcmp(required_entropies, 'Chi(A)')}(t);
                 Hind_A = H_values{strcmp(required_entropies, 'Hind(A)')}(t);
                 MI_values{i}(1,t) = Chi_A - Hind_A;
+                if strcmp(corr, 'pt')
+                    Chi_A_n = H_naive{strcmp(required_entropies, 'Chi(A)')}(t);
+                    Hind_A_n = H_naive{strcmp(required_entropies, 'Hind(A)')}(t);
+                    MI_naive{i}(1,t) = Chi_A_n - Hind_A_n;
+                end
             case 'Icd(A;B)'
                 % Icd(A;B) = H(A) - H(A|B) - Chi(A) + Hind(A|B)
                 H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
@@ -314,6 +373,13 @@ for t = 1:nTimepoints
                 Chi_A = H_values{strcmp(required_entropies, 'Chi(A)')}(t);
                 Hind_A_B = H_values{strcmp(required_entropies, 'Hind(A|B)')}(t);
                 MI_values{i}(1,t) = H_A - H_A_B - Chi_A + Hind_A_B;
+                if strcmp(corr, 'pt')
+                    H_A_n = H_naive{strcmp(required_entropies, 'H(A)')}(t);
+                    H_A_B_n = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
+                    Chi_A_n = H_naive{strcmp(required_entropies, 'Chi(A)')}(t);
+                    Hind_A_B_n = H_naive{strcmp(required_entropies, 'Hind(A|B)')}(t);
+                    MI_naive{i}(1,t) = H_A_n - H_A_B_n - Chi_A_n + Hind_A_B_n;
+                end
             case 'Icdsh(A;B)'
                 % Icdsh(A;B) = H(A) + Hsh(A|B) - H(A|B) - Chi(A)
                 H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
@@ -321,6 +387,13 @@ for t = 1:nTimepoints
                 H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
                 Chi_A = H_values{strcmp(required_entropies, 'Chi(A)')}(t);
                 MI_values{i}(1,t) = H_A + Hsh_A_B - H_A_B - Chi_A;
+                if strcmp(corr, 'pt')
+                    H_A_n = H_naive{strcmp(required_entropies, 'H(A)')}(t);
+                    Hsh_A_B_n = H_naive{strcmp(required_entropies, 'Hsh(A|B)')}(t);
+                    H_A_B_n = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
+                    Chi_A_n = H_naive{strcmp(required_entropies, 'Chi(A)')}(t);
+                    MI_naive{i}(1,t) = H_A_n + Hsh_A_B_n - H_A_B_n - Chi_A_n;
+                end
         end
     end
 end

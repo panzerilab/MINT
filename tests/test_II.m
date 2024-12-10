@@ -23,7 +23,7 @@ classdef test_II < matlab.unittest.TestCase
             C = rand(3, 100);
             S(2, 5) = NaN;
             opts.NaN_handling = 'error';
-            opts.supressWarnings = true;
+            opts.suppressWarnings = true;
             testCase.verifyError(@()II({S, R, C}, opts), 'checkInputs:NaNDetected'); 
         end
 
@@ -66,7 +66,7 @@ classdef test_II < matlab.unittest.TestCase
             C(R > 2) = 1;
             opts.bias = 'naive';
             opts.bin_method = {'eqpop'};
-            opts.supressWarnings  = true;
+            opts.suppressWarnings  = true;
             opts.n_bins = {2, 3, 2};
             II_out = II({S, R, C},opts);
             assert((II_out{1} - 0.5969) < 0.01);
