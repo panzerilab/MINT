@@ -273,10 +273,12 @@ end
 predictedLabels = zeros(length(labels), 1);
 posteriorProbability = zeros(length(labels),length(unique_values));
 if isbinary
-    intercept = zeros(1, cvPartition.NumTestSets);
     if strcmp(opts.svm_family, 'linear')
+        intercept = zeros(1, cvPartition.NumTestSets);
         partition_betaWeights = zeros(size(input{1}, 1),cvPartition.NumTestSets);
-    end
+    else
+        intercept = struct();
+    end 
 else
     intercept = struct();
     partition_betaWeights = struct();

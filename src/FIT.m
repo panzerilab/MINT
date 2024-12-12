@@ -195,11 +195,6 @@ if ~opts.recall
     A_past = squeeze(A_delayed(:, 2:end, :));
     S = inputs{end};
 
-    % A_pres = reshape(A_delayed(:, 1, :), DimsA(1), DimsA(3));  % Shape [nDims, nTrials]
-    % B_pres = reshape(B_delayed(:, 1, :), DimsB(1), DimsB(3));  % Shape [nDims, nTrials]
-    % A_past = squeeze(reshape(A_delayed(:, 2:end, :), DimsA(1), size(A_delayed, 2)-1, DimsA(3)));  % Shape [nDims-1, delays, nTrials]
-    % B_past = squeeze(reshape(B_delayed(:, 2:end, :), DimsB(1), size(B_delayed, 2)-1, DimsB(3)));  % Shape [nDims-1, delays, nTrials]
-   
     if size(A_past,1) == nTrials
         A_past = A_past';
     end
