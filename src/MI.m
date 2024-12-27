@@ -33,6 +33,7 @@ function [MI_values, MI_naive, MI_nullDist] = MI(inputs, varargin)
 %                                  'pt'                         :Panzeri-Treves bias correction (Panzeri and Treves 1996).
 %                                  'bub'                        :best upper bound(Paninsky, 2003)
 %                                  'shuffCorr'                  :correction using stimulus-conditioned shuffling (Panzeri et al., 2007)
+%                                  'ksg'                        :correction using a k-neighbors entropy estimator (Holmes and Nemenman, 2019) 
 %                                  Users can also define their own custom bias correction method
 %                                  (type 'help correction' for more information)
 %
@@ -121,7 +122,7 @@ else
     [inputs, reqOutputs, opts] = check_inputs('MI',inputs,varargin{:});
 end
 possibleOutputs = {'I(A;B)', 'Ish(A;B)',  'Ilin(A;B)', 'coI(A;B)', 'coIsh(A;B)', ...
-    'Iss(A)', 'Ic(A;B)', 'Icsh(A;B)', 'Ici(A;B)', 'Icd(A;B)', 'Icdsh(A;B)'};
+    'Iss(A)', 'Ic(A;B)', 'Icsh(A;B)', 'Ici(A;B)', 'Icd(A;B)', 'Icdsh(A;B)', 'Iksg(A;B)'};
 [isMember, indices] = ismember(reqOutputs, possibleOutputs);
 if any(~isMember)
     nonMembers = reqOutputs(~isMember);
@@ -266,6 +267,13 @@ for t = 1:nTimepoints
                     H_A_B_n = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
                     MI_naive{i}(1,t) = H_A_n - H_A_B_n;
                 end
+            case 'Iksg(A;B)'
+                A = inputs{1}(:,t,:);
+                A = reshape(A,size(A,1),size(A,3));
+                B = inputs{2}(:,t,:);
+                B = reshape(B,size(B,1),size(B,3));
+                MI_values{i}(1,t) = MIxnyn_matlab(A,B,6,pwd);
+
             case 'Ish(A;B)'
                 % Ish(A;B) = H(A) - Hind(A|B) + Hsh(A|B) - H(A|B)
                 H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);

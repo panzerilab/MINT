@@ -1,0 +1,402 @@
+order = 10
+ 
+sol[1] = {b[1] -> (b[0]^2*(EulerGamma*k2 + f[0]))/
+       (k1 - b[0]^2*PolyGamma[1, b[0]] + b[0]^2*PolyGamma[1, N + b[0]])}
+ 
+sol[2] = {b[2] -> (k2*Pi^2*b[0] - (6*k1*b[1]^2)/b[0]^3 - 
+        3*b[1]^2*PolyGamma[2, b[0]] + 3*b[1]^2*PolyGamma[2, N + b[0]] - 
+        6*b[0]*Derivative[1][f][0])/(6*(-(k1/b[0]^2) + PolyGamma[1, b[0]] - 
+         PolyGamma[1, N + b[0]]))}
+ 
+sol[3] = {b[3] -> (k2*Pi^2*b[1] + (6*k1*b[1]^3)/b[0]^4 - 
+        (12*k1*b[1]*b[2])/b[0]^3 + 3*k2*b[0]^2*PolyGamma[2, 1] - 
+        6*b[1]*b[2]*PolyGamma[2, b[0]] + 6*b[1]*b[2]*PolyGamma[2, N + b[0]] - 
+        b[1]^3*PolyGamma[3, b[0]] + b[1]^3*PolyGamma[3, N + b[0]] - 
+        6*b[1]*Derivative[1][f][0] - 3*b[0]^2*Derivative[2][f][0])/
+       (6*(-(k1/b[0]^2) + PolyGamma[1, b[0]] - PolyGamma[1, N + b[0]]))}
+ 
+sol[4] = {b[4] -> -((-(k2*Pi^4*b[0]^3)/90 + (k1*b[1]^4)/b[0]^5 - 
+         (k2*Pi^2*b[2])/6 - (3*k1*b[1]^2*b[2])/b[0]^4 + (k1*b[2]^2)/b[0]^3 + 
+         (2*k1*b[1]*b[3])/b[0]^3 - k2*b[0]*b[1]*PolyGamma[2, 1] + 
+         ((b[2]^2 + 2*b[1]*b[3])*PolyGamma[2, b[0]])/2 - 
+         ((b[2]^2 + 2*b[1]*b[3])*PolyGamma[2, N + b[0]])/2 + 
+         (b[1]^2*b[2]*PolyGamma[3, b[0]])/2 - 
+         (b[1]^2*b[2]*PolyGamma[3, N + b[0]])/2 + (b[1]^4*PolyGamma[4, b[0]])/
+          24 - (b[1]^4*PolyGamma[4, N + b[0]])/24 + 
+         b[2]*Derivative[1][f][0] + b[0]*b[1]*Derivative[2][f][0] + 
+         (b[0]^3*Derivative[3][f][0])/6)/(-(k1/b[0]^2) + PolyGamma[1, b[0]] - 
+         PolyGamma[1, N + b[0]]))}
+ 
+sol[5] = {b[5] -> (-((b[2]*b[3] + b[1]*b[4])*PolyGamma[2, b[0]]) + 
+        (b[2]*b[3] + b[1]*b[4])*PolyGamma[2, N + b[0]] + 
+        (4*k2*Pi^4*b[0]^2*b[1] + (120*k1*b[1]^5)/b[0]^6 - 
+          (480*k1*b[1]^3*b[2])/b[0]^5 + (360*k1*b[1]*b[2]^2)/b[0]^4 + 
+          20*k2*Pi^2*b[3] + (360*k1*b[1]^2*b[3])/b[0]^4 - 
+          (240*k1*b[2]*b[3])/b[0]^3 - (240*k1*b[1]*b[4])/b[0]^3 + 
+          60*k2*b[1]^2*PolyGamma[2, 1] + 120*k2*b[0]*b[2]*PolyGamma[2, 1] - 
+          60*b[1]*(b[2]^2 + b[1]*b[3])*PolyGamma[3, b[0]] + 
+          60*b[1]*(b[2]^2 + b[1]*b[3])*PolyGamma[3, N + b[0]] + 
+          5*k2*b[0]^4*PolyGamma[4, 1] - 20*b[1]^3*b[2]*PolyGamma[4, b[0]] + 
+          20*b[1]^3*b[2]*PolyGamma[4, N + b[0]] - b[1]^5*PolyGamma[5, b[0]] + 
+          b[1]^5*PolyGamma[5, N + b[0]] - 120*b[3]*Derivative[1][f][0] - 
+          60*b[1]^2*Derivative[2][f][0] - 120*b[0]*b[2]*Derivative[2][f][0] - 
+          60*b[0]^2*b[1]*Derivative[3][f][0] - 5*b[0]^4*Derivative[4][f][0])/
+         120)/(-(k1/b[0]^2) + PolyGamma[1, b[0]] - PolyGamma[1, N + b[0]])}
+ 
+sol[6] = {b[6] -> -((-(k2*Pi^6*b[0]^5)/945 - (k2*Pi^4*b[0]*b[1]^2)/30 + 
+         (k1*b[1]^6)/b[0]^7 - (k2*Pi^4*b[0]^2*b[2])/30 - 
+         (5*k1*b[1]^4*b[2])/b[0]^6 + (6*k1*b[1]^2*b[2]^2)/b[0]^5 - 
+         (k1*b[2]^3)/b[0]^4 + (4*k1*b[1]^3*b[3])/b[0]^5 - 
+         (6*k1*b[1]*b[2]*b[3])/b[0]^4 + (k1*b[3]^2)/b[0]^3 - 
+         (k2*Pi^2*b[4])/6 - (3*k1*b[1]^2*b[4])/b[0]^4 + 
+         (2*k1*b[2]*b[4])/b[0]^3 + (2*k1*b[1]*b[5])/b[0]^3 - 
+         k2*b[1]*b[2]*PolyGamma[2, 1] - k2*b[0]*b[3]*PolyGamma[2, 1] + 
+         (b[3]^2/2 + b[2]*b[4] + b[1]*b[5])*PolyGamma[2, b[0]] - 
+         ((b[3]^2 + 2*b[2]*b[4] + 2*b[1]*b[5])*PolyGamma[2, N + b[0]])/2 + 
+         (b[2]^3*PolyGamma[3, b[0]])/6 + b[1]*b[2]*b[3]*PolyGamma[3, b[0]] + 
+         (b[1]^2*b[4]*PolyGamma[3, b[0]])/2 - (b[2]^3*PolyGamma[3, N + b[0]])/
+          6 - b[1]*b[2]*b[3]*PolyGamma[3, N + b[0]] - 
+         (b[1]^2*b[4]*PolyGamma[3, N + b[0]])/2 - 
+         (k2*b[0]^3*b[1]*PolyGamma[4, 1])/6 + 
+         (b[1]^2*b[2]^2*PolyGamma[4, b[0]])/4 + 
+         (b[1]^3*b[3]*PolyGamma[4, b[0]])/6 - 
+         (b[1]^2*b[2]^2*PolyGamma[4, N + b[0]])/4 - 
+         (b[1]^3*b[3]*PolyGamma[4, N + b[0]])/6 + 
+         (b[1]^4*b[2]*PolyGamma[5, b[0]])/24 - 
+         (b[1]^4*b[2]*PolyGamma[5, N + b[0]])/24 + 
+         (b[1]^6*PolyGamma[6, b[0]])/720 - (b[1]^6*PolyGamma[6, N + b[0]])/
+          720 + b[4]*Derivative[1][f][0] + b[1]*b[2]*Derivative[2][f][0] + 
+         b[0]*b[3]*Derivative[2][f][0] + (b[0]*b[1]^2*Derivative[3][f][0])/
+          2 + (b[0]^2*b[2]*Derivative[3][f][0])/2 + 
+         (b[0]^3*b[1]*Derivative[4][f][0])/6 + (b[0]^5*Derivative[5][f][0])/
+          120)/(-(k1/b[0]^2) + PolyGamma[1, b[0]] - PolyGamma[1, N + b[0]]))}
+ 
+sol[7] = {b[7] -> ((k2*Pi^6*b[0]^4*b[1])/189 + (k2*Pi^4*b[1]^3)/90 + 
+        (k1*b[1]^7)/b[0]^8 + (k2*Pi^4*b[0]*b[1]*b[2])/15 - 
+        (6*k1*b[1]^5*b[2])/b[0]^7 + (10*k1*b[1]^3*b[2]^2)/b[0]^6 - 
+        (4*k1*b[1]*b[2]^3)/b[0]^5 + (k2*Pi^4*b[0]^2*b[3])/30 + 
+        (5*k1*b[1]^4*b[3])/b[0]^6 - (12*k1*b[1]^2*b[2]*b[3])/b[0]^5 + 
+        (3*k1*b[2]^2*b[3])/b[0]^4 + (3*k1*b[1]*b[3]^2)/b[0]^4 - 
+        (4*k1*b[1]^3*b[4])/b[0]^5 + (6*k1*b[1]*b[2]*b[4])/b[0]^4 - 
+        (2*k1*b[3]*b[4])/b[0]^3 + (k2*Pi^2*b[5])/6 + (3*k1*b[1]^2*b[5])/
+         b[0]^4 - (2*k1*b[2]*b[5])/b[0]^3 - (2*k1*b[1]*b[6])/b[0]^3 + 
+        (k2*b[2]^2*PolyGamma[2, 1])/2 + k2*b[1]*b[3]*PolyGamma[2, 1] + 
+        k2*b[0]*b[4]*PolyGamma[2, 1] - (b[3]*b[4] + b[2]*b[5] + b[1]*b[6])*
+         PolyGamma[2, b[0]] + (b[3]*b[4] + b[2]*b[5] + b[1]*b[6])*
+         PolyGamma[2, N + b[0]] - (b[2]^2*b[3]*PolyGamma[3, b[0]])/2 - 
+        (b[1]*b[3]^2*PolyGamma[3, b[0]])/2 - b[1]*b[2]*b[4]*
+         PolyGamma[3, b[0]] - (b[1]^2*b[5]*PolyGamma[3, b[0]])/2 + 
+        (b[2]^2*b[3]*PolyGamma[3, N + b[0]])/2 + 
+        (b[1]*b[3]^2*PolyGamma[3, N + b[0]])/2 + b[1]*b[2]*b[4]*
+         PolyGamma[3, N + b[0]] + (b[1]^2*b[5]*PolyGamma[3, N + b[0]])/2 + 
+        (k2*b[0]^2*b[1]^2*PolyGamma[4, 1])/4 + 
+        (k2*b[0]^3*b[2]*PolyGamma[4, 1])/6 - (b[1]*b[2]^3*PolyGamma[4, b[0]])/
+         6 - (b[1]^2*b[2]*b[3]*PolyGamma[4, b[0]])/2 - 
+        (b[1]^3*b[4]*PolyGamma[4, b[0]])/6 + 
+        (b[1]*b[2]^3*PolyGamma[4, N + b[0]])/6 + 
+        (b[1]^2*b[2]*b[3]*PolyGamma[4, N + b[0]])/2 + 
+        (b[1]^3*b[4]*PolyGamma[4, N + b[0]])/6 - 
+        (b[1]^3*b[2]^2*PolyGamma[5, b[0]])/12 - 
+        (b[1]^4*b[3]*PolyGamma[5, b[0]])/24 + 
+        (b[1]^3*b[2]^2*PolyGamma[5, N + b[0]])/12 + 
+        (b[1]^4*b[3]*PolyGamma[5, N + b[0]])/24 + (k2*b[0]^6*PolyGamma[6, 1])/
+         720 - (b[1]^5*b[2]*PolyGamma[6, b[0]])/120 + 
+        (b[1]^5*b[2]*PolyGamma[6, N + b[0]])/120 - 
+        (b[1]^7*PolyGamma[7, b[0]])/5040 + (b[1]^7*PolyGamma[7, N + b[0]])/
+         5040 - b[5]*Derivative[1][f][0] - (b[2]^2*Derivative[2][f][0])/2 - 
+        b[1]*b[3]*Derivative[2][f][0] - b[0]*b[4]*Derivative[2][f][0] - 
+        (b[1]^3*Derivative[3][f][0])/6 - b[0]*b[1]*b[2]*Derivative[3][f][0] - 
+        (b[0]^2*b[3]*Derivative[3][f][0])/2 - 
+        (b[0]^2*b[1]^2*Derivative[4][f][0])/4 - 
+        (b[0]^3*b[2]*Derivative[4][f][0])/6 - 
+        (b[0]^4*b[1]*Derivative[5][f][0])/24 - (b[0]^6*Derivative[6][f][0])/
+         720)/(-(k1/b[0]^2) + PolyGamma[1, b[0]] - PolyGamma[1, N + b[0]])}
+ 
+sol[8] = {b[8] -> -((-(k2*Pi^8*b[0]^7)/9450 - (2*k2*Pi^6*b[0]^3*b[1]^2)/189 + 
+         (k1*b[1]^8)/b[0]^9 - (k2*Pi^6*b[0]^4*b[2])/189 - 
+         (k2*Pi^4*b[1]^2*b[2])/30 - (7*k1*b[1]^6*b[2])/b[0]^8 - 
+         (k2*Pi^4*b[0]*b[2]^2)/30 + (15*k1*b[1]^4*b[2]^2)/b[0]^7 - 
+         (10*k1*b[1]^2*b[2]^3)/b[0]^6 + (k1*b[2]^4)/b[0]^5 - 
+         (k2*Pi^4*b[0]*b[1]*b[3])/15 + (6*k1*b[1]^5*b[3])/b[0]^7 - 
+         (20*k1*b[1]^3*b[2]*b[3])/b[0]^6 + (12*k1*b[1]*b[2]^2*b[3])/b[0]^5 + 
+         (6*k1*b[1]^2*b[3]^2)/b[0]^5 - (3*k1*b[2]*b[3]^2)/b[0]^4 - 
+         (k2*Pi^4*b[0]^2*b[4])/30 - (5*k1*b[1]^4*b[4])/b[0]^6 + 
+         (12*k1*b[1]^2*b[2]*b[4])/b[0]^5 - (3*k1*b[2]^2*b[4])/b[0]^4 - 
+         (6*k1*b[1]*b[3]*b[4])/b[0]^4 + (k1*b[4]^2)/b[0]^3 + 
+         (4*k1*b[1]^3*b[5])/b[0]^5 - (6*k1*b[1]*b[2]*b[5])/b[0]^4 + 
+         (2*k1*b[3]*b[5])/b[0]^3 - (k2*Pi^2*b[6])/6 - (3*k1*b[1]^2*b[6])/
+          b[0]^4 + (2*k1*b[2]*b[6])/b[0]^3 + (2*k1*b[1]*b[7])/b[0]^3 - 
+         k2*b[2]*b[3]*PolyGamma[2, 1] - k2*b[1]*b[4]*PolyGamma[2, 1] - 
+         k2*b[0]*b[5]*PolyGamma[2, 1] + (b[4]^2/2 + b[3]*b[5] + b[2]*b[6] + 
+           b[1]*b[7])*PolyGamma[2, b[0]] - 
+         ((b[4]^2 + 2*b[3]*b[5] + 2*b[2]*b[6] + 2*b[1]*b[7])*
+           PolyGamma[2, N + b[0]])/2 + (b[2]*b[3]^2*PolyGamma[3, b[0]])/2 + 
+         (b[2]^2*b[4]*PolyGamma[3, b[0]])/2 + b[1]*b[3]*b[4]*
+          PolyGamma[3, b[0]] + b[1]*b[2]*b[5]*PolyGamma[3, b[0]] + 
+         (b[1]^2*b[6]*PolyGamma[3, b[0]])/2 - 
+         (b[2]*b[3]^2*PolyGamma[3, N + b[0]])/2 - 
+         (b[2]^2*b[4]*PolyGamma[3, N + b[0]])/2 - b[1]*b[3]*b[4]*
+          PolyGamma[3, N + b[0]] - b[1]*b[2]*b[5]*PolyGamma[3, N + b[0]] - 
+         (b[1]^2*b[6]*PolyGamma[3, N + b[0]])/2 - 
+         (k2*b[0]*b[1]^3*PolyGamma[4, 1])/6 - (k2*b[0]^2*b[1]*b[2]*
+           PolyGamma[4, 1])/2 - (k2*b[0]^3*b[3]*PolyGamma[4, 1])/6 + 
+         (b[2]^4*PolyGamma[4, b[0]])/24 + (b[1]*b[2]^2*b[3]*
+           PolyGamma[4, b[0]])/2 + (b[1]^2*b[3]^2*PolyGamma[4, b[0]])/4 + 
+         (b[1]^2*b[2]*b[4]*PolyGamma[4, b[0]])/2 + 
+         (b[1]^3*b[5]*PolyGamma[4, b[0]])/6 - (b[2]^4*PolyGamma[4, N + b[0]])/
+          24 - (b[1]*b[2]^2*b[3]*PolyGamma[4, N + b[0]])/2 - 
+         (b[1]^2*b[3]^2*PolyGamma[4, N + b[0]])/4 - 
+         (b[1]^2*b[2]*b[4]*PolyGamma[4, N + b[0]])/2 - 
+         (b[1]^3*b[5]*PolyGamma[4, N + b[0]])/6 + 
+         (b[1]^2*b[2]^3*PolyGamma[5, b[0]])/12 + 
+         (b[1]^3*b[2]*b[3]*PolyGamma[5, b[0]])/6 + 
+         (b[1]^4*b[4]*PolyGamma[5, b[0]])/24 - 
+         (b[1]^2*b[2]^3*PolyGamma[5, N + b[0]])/12 - 
+         (b[1]^3*b[2]*b[3]*PolyGamma[5, N + b[0]])/6 - 
+         (b[1]^4*b[4]*PolyGamma[5, N + b[0]])/24 - 
+         (k2*b[0]^5*b[1]*PolyGamma[6, 1])/120 + 
+         (b[1]^4*b[2]^2*PolyGamma[6, b[0]])/48 + 
+         (b[1]^5*b[3]*PolyGamma[6, b[0]])/120 - 
+         (b[1]^4*b[2]^2*PolyGamma[6, N + b[0]])/48 - 
+         (b[1]^5*b[3]*PolyGamma[6, N + b[0]])/120 + 
+         (b[1]^6*b[2]*PolyGamma[7, b[0]])/720 - 
+         (b[1]^6*b[2]*PolyGamma[7, N + b[0]])/720 + 
+         (b[1]^8*PolyGamma[8, b[0]])/40320 - (b[1]^8*PolyGamma[8, N + b[0]])/
+          40320 + b[6]*Derivative[1][f][0] + b[2]*b[3]*Derivative[2][f][0] + 
+         b[1]*b[4]*Derivative[2][f][0] + b[0]*b[5]*Derivative[2][f][0] + 
+         (b[1]^2*b[2]*Derivative[3][f][0])/2 + 
+         (b[0]*b[2]^2*Derivative[3][f][0])/2 + b[0]*b[1]*b[3]*
+          Derivative[3][f][0] + (b[0]^2*b[4]*Derivative[3][f][0])/2 + 
+         (b[0]*b[1]^3*Derivative[4][f][0])/6 + 
+         (b[0]^2*b[1]*b[2]*Derivative[4][f][0])/2 + 
+         (b[0]^3*b[3]*Derivative[4][f][0])/6 + 
+         (b[0]^3*b[1]^2*Derivative[5][f][0])/12 + 
+         (b[0]^4*b[2]*Derivative[5][f][0])/24 + 
+         (b[0]^5*b[1]*Derivative[6][f][0])/120 + (b[0]^7*Derivative[7][f][0])/
+          5040)/(-(k1/b[0]^2) + PolyGamma[1, b[0]] - PolyGamma[1, N + b[0]]))}
+ 
+sol[9] = {b[9] -> ((k2*Pi^8*b[0]^6*b[1])/1350 + (2*k2*Pi^6*b[0]^2*b[1]^3)/
+         189 + (k1*b[1]^9)/b[0]^10 + (4*k2*Pi^6*b[0]^3*b[1]*b[2])/189 - 
+        (8*k1*b[1]^7*b[2])/b[0]^9 + (k2*Pi^4*b[1]*b[2]^2)/30 + 
+        (21*k1*b[1]^5*b[2]^2)/b[0]^8 - (20*k1*b[1]^3*b[2]^3)/b[0]^7 + 
+        (5*k1*b[1]*b[2]^4)/b[0]^6 + (k2*Pi^6*b[0]^4*b[3])/189 + 
+        (k2*Pi^4*b[1]^2*b[3])/30 + (7*k1*b[1]^6*b[3])/b[0]^8 + 
+        (k2*Pi^4*b[0]*b[2]*b[3])/15 - (30*k1*b[1]^4*b[2]*b[3])/b[0]^7 + 
+        (30*k1*b[1]^2*b[2]^2*b[3])/b[0]^6 - (4*k1*b[2]^3*b[3])/b[0]^5 + 
+        (10*k1*b[1]^3*b[3]^2)/b[0]^6 - (12*k1*b[1]*b[2]*b[3]^2)/b[0]^5 + 
+        (k1*b[3]^3)/b[0]^4 + (k2*Pi^4*b[0]*b[1]*b[4])/15 - 
+        (6*k1*b[1]^5*b[4])/b[0]^7 + (20*k1*b[1]^3*b[2]*b[4])/b[0]^6 - 
+        (12*k1*b[1]*b[2]^2*b[4])/b[0]^5 - (12*k1*b[1]^2*b[3]*b[4])/b[0]^5 + 
+        (6*k1*b[2]*b[3]*b[4])/b[0]^4 + (3*k1*b[1]*b[4]^2)/b[0]^4 + 
+        (k2*Pi^4*b[0]^2*b[5])/30 + (5*k1*b[1]^4*b[5])/b[0]^6 - 
+        (12*k1*b[1]^2*b[2]*b[5])/b[0]^5 + (3*k1*b[2]^2*b[5])/b[0]^4 + 
+        (6*k1*b[1]*b[3]*b[5])/b[0]^4 - (2*k1*b[4]*b[5])/b[0]^3 - 
+        (4*k1*b[1]^3*b[6])/b[0]^5 + (6*k1*b[1]*b[2]*b[6])/b[0]^4 - 
+        (2*k1*b[3]*b[6])/b[0]^3 + (k2*Pi^2*b[7])/6 + (3*k1*b[1]^2*b[7])/
+         b[0]^4 - (2*k1*b[2]*b[7])/b[0]^3 - (2*k1*b[1]*b[8])/b[0]^3 + 
+        (k2*b[3]^2*PolyGamma[2, 1])/2 + k2*b[2]*b[4]*PolyGamma[2, 1] + 
+        k2*b[1]*b[5]*PolyGamma[2, 1] + k2*b[0]*b[6]*PolyGamma[2, 1] - 
+        (b[4]*b[5] + b[3]*b[6] + b[2]*b[7] + b[1]*b[8])*PolyGamma[2, b[0]] + 
+        (b[4]*b[5] + b[3]*b[6] + b[2]*b[7] + b[1]*b[8])*
+         PolyGamma[2, N + b[0]] - (b[3]^3*PolyGamma[3, b[0]])/6 - 
+        b[2]*b[3]*b[4]*PolyGamma[3, b[0]] - (b[1]*b[4]^2*PolyGamma[3, b[0]])/
+         2 - (b[2]^2*b[5]*PolyGamma[3, b[0]])/2 - b[1]*b[3]*b[5]*
+         PolyGamma[3, b[0]] - b[1]*b[2]*b[6]*PolyGamma[3, b[0]] - 
+        (b[1]^2*b[7]*PolyGamma[3, b[0]])/2 + (b[3]^3*PolyGamma[3, N + b[0]])/
+         6 + b[2]*b[3]*b[4]*PolyGamma[3, N + b[0]] + 
+        (b[1]*b[4]^2*PolyGamma[3, N + b[0]])/2 + 
+        (b[2]^2*b[5]*PolyGamma[3, N + b[0]])/2 + b[1]*b[3]*b[5]*
+         PolyGamma[3, N + b[0]] + b[1]*b[2]*b[6]*PolyGamma[3, N + b[0]] + 
+        (b[1]^2*b[7]*PolyGamma[3, N + b[0]])/2 + (k2*b[1]^4*PolyGamma[4, 1])/
+         24 + (k2*b[0]*b[1]^2*b[2]*PolyGamma[4, 1])/2 + 
+        (k2*b[0]^2*b[2]^2*PolyGamma[4, 1])/4 + 
+        (k2*b[0]^2*b[1]*b[3]*PolyGamma[4, 1])/2 + 
+        (k2*b[0]^3*b[4]*PolyGamma[4, 1])/6 - (b[2]^3*b[3]*PolyGamma[4, b[0]])/
+         6 - (b[1]*b[2]*b[3]^2*PolyGamma[4, b[0]])/2 - 
+        (b[1]*b[2]^2*b[4]*PolyGamma[4, b[0]])/2 - 
+        (b[1]^2*b[3]*b[4]*PolyGamma[4, b[0]])/2 - 
+        (b[1]^2*b[2]*b[5]*PolyGamma[4, b[0]])/2 - 
+        (b[1]^3*b[6]*PolyGamma[4, b[0]])/6 + 
+        (b[2]^3*b[3]*PolyGamma[4, N + b[0]])/6 + 
+        (b[1]*b[2]*b[3]^2*PolyGamma[4, N + b[0]])/2 + 
+        (b[1]*b[2]^2*b[4]*PolyGamma[4, N + b[0]])/2 + 
+        (b[1]^2*b[3]*b[4]*PolyGamma[4, N + b[0]])/2 + 
+        (b[1]^2*b[2]*b[5]*PolyGamma[4, N + b[0]])/2 + 
+        (b[1]^3*b[6]*PolyGamma[4, N + b[0]])/6 - 
+        (b[1]*b[2]^4*PolyGamma[5, b[0]])/24 - 
+        (b[1]^2*b[2]^2*b[3]*PolyGamma[5, b[0]])/4 - 
+        (b[1]^3*b[3]^2*PolyGamma[5, b[0]])/12 - 
+        (b[1]^3*b[2]*b[4]*PolyGamma[5, b[0]])/6 - 
+        (b[1]^4*b[5]*PolyGamma[5, b[0]])/24 + 
+        (b[1]*b[2]^4*PolyGamma[5, N + b[0]])/24 + 
+        (b[1]^2*b[2]^2*b[3]*PolyGamma[5, N + b[0]])/4 + 
+        (b[1]^3*b[3]^2*PolyGamma[5, N + b[0]])/12 + 
+        (b[1]^3*b[2]*b[4]*PolyGamma[5, N + b[0]])/6 + 
+        (b[1]^4*b[5]*PolyGamma[5, N + b[0]])/24 + 
+        (k2*b[0]^4*b[1]^2*PolyGamma[6, 1])/48 + 
+        (k2*b[0]^5*b[2]*PolyGamma[6, 1])/120 - 
+        (b[1]^3*b[2]^3*PolyGamma[6, b[0]])/36 - 
+        (b[1]^4*b[2]*b[3]*PolyGamma[6, b[0]])/24 - 
+        (b[1]^5*b[4]*PolyGamma[6, b[0]])/120 + 
+        (b[1]^3*b[2]^3*PolyGamma[6, N + b[0]])/36 + 
+        (b[1]^4*b[2]*b[3]*PolyGamma[6, N + b[0]])/24 + 
+        (b[1]^5*b[4]*PolyGamma[6, N + b[0]])/120 - 
+        (b[1]^5*b[2]^2*PolyGamma[7, b[0]])/240 - 
+        (b[1]^6*b[3]*PolyGamma[7, b[0]])/720 + 
+        (b[1]^5*b[2]^2*PolyGamma[7, N + b[0]])/240 + 
+        (b[1]^6*b[3]*PolyGamma[7, N + b[0]])/720 + 
+        (k2*b[0]^8*PolyGamma[8, 1])/40320 - (b[1]^7*b[2]*PolyGamma[8, b[0]])/
+         5040 + (b[1]^7*b[2]*PolyGamma[8, N + b[0]])/5040 - 
+        (b[1]^9*PolyGamma[9, b[0]])/362880 + (b[1]^9*PolyGamma[9, N + b[0]])/
+         362880 - b[7]*Derivative[1][f][0] - (b[3]^2*Derivative[2][f][0])/2 - 
+        b[2]*b[4]*Derivative[2][f][0] - b[1]*b[5]*Derivative[2][f][0] - 
+        b[0]*b[6]*Derivative[2][f][0] - (b[1]*b[2]^2*Derivative[3][f][0])/2 - 
+        (b[1]^2*b[3]*Derivative[3][f][0])/2 - b[0]*b[2]*b[3]*
+         Derivative[3][f][0] - b[0]*b[1]*b[4]*Derivative[3][f][0] - 
+        (b[0]^2*b[5]*Derivative[3][f][0])/2 - (b[1]^4*Derivative[4][f][0])/
+         24 - (b[0]*b[1]^2*b[2]*Derivative[4][f][0])/2 - 
+        (b[0]^2*b[2]^2*Derivative[4][f][0])/4 - 
+        (b[0]^2*b[1]*b[3]*Derivative[4][f][0])/2 - 
+        (b[0]^3*b[4]*Derivative[4][f][0])/6 - 
+        (b[0]^2*b[1]^3*Derivative[5][f][0])/12 - 
+        (b[0]^3*b[1]*b[2]*Derivative[5][f][0])/6 - 
+        (b[0]^4*b[3]*Derivative[5][f][0])/24 - 
+        (b[0]^4*b[1]^2*Derivative[6][f][0])/48 - 
+        (b[0]^5*b[2]*Derivative[6][f][0])/120 - 
+        (b[0]^6*b[1]*Derivative[7][f][0])/720 - (b[0]^8*Derivative[8][f][0])/
+         40320)/(-(k1/b[0]^2) + PolyGamma[1, b[0]] - PolyGamma[1, N + b[0]])}
+ 
+sol[10] = {b[10] -> -((-(k2*Pi^10*b[0]^9)/93555 - (k2*Pi^8*b[0]^5*b[1]^2)/
+          450 - (k2*Pi^6*b[0]*b[1]^4)/189 + (k1*b[1]^10)/b[0]^11 - 
+         (k2*Pi^8*b[0]^6*b[2])/1350 - (2*k2*Pi^6*b[0]^2*b[1]^2*b[2])/63 - 
+         (9*k1*b[1]^8*b[2])/b[0]^10 - (2*k2*Pi^6*b[0]^3*b[2]^2)/189 + 
+         (28*k1*b[1]^6*b[2]^2)/b[0]^9 - (k2*Pi^4*b[2]^3)/90 - 
+         (35*k1*b[1]^4*b[2]^3)/b[0]^8 + (15*k1*b[1]^2*b[2]^4)/b[0]^7 - 
+         (k1*b[2]^5)/b[0]^6 - (4*k2*Pi^6*b[0]^3*b[1]*b[3])/189 + 
+         (8*k1*b[1]^7*b[3])/b[0]^9 - (k2*Pi^4*b[1]*b[2]*b[3])/15 - 
+         (42*k1*b[1]^5*b[2]*b[3])/b[0]^8 + (60*k1*b[1]^3*b[2]^2*b[3])/
+          b[0]^7 - (20*k1*b[1]*b[2]^3*b[3])/b[0]^6 - (k2*Pi^4*b[0]*b[3]^2)/
+          30 + (15*k1*b[1]^4*b[3]^2)/b[0]^7 - (30*k1*b[1]^2*b[2]*b[3]^2)/
+          b[0]^6 + (6*k1*b[2]^2*b[3]^2)/b[0]^5 + (4*k1*b[1]*b[3]^3)/b[0]^5 - 
+         (k2*Pi^6*b[0]^4*b[4])/189 - (k2*Pi^4*b[1]^2*b[4])/30 - 
+         (7*k1*b[1]^6*b[4])/b[0]^8 - (k2*Pi^4*b[0]*b[2]*b[4])/15 + 
+         (30*k1*b[1]^4*b[2]*b[4])/b[0]^7 - (30*k1*b[1]^2*b[2]^2*b[4])/
+          b[0]^6 + (4*k1*b[2]^3*b[4])/b[0]^5 - (20*k1*b[1]^3*b[3]*b[4])/
+          b[0]^6 + (24*k1*b[1]*b[2]*b[3]*b[4])/b[0]^5 - (3*k1*b[3]^2*b[4])/
+          b[0]^4 + (6*k1*b[1]^2*b[4]^2)/b[0]^5 - (3*k1*b[2]*b[4]^2)/b[0]^4 - 
+         (k2*Pi^4*b[0]*b[1]*b[5])/15 + (6*k1*b[1]^5*b[5])/b[0]^7 - 
+         (20*k1*b[1]^3*b[2]*b[5])/b[0]^6 + (12*k1*b[1]*b[2]^2*b[5])/b[0]^5 + 
+         (12*k1*b[1]^2*b[3]*b[5])/b[0]^5 - (6*k1*b[2]*b[3]*b[5])/b[0]^4 - 
+         (6*k1*b[1]*b[4]*b[5])/b[0]^4 + (k1*b[5]^2)/b[0]^3 - 
+         (k2*Pi^4*b[0]^2*b[6])/30 - (5*k1*b[1]^4*b[6])/b[0]^6 + 
+         (12*k1*b[1]^2*b[2]*b[6])/b[0]^5 - (3*k1*b[2]^2*b[6])/b[0]^4 - 
+         (6*k1*b[1]*b[3]*b[6])/b[0]^4 + (2*k1*b[4]*b[6])/b[0]^3 + 
+         (4*k1*b[1]^3*b[7])/b[0]^5 - (6*k1*b[1]*b[2]*b[7])/b[0]^4 + 
+         (2*k1*b[3]*b[7])/b[0]^3 - (k2*Pi^2*b[8])/6 - (3*k1*b[1]^2*b[8])/
+          b[0]^4 + (2*k1*b[2]*b[8])/b[0]^3 + (2*k1*b[1]*b[9])/b[0]^3 - 
+         k2*b[3]*b[4]*PolyGamma[2, 1] - k2*b[2]*b[5]*PolyGamma[2, 1] - 
+         k2*b[1]*b[6]*PolyGamma[2, 1] - k2*b[0]*b[7]*PolyGamma[2, 1] + 
+         (b[5]^2/2 + b[4]*b[6] + b[3]*b[7] + b[2]*b[8] + b[1]*b[9])*
+          PolyGamma[2, b[0]] - ((b[5]^2 + 2*(b[4]*b[6] + b[3]*b[7] + 
+              b[2]*b[8] + b[1]*b[9]))*PolyGamma[2, N + b[0]])/2 + 
+         (b[3]^2*b[4]*PolyGamma[3, b[0]])/2 + 
+         (b[2]*b[4]^2*PolyGamma[3, b[0]])/2 + b[2]*b[3]*b[5]*
+          PolyGamma[3, b[0]] + b[1]*b[4]*b[5]*PolyGamma[3, b[0]] + 
+         (b[2]^2*b[6]*PolyGamma[3, b[0]])/2 + b[1]*b[3]*b[6]*
+          PolyGamma[3, b[0]] + b[1]*b[2]*b[7]*PolyGamma[3, b[0]] + 
+         (b[1]^2*b[8]*PolyGamma[3, b[0]])/2 - 
+         (b[3]^2*b[4]*PolyGamma[3, N + b[0]])/2 - 
+         (b[2]*b[4]^2*PolyGamma[3, N + b[0]])/2 - b[2]*b[3]*b[5]*
+          PolyGamma[3, N + b[0]] - b[1]*b[4]*b[5]*PolyGamma[3, N + b[0]] - 
+         (b[2]^2*b[6]*PolyGamma[3, N + b[0]])/2 - b[1]*b[3]*b[6]*
+          PolyGamma[3, N + b[0]] - b[1]*b[2]*b[7]*PolyGamma[3, N + b[0]] - 
+         (b[1]^2*b[8]*PolyGamma[3, N + b[0]])/2 - 
+         (k2*b[1]^3*b[2]*PolyGamma[4, 1])/6 - (k2*b[0]*b[1]*b[2]^2*
+           PolyGamma[4, 1])/2 - (k2*b[0]*b[1]^2*b[3]*PolyGamma[4, 1])/2 - 
+         (k2*b[0]^2*b[2]*b[3]*PolyGamma[4, 1])/2 - 
+         (k2*b[0]^2*b[1]*b[4]*PolyGamma[4, 1])/2 - 
+         (k2*b[0]^3*b[5]*PolyGamma[4, 1])/6 + 
+         (b[2]^2*b[3]^2*PolyGamma[4, b[0]])/4 + 
+         (b[1]*b[3]^3*PolyGamma[4, b[0]])/6 + 
+         (b[2]^3*b[4]*PolyGamma[4, b[0]])/6 + b[1]*b[2]*b[3]*b[4]*
+          PolyGamma[4, b[0]] + (b[1]^2*b[4]^2*PolyGamma[4, b[0]])/4 + 
+         (b[1]*b[2]^2*b[5]*PolyGamma[4, b[0]])/2 + 
+         (b[1]^2*b[3]*b[5]*PolyGamma[4, b[0]])/2 + 
+         (b[1]^2*b[2]*b[6]*PolyGamma[4, b[0]])/2 + 
+         (b[1]^3*b[7]*PolyGamma[4, b[0]])/6 - 
+         (b[2]^2*b[3]^2*PolyGamma[4, N + b[0]])/4 - 
+         (b[1]*b[3]^3*PolyGamma[4, N + b[0]])/6 - 
+         (b[2]^3*b[4]*PolyGamma[4, N + b[0]])/6 - b[1]*b[2]*b[3]*b[4]*
+          PolyGamma[4, N + b[0]] - (b[1]^2*b[4]^2*PolyGamma[4, N + b[0]])/4 - 
+         (b[1]*b[2]^2*b[5]*PolyGamma[4, N + b[0]])/2 - 
+         (b[1]^2*b[3]*b[5]*PolyGamma[4, N + b[0]])/2 - 
+         (b[1]^2*b[2]*b[6]*PolyGamma[4, N + b[0]])/2 - 
+         (b[1]^3*b[7]*PolyGamma[4, N + b[0]])/6 + (b[2]^5*PolyGamma[5, b[0]])/
+          120 + (b[1]*b[2]^3*b[3]*PolyGamma[5, b[0]])/6 + 
+         (b[1]^2*b[2]*b[3]^2*PolyGamma[5, b[0]])/4 + 
+         (b[1]^2*b[2]^2*b[4]*PolyGamma[5, b[0]])/4 + 
+         (b[1]^3*b[3]*b[4]*PolyGamma[5, b[0]])/6 + 
+         (b[1]^3*b[2]*b[5]*PolyGamma[5, b[0]])/6 + 
+         (b[1]^4*b[6]*PolyGamma[5, b[0]])/24 - 
+         (b[2]^5*PolyGamma[5, N + b[0]])/120 - 
+         (b[1]*b[2]^3*b[3]*PolyGamma[5, N + b[0]])/6 - 
+         (b[1]^2*b[2]*b[3]^2*PolyGamma[5, N + b[0]])/4 - 
+         (b[1]^2*b[2]^2*b[4]*PolyGamma[5, N + b[0]])/4 - 
+         (b[1]^3*b[3]*b[4]*PolyGamma[5, N + b[0]])/6 - 
+         (b[1]^3*b[2]*b[5]*PolyGamma[5, N + b[0]])/6 - 
+         (b[1]^4*b[6]*PolyGamma[5, N + b[0]])/24 - 
+         (k2*b[0]^3*b[1]^3*PolyGamma[6, 1])/36 - 
+         (k2*b[0]^4*b[1]*b[2]*PolyGamma[6, 1])/24 - 
+         (k2*b[0]^5*b[3]*PolyGamma[6, 1])/120 + 
+         (b[1]^2*b[2]^4*PolyGamma[6, b[0]])/48 + 
+         (b[1]^3*b[2]^2*b[3]*PolyGamma[6, b[0]])/12 + 
+         (b[1]^4*b[3]^2*PolyGamma[6, b[0]])/48 + 
+         (b[1]^4*b[2]*b[4]*PolyGamma[6, b[0]])/24 + 
+         (b[1]^5*b[5]*PolyGamma[6, b[0]])/120 - 
+         (b[1]^2*b[2]^4*PolyGamma[6, N + b[0]])/48 - 
+         (b[1]^3*b[2]^2*b[3]*PolyGamma[6, N + b[0]])/12 - 
+         (b[1]^4*b[3]^2*PolyGamma[6, N + b[0]])/48 - 
+         (b[1]^4*b[2]*b[4]*PolyGamma[6, N + b[0]])/24 - 
+         (b[1]^5*b[5]*PolyGamma[6, N + b[0]])/120 + 
+         (b[1]^4*b[2]^3*PolyGamma[7, b[0]])/144 + 
+         (b[1]^5*b[2]*b[3]*PolyGamma[7, b[0]])/120 + 
+         (b[1]^6*b[4]*PolyGamma[7, b[0]])/720 - 
+         (b[1]^4*b[2]^3*PolyGamma[7, N + b[0]])/144 - 
+         (b[1]^5*b[2]*b[3]*PolyGamma[7, N + b[0]])/120 - 
+         (b[1]^6*b[4]*PolyGamma[7, N + b[0]])/720 - 
+         (k2*b[0]^7*b[1]*PolyGamma[8, 1])/5040 + 
+         (b[1]^6*b[2]^2*PolyGamma[8, b[0]])/1440 + 
+         (b[1]^7*b[3]*PolyGamma[8, b[0]])/5040 - 
+         (b[1]^6*b[2]^2*PolyGamma[8, N + b[0]])/1440 - 
+         (b[1]^7*b[3]*PolyGamma[8, N + b[0]])/5040 + 
+         (b[1]^8*b[2]*PolyGamma[9, b[0]])/40320 - 
+         (b[1]^8*b[2]*PolyGamma[9, N + b[0]])/40320 + 
+         (b[1]^10*PolyGamma[10, b[0]])/3628800 - 
+         (b[1]^10*PolyGamma[10, N + b[0]])/3628800 + 
+         b[8]*Derivative[1][f][0] + b[3]*b[4]*Derivative[2][f][0] + 
+         b[2]*b[5]*Derivative[2][f][0] + b[1]*b[6]*Derivative[2][f][0] + 
+         b[0]*b[7]*Derivative[2][f][0] + (b[2]^3*Derivative[3][f][0])/6 + 
+         b[1]*b[2]*b[3]*Derivative[3][f][0] + 
+         (b[0]*b[3]^2*Derivative[3][f][0])/2 + 
+         (b[1]^2*b[4]*Derivative[3][f][0])/2 + b[0]*b[2]*b[4]*
+          Derivative[3][f][0] + b[0]*b[1]*b[5]*Derivative[3][f][0] + 
+         (b[0]^2*b[6]*Derivative[3][f][0])/2 + 
+         (b[1]^3*b[2]*Derivative[4][f][0])/6 + 
+         (b[0]*b[1]*b[2]^2*Derivative[4][f][0])/2 + 
+         (b[0]*b[1]^2*b[3]*Derivative[4][f][0])/2 + 
+         (b[0]^2*b[2]*b[3]*Derivative[4][f][0])/2 + 
+         (b[0]^2*b[1]*b[4]*Derivative[4][f][0])/2 + 
+         (b[0]^3*b[5]*Derivative[4][f][0])/6 + 
+         (b[0]*b[1]^4*Derivative[5][f][0])/24 + 
+         (b[0]^2*b[1]^2*b[2]*Derivative[5][f][0])/4 + 
+         (b[0]^3*b[2]^2*Derivative[5][f][0])/12 + 
+         (b[0]^3*b[1]*b[3]*Derivative[5][f][0])/6 + 
+         (b[0]^4*b[4]*Derivative[5][f][0])/24 + 
+         (b[0]^3*b[1]^3*Derivative[6][f][0])/36 + 
+         (b[0]^4*b[1]*b[2]*Derivative[6][f][0])/24 + 
+         (b[0]^5*b[3]*Derivative[6][f][0])/120 + 
+         (b[0]^5*b[1]^2*Derivative[7][f][0])/240 + 
+         (b[0]^6*b[2]*Derivative[7][f][0])/720 + 
+         (b[0]^7*b[1]*Derivative[8][f][0])/5040 + 
+         (b[0]^9*Derivative[9][f][0])/362880)/(-(k1/b[0]^2) + 
+         PolyGamma[1, b[0]] - PolyGamma[1, N + b[0]]))}
