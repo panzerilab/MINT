@@ -268,9 +268,9 @@ for t = 1:nTimepoints
                     MI_naive{i}(1,t) = H_A_n - H_A_B_n;
                 end
             case 'Iksg(A;B)'
-                A = inputs{1}(:,t,:);
+                A = inputs_b{1}(:,t,:);
                 A = reshape(A,size(A,1),size(A,3));
-                B = inputs{2}(:,t,:);
+                B = inputs_b{2}(:,t,:);
                 B = reshape(B,size(B,1),size(B,3));
                 MI_values{i}(1,t) = MIxnyn_matlab(A,B,6,pwd);
 
