@@ -340,7 +340,7 @@ for t = 1:nTimepoints
 end
 PID_naive = PID_values;
 if strcmp(opts.bias, 'shuffSub') && ~opts.computeNulldist
-    PID_nullDist = MI_shuff_all;
+    PID_nullDist = PID_shuff_all;
 else
     PID_nullDist = 0;
 end
