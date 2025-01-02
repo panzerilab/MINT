@@ -139,7 +139,7 @@ if DimsA(end) ~= DimsB(end)
     error('MI:InvalidInput', msg);
 end
 
-if length(DimsA) > 2 || length(DimsB) > 2
+if (length(DimsA) > 2 || length(DimsB) > 2) 
     if length(DimsA) > 2 && length(DimsB) <= 2
         inputs{2} = reshape(inputs{2}, [DimsB(1), 1, DimsB(2)]);
         inputs{2} = repmat(inputs{2}, [1, DimsA(2), 1]);
@@ -163,13 +163,13 @@ else
 end
 
 inputs_1d = inputs_b;
-if DimsA(1) > 1
+if DimsA(1) > 1 && ~strcmp(opts.bias, 'ksg')
     inputs_1d{1} = reduce_dim(inputs_b{1}, 1);
     if  any(strcmp(reqOutputs,'Hlin(A)')) || any(strcmp(reqOutputs,'Hind(A)')) || any(strcmp(reqOutputs, 'Hind(A|B)'))
         inputs_1d{3} = inputs_b{1};
     end 
 end
-if DimsB(1) > 1
+if DimsB(1) > 1 && ~strcmp(opts.bias, 'ksg')
     inputs_1d{2} = reduce_dim(inputs_b{2}, 1);
 end
 if DimsA(2:end) ~= DimsB(2:end)
