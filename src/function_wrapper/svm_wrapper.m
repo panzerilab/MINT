@@ -19,7 +19,7 @@ function output_values = svm_wrapper(input,varargin)
 %           - libsvm: Boolean indicating whether to use LIBSVM (default false).
 %           - optimize_params: A structure with optimization options for hyperparameters (default is empty).
 %           - svm_family: Type of SVM to use, options include 'linear' and 'RBF' (default 'linear').
-%           - cv_type: Type of cross-validation (default 'KFold').
+%           - cv_type: Type of cross-validation (default 'Resubstitution').
 %           - K_folds: Number of folds for K-fold cross-validation (default 5).
 %           - hp_C: Regularization parameter for SVM (default 1).
 %           - hp_gamma: Kernel coefficient for 'RBF' SVM (default 1/number of observations for RBF).
@@ -198,7 +198,7 @@ end
 
 if iscell(opts.cv)
     cv_method =  opts.cv{1};
-    valid_methods = ["KFold", "HoldOut", "LeaveMOut", "LeaveOut", "Resubstitution"];
+    valid_methods = ["KFold", "HoldOut", "LeaveMOut", "LeaveOut", "Resubstitution", "cvPartition"];
     if ~ismember(cv_method, valid_methods)
         error('SVM:The chosen cross-validation method for hyperparameter optimization is not acceptable');
     end
@@ -226,8 +226,14 @@ if iscell(opts.cv)
             warning('Using default partition value for crossvalidation: %d.', cv_partition);
         end
         cvPartition = cvpartition(input{2}, cv_method, cv_partition);
+    elseif strcmp(cv_method,'cvPartition')
+        if length(opts.cv) < 2
+            error('SVM:Please provide cv partition as second field in the cell, when choosing cvPartition as partition method.');
+        else 
+            cvPartition =  opts.cv{2};
+        end 
     else
-        cvPartition = cvpartition(input{2}, cv_method);
+        cvPartition = cvpartition(input{2}, cv_method);        
     end
 
 else
@@ -235,12 +241,12 @@ else
 end
 
 % Check outputs
-possibleOutputs = {'labels', 'posteriorProbs', 'optimized_hyperparameters', 'betaWeights', 'intercept', 'mean_betaWeigths', 'testIdx'};
+possibleOutputs = {'labels', 'posteriorProbs', 'optimized_hyperparameters', 'betaWeights', 'intercept', 'mean_betaWeigths', 'testIdx', 'cvPartition'};
 if ismember('all', outputs)
     if strcmp(opts.svm_family, 'RBF')
-        outputs = {'labels', 'posteriorProbs', 'optimized_hyperparameters', 'intercept'};
+        outputs = {'labels', 'posteriorProbs', 'optimized_hyperparameters', 'intercept', 'cvPartition'};
     else         
-        outputs = {'labels', 'posteriorProbs', 'optimized_hyperparameters', 'betaWeights', 'intercept', 'mean_betaWeigths', 'testIdx'};
+        outputs = {'labels', 'posteriorProbs', 'optimized_hyperparameters', 'betaWeights', 'intercept', 'mean_betaWeigths', 'testIdx', 'cvPartition'};
     end 
 end 
 if strcmp(opts.svm_family, 'RBF')
@@ -304,10 +310,10 @@ for partition = 1:cvPartition.NumTestSets
     testIdx{partition} = train_test_partition.test;
 
     if optimization_opts.optimize == true
-        if isnan(cv_partition)
+        if isnan(optim_cv_partition)
             optim_cvPartition =  cvpartition(labelsTrain, optim_cv_method);
         else 
-            optim_cvPartition =  cvpartition(labelsTrain, optim_cv_method, cv_partition);
+            optim_cvPartition =  cvpartition(labelsTrain, optim_cv_method, optim_cv_partition);
         end 
     else 
         optim_cvPartition = NaN;
@@ -360,6 +366,8 @@ for i = 1:length(indices)
             end 
         case 'testIdx'
             output_values{i} = testIdx;
+        case 'cvPartition'
+            output_values{i} = cvPartition;
     end
 end
 end 
