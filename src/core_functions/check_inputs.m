@@ -54,6 +54,7 @@ if isempty(varargin)
     opts = defaultOpts;
     opts.isBinned = false;
     opts.isChecked = false;
+    opts.isKSG = false;
     opts.parallel = false;
     opts.n_bins = {3};
     opts.suppressWarnings = false;
@@ -65,6 +66,7 @@ elseif isscalar(varargin)
         opts.isBinned = false;
         opts.n_bins = {3};
         opts.isChecked = false;
+        opts.isKSG = false;
         opts.parallel = false;
         opts.suppressWarnings = false;
         if ~opts.suppressWarnings
@@ -83,6 +85,9 @@ elseif isscalar(varargin)
         end
         if ~isfield(opts, 'isChecked')
             opts.isChecked = false;
+        end
+        if ~isfield(opts, 'isKSG')
+            opts.isKSG = false;
         end
         reqOutputs = eval(['defaultOutputs_' corefunc]);
         if ~opts.suppressWarnings
@@ -131,6 +136,9 @@ else
     end
     if ~isfield(opts, 'isChecked')
         opts.isChecked = false;
+    end     
+    if ~isfield(opts, 'isKSG')
+        opts.isKSG = false;
     end
     if ~opts.isChecked
         default_fields= fieldnames(defaultOpts);

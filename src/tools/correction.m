@@ -144,6 +144,8 @@ switch corr
         [corrected_v, naive_v] = shuffle_correction(inputs, reqOutputs, corefunc, opts);
     case 'ksg'
         [corrected_v, naive_v] = ksg_correction(inputs, reqOutputs, corefunc, opts);
+    case 'nsb'
+        [corrected_v, naive_v] = ksg_correction(inputs, reqOutputs, corefunc, opts);
     otherwise
         func_handle = str2func(corr);
         if exist(corr, 'file') == 2
