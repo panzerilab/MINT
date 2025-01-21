@@ -48,6 +48,8 @@ function [cTE_values, cTE_naive, cTE_nullDist] = cTE(inputs, varargin)
 %                                    'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
 %                                    'pt'                         :Panzeri-Treves bias correction (Panzeri and Treves 1996).
 %                                    'bub'                        :best upper bound(Paninsky, 2003)
+%                                    'ksg'                        :correction using a k-neighbors entropy estimator (Holmes and Nemenman, 2019) 
+%                                    'nsb'                        :correction using the NSB algorithm (Nemenman, Bialek and van Steveninck, 2019) 
 %                                    Users can also define their own custom bias correction method
 %                                    (type 'help correction' for more information)
 %

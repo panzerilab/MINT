@@ -30,6 +30,7 @@ function [entropies, entropies_naive, entropies_nullDist, prob_dists] = H(inputs
 %              - bias:             Specifies the bias correction method to be used.
 %                                  'naive'                      :(default) - No correction applied.
 %                                  'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
+%                                  'nsb'                        :correction using the NSB algorithm (Nemenman, Bialek and van Steveninck, 2019) 
 %                                  Users can also define their own custom bias correction method
 %                                  (type 'help correction' for more information)
 %  
@@ -407,6 +408,43 @@ for t = 1:nTimepoints
                     bias = 0;
                 end
                 entropies{i}(1,t) = entropies_naive{i}(1,t) - bias;         
+            case 'Hnsb(A)'
+                qfun = 1;
+                precision = .1;
+                
+                nb = inputs_1d{1};
+                K = length(nb);
+                nxa = nb(nb>0);
+                kxb = ones(size(nxa));
+                
+                [Sb_nsb, ~, ~, ~, ~, S_ml,~]=find_nsb_entropy (kxb, nxa, K, precision,qfun);
+                entropies_naive{i}(1,t) = S_ml;
+                entropies{i}(1,t) = Sb_nsb;
+            case 'Hnsb(B)'
+                qfun = 1;
+                precision = .1;
+                
+                nb = inputs_1d{2};
+                K = length(nb);
+                nxb = nb(nb>0);
+                kxb = ones(size(nxb));
+                
+                [Sb_nsb, ~, ~, ~, ~, S_ml,~]=find_nsb_entropy (kxb, nxb, K, precision,qfun);
+                entropies_naive{i}(1,t) = S_ml;
+                entropies{i}(1,t) = Sb_nsb;
+            case 'Hnsb(A,B)'
+                qfun = 1;
+                precision = .1;
+                
+                nab = reduce_dim([inputs_1d{1}; inputs_1d{2}],1); 
+                K = length(nab);
+                nxab = nab(nab>0);
+                kxab = ones(size(nxab));
+                
+                [Sab_nsb, ~, ~, ~, ~, S_ml,~]=find_nsb_entropy (kxab, nxab, K, precision,qfun);
+                entropies_naive{i}(1,t) = S_ml;
+                entropies{i}(1,t) = Sab_nsb;
+
         end
     end
 end

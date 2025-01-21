@@ -33,6 +33,8 @@ function [MI_values, MI_naive, MI_nullDist] = MI(inputs, varargin)
 %                                  'pt'                         :Panzeri-Treves bias correction (Panzeri and Treves 1996).
 %                                  'bub'                        :best upper bound(Paninsky, 2003)
 %                                  'shuffCorr'                  :correction using stimulus-conditioned shuffling (Panzeri et al., 2007)
+%                                  'ksg'                        :correction using a k-neighbors entropy estimator (Holmes and Nemenman, 2019) 
+%                                  'nsb'                        :correction using the NSB algorithm (Nemenman, Bialek and van Steveninck, 2019) 
 %                                  Users can also define their own custom bias correction method
 %                                  (type 'help correction' for more information)
 %
@@ -121,7 +123,7 @@ else
     [inputs, reqOutputs, opts] = check_inputs('MI',inputs,varargin{:});
 end
 possibleOutputs = {'I(A;B)', 'Ish(A;B)',  'Ilin(A;B)', 'coI(A;B)', 'coIsh(A;B)', ...
-    'Iss(A)', 'Ic(A;B)', 'Icsh(A;B)', 'Ici(A;B)', 'Icd(A;B)', 'Icdsh(A;B)'};
+    'Iss(A)', 'Ic(A;B)', 'Icsh(A;B)', 'Ici(A;B)', 'Icd(A;B)', 'Icdsh(A;B)', 'Iksg(A;B)', 'Insb(A;B)'};
 [isMember, indices] = ismember(reqOutputs, possibleOutputs);
 if any(~isMember)
     nonMembers = reqOutputs(~isMember);
@@ -138,7 +140,7 @@ if DimsA(end) ~= DimsB(end)
     error('MI:InvalidInput', msg);
 end
 
-if length(DimsA) > 2 || length(DimsB) > 2
+if (length(DimsA) > 2 || length(DimsB) > 2) 
     if length(DimsA) > 2 && length(DimsB) <= 2
         inputs{2} = reshape(inputs{2}, [DimsB(1), 1, DimsB(2)]);
         inputs{2} = repmat(inputs{2}, [1, DimsA(2), 1]);
@@ -154,7 +156,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %               Step 2: Prepare Data (binning/reduce dimensions)                %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ~opts.isBinned 
+if (~opts.isBinned) && ~opts.isKSG
     inputs_b = binning(inputs,opts);
     opts.isBinned = true;
 else
@@ -162,13 +164,13 @@ else
 end
 
 inputs_1d = inputs_b;
-if DimsA(1) > 1
+if DimsA(1) > 1 && ~opts.isKSG
     inputs_1d{1} = reduce_dim(inputs_b{1}, 1);
     if  any(strcmp(reqOutputs,'Hlin(A)')) || any(strcmp(reqOutputs,'Hind(A)')) || any(strcmp(reqOutputs, 'Hind(A|B)'))
         inputs_1d{3} = inputs_b{1};
     end 
 end
-if DimsB(1) > 1
+if DimsB(1) > 1 && ~~opts.isKSG
     inputs_1d{2} = reduce_dim(inputs_b{2}, 1);
 end
 if DimsA(2:end) ~= DimsB(2:end)
@@ -207,7 +209,8 @@ entropy_dependencies = struct( ...
     'Icsh_A_B', {{'H(A)', 'H(A|B)', 'Hsh(A|B)', 'Hind(A)'}}, ...
     'Ici_A_B', {{'Chi(A)', 'Hind(A)'}}, ...
     'Icd_A_B', {{'H(A)', 'H(A|B)', 'Chi(A)', 'Hind(A|B)'}}, ...
-    'Icdsh_A_B', {{'H(A)', 'H(A|B)', 'Hsh(A|B)', 'Chi(A)'}} ...
+    'Icdsh_A_B', {{'H(A)', 'H(A|B)', 'Hsh(A|B)', 'Chi(A)'}}, ...
+    'Insb_A_B', {{'Hnsb(A)', 'Hnsb(B)', 'Hnsb(A,B)'}} ...
     );
 required_entropies = {};
 for ind = 1:length(indices)
@@ -235,6 +238,8 @@ for ind = 1:length(indices)
             required_entropies = [required_entropies, entropy_dependencies.Icd_A_B{:}];
         case 'Icdsh(A;B)'
             required_entropies = [required_entropies, entropy_dependencies.Icdsh_A_B{:}];
+        case 'Insb(A;B)'
+            required_entropies = [required_entropies, entropy_dependencies.Insb_A_B{:}];
     end
 end
 opts_entropies = opts;
@@ -266,6 +271,19 @@ for t = 1:nTimepoints
                     H_A_B_n = H_naive{strcmp(required_entropies, 'H(A|B)')}(t);
                     MI_naive{i}(1,t) = H_A_n - H_A_B_n;
                 end
+            case 'Iksg(A;B)'
+                A = inputs_b{1}(:,t,:);
+                A = reshape(A,size(A,1),size(A,3));
+                B = inputs_b{2}(:,t,:);
+                B = reshape(B,size(B,1),size(B,3));
+                MI_values{i}(1,t) = MIxnyn_matlab(A,B,6,pwd);
+
+            case 'Insb(A;B)'
+                H_A  = H_values{strcmp(required_entropies, 'Hnsb(A)')}(t);
+                H_B  = H_values{strcmp(required_entropies, 'Hnsb(B)')}(t);
+                H_AB = H_values{strcmp(required_entropies, 'Hnsb(A,B)')}(t);
+                MI_values{i}(1,t) = H_A + H_B - H_AB;
+
             case 'Ish(A;B)'
                 % Ish(A;B) = H(A) - Hind(A|B) + Hsh(A|B) - H(A|B)
                 H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);

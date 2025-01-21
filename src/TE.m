@@ -41,6 +41,8 @@ function [TE_values, TE_naive, TE_nullDist] = TE(inputs, varargin)
 %                                    'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
 %                                    'pt'                         :Panzeri-Treves bias correction (Panzeri and Treves 1996).
 %                                    'bub'                        :best upper bound(Paninsky, 2003)
+%                                    'ksg'                        :correction using a k-neighbors entropy estimator (Holmes and Nemenman, 2019) 
+%                                    'nsb'                        :correction using the NSB algorithm (Nemenman, Bialek and van Steveninck, 2019) 
 %                                    Users can also define their own custom bias correction method
 %                                    (type 'help correction' for more information)
 %
@@ -367,7 +369,25 @@ for i = 1:length(indices)
         case 'TE(B->A)'           
                 H_Apres_Apast = H_values{strcmp(required_entropies, 'H(A_pres|A_past)')};
                 H_Apres_Apast_Bpast = H_values{strcmp(required_entropies, 'H(A_pres|A_past,B_past)')};
-                TE_values{i} = H_Apres_Apast{1} - H_Apres_Apast_Bpast{1};           
+                TE_values{i} = H_Apres_Apast{1} - H_Apres_Apast_Bpast{1};
+        case 'TEnsb(A->B)'
+                H_xy      = 0;
+                H_yypres  = 0;
+                H_xyypres = 0;
+                H_y       = 0;
+                TE_values{i} = I_bpres_ab - I_bpres_b;                   
+        case 'TEnsb(B->A)'           
+                I_apres_ba = 0;
+                I_apres_a = 0;
+                TE_values{i} = I_apres_ba - I_apres_a;   
+        case 'TEksg(A->B)'         
+                I_bpres_ab = MIxnyn_matlab(B_pres, [A_past; B_past], 6, pwd);
+                I_bpres_b  = MIxnyn_matlab(B_pres, B_past, 6, pwd);
+                TE_values{i} = I_bpres_ab - I_bpres_b;    
+        case 'TEksg(B->A)'           
+                I_apres_ba = MIxnyn_matlab(A_pres, [B_past; A_past], 6, pwd);
+                I_apres_a  = MIxnyn_matlab(A_pres, A_past, 6, pwd);
+                TE_values{i} = I_apres_ba - I_apres_a;   
     end
 end
 end

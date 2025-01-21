@@ -1,0 +1,156 @@
+Version 1.13 (bugs fix) 
+
+Changes:
+1) Removed an extra parameter from the documentation of
+   find_nsb_entropy.m, which has been depreciated a while back.
+2) Changed evaluation of the calculation of the integrals when
+   the series expansion of the saddle point evaluation (with Newton-
+   Raphson polishing) is unstable. In this case, we still report an
+   error, but keep the last value before the error as an output. The
+   the thought is that this will still help evaluation of the Gaussian
+   integrals.
+3) Minor documentation/help changes.
+
+********************
+Version 1.12 (bugs fix) 
+
+Changes:
+1) A sign error in meanS2.m function was corrected (thanks to Bryan
+   Daniels). 
+
+
+********************
+Version 1.11 (bugs fix) 
+
+Changes:
+1) A typo removed from B_xiK (part of the debugginf code was left in
+   unintentionally). Thanks to Jack Waddell for pointing this out.
+2) find_nsb_entropy.m now returns the maximum likelihood entropy
+   estimate S_ml, as has been said in the README all along. Thanks for
+   Gabor Szirtes for noticing this.
+3) Typo corrected in find_nsb_entropy.m (pecision->precision). Thanks
+   to Gabor Szirtes.
+3) Multiple leftover errors from conversion from Octave to Matlab
+   corrected.
+4) Call to "usage" replaced by "error" in polygamma.m for Matlab
+   compatibility. Thanks to Gabor Szirtes.
+
+*******************
+Version 1.1
+
+Changes from 1.0
+1) Fractional counts are allowed.
+2) Matlab'ization is complete (thanks to Fernando Montani); the only
+   non-Matlab-compatible function is entropyN, which is very specific
+   to the fly data analysis I was performing, and is probably not
+   needed for most other applications.
+
+
+*** From now on the Octave/MatLab version is not being developed to
+    follow the functionality of the main C++ version; it's being kept
+    for compatibility and for having routines for a quick analysis
+    easily accessible. ***
+
+********************
+Usage:
+
+To estimate entropy of empirical counts using this collection of
+routines do the following:
+
+1) Say you have data in the following form: for each possible state i
+   there is a number of times this state has occured n(i). Then
+   prepare two row vectors (kx and nx) in the following way: for each
+   unique n(i) count how many times this n(i) has occured among all
+   counts, and set nx equal to this n(i) and kx to the number of
+   occurences, then remove entry with nx==0;
+   
+   Example (see file intest.m):	
+     n = [4 2 3 0 2 4 0 0 2]; K = length(n); (K=9)
+     then:
+     nx = [0 2 3 4]
+     kx = [3 3 1 2]
+     After this remove the entry with nx==0
+     nx = [2 3 4]
+     kx = [3 1 2]
+
+   Note that there are no requirements regarding the ordering of nx
+   and kx, if they are reordered together. You are also allowed to
+   have two equivalent entries in nx, so that nx = [2 3 4], kx=[3 1 2]
+   is equivalent to nx=[2 2 3 4], kx=[1 2 1 2].
+
+   In principle, this collapse of data may be skipped and one can
+   form kx and nx (from the previous example) as:
+     nx = [4 2 3 2 4 2];
+     kx = [1 1 1 1 1 1];
+     K = 9;
+   To for nx from n in this simple way:
+     K = length(n);
+     nx = n(n>0);
+     kx = ones(size(nx));
+
+   Such collapse of data is desirable because the algorithms in this
+   package are O(length(nx)^2). But for short length this is not
+   essential.
+
+   To automate (in octave);
+   nx=n(n>0);
+   kx=ones(size(nx));
+
+2) Supply the above vectors to the find_nsb_entropy routine:
+
+   [S_nsb, dS_nsb, S_cl, dS_cl, xi_cl, S_ml,errcode] =	
+                           find_nsb_entropy (kx, nx, K, precision,
+			   qfun, todo)
+
+   In addition to the three already described arguments kx, nx, and
+   K, the remaining arguments are:
+      precision - relative precision for calculations;
+      qfun    - which integration routine to use:
+                1 - quad (standard Octave routine, VERY slow, but
+                    has good error handling)
+                2 - quadg (Gauss integration from the
+                    Octave-forge package from sourceforge, require
+                    installation of this package; fast but bad error
+                    handling; you will probably want to use this
+                    routine once you install Octave-forge)
+      todo    - controls if nsb integration is done (1), or
+                if only maximum likelihood, and classical things are
+                calculated; you will probably want to set this
+                argument to 1
+
+   The following will be output:
+       S_nsb   - entropy estimate by the NSB method, scalar;
+       dS_nsb  - the standard deviation of the estimate;
+       S_cl    - entropy at the saddle point (you will probably
+                 disregard this);
+       dS_cl   - standard deviation at the saddle point (again,
+                 disregard this);
+       xi_cl   - saddle point (disregard);
+       S_ml    - maximum likelihood (naive) entropy estimate;
+       errcode - error code; this is build as the error code from
+                 finding the saddle, plus 10 times the error
+                 code of the normalization integral, 100 times
+                 the error code of the S integral, and 1000 times
+                 the error code of the S^2 integral. The saddle
+                 finding error code are (see max_evidence.m)
+                     0 - all ok;
+                     1 - no coincidences; saddle point evaluation 
+                         invalid (wide variance); this is a warning,
+                         not an error.
+                     2 - all data coincides; saddle point evaluation
+                         invalid - Bcl close to zero; this is again
+                         only a warning
+                     3 - no convergence in Newton-Raphson root
+                         finding of B_cl; also only a warning
+                 If quad integrator is used, then the integration 
+                 erros are (see dqag.f documentation in QUADPACK)
+                     0 - all ok (but check estimated error anyway);
+                     1 - maximum allowed number of Gauss-Kronrod 
+                         subdivisions has been achieved;
+                     2 - roundoff error is detected; the requested 
+                         tolerance cannot be achieved;
+                     3 - extremely bad integrand behavior encountered;
+        	     6 - invalid input.
+                 If quadg integrator is used, not integration error 
+                 code is reported (only saddle finding is), and one 
+                 has to track on-screen messages.

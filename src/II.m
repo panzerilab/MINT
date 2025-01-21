@@ -34,6 +34,8 @@ function [II_values, II_naive, II_nullDist, atom1, atom2] = II(inputs, varargin)
 %                                    'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
 %                                    'ShuffSub'                   :Shuffle Substraction (need to specify shuff as number of shufflings).
 %                                    'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
+%                                    'ksg'                        :correction using a k-neighbors entropy estimator (Holmes and Nemenman, 2019). Only available when redundancy_measure is I_MMI
+%                                    'nsb'                        :correction using the NSB algorithm (Nemenman, Bialek and van Steveninck, 2019). Only available when redundancy_measure is I_MMI
 %                                    Users can also define their own custom bias correction method
 %                                    (type 'help correction' for more information)
 %     
