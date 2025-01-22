@@ -21,22 +21,22 @@ function [results_full, results_partition21, results_partition22] = check_stabil
 %   - varargin: Optional arguments that are passed as a structure, typically including fields like:
 %               - `bin_method`      : Binning method to apply (e.g., 'none', 'eqpop', 'eqspace', etc.)
 %               - `n_bins`          : Specifies the number of bins for binning (default is {3})
-%               - `bias`            : Indicates the bias correction method ('naive', 'qe', 'ShuffSub', etc.)
+%               - `bias`            : Indicates the bias correction method ('plugin', 'qe', 'ShuffSub', etc.)
 %               - Additional options may vary according to the core function specified
 %               Note: by default this function does not compute the nulldistribution so computeNulldist is always set to false
 %
 % Outputs:
 %   - results_full: Struct containing the output values of `corefunc` applied to the full dataset:
 %       - results_full.corrected : Bias-corrected results from `corefunc`.
-%       - results_full.naive     : Naive results from `corefunc` without bias correction.
+%       - results_full.plugin     : plugin results from `corefunc` without bias correction.
 %
 %   - results_partition21: Struct containing the output values of `corefunc` applied to the first data partition:
 %       - results_partition21.corrected : Corrected values from `corefunc` on the first partition.
-%       - results_partition21.naive     : Naive values from `corefunc` on the first partition.
+%       - results_partition21.plugin     : plugin values from `corefunc` on the first partition.
 %
 %   - results_partition22: Struct containing the output values of `corefunc` applied to the second data partition:
 %       - results_partition22.corrected : Corrected values from `corefunc` on the second partition.
-%       - results_partition22.naive     : Naive values from `corefunc` on the second partition.
+%       - results_partition22.plugin     : plugin values from `corefunc` on the second partition.
 %
 % Example:
 %   To evaluate stability in partial information decomposition results between two neural sources about a target,
@@ -97,14 +97,14 @@ inputs_p_1 = partition(inputs_1d, 2, 1 ,1);
 inputs_p_2 = partition(inputs_1d, 2, 2, 1);
 
 
-[value_corr, value_naive] = feval(corefunc, inputs_1d, outputs, opts);
-[value_corr_1, value_naive_1] = feval(corefunc, inputs_p_1, outputs, opts);
-[value_corr_2, value_naive_2] = feval(corefunc, inputs_p_2, outputs, opts);
+[value_corr, value_plugin] = feval(corefunc, inputs_1d, outputs, opts);
+[value_corr_1, value_plugin_1] = feval(corefunc, inputs_p_1, outputs, opts);
+[value_corr_2, value_plugin_2] = feval(corefunc, inputs_p_2, outputs, opts);
 
 results_full.corrected = value_corr;
-results_full.naive = value_naive;
+results_full.plugin = value_plugin;
 results_partition21.corrected = value_corr_1;
-results_partition21.naive = value_naive_1;
+results_partition21.plugin = value_plugin_1;
 results_partition22.corrected = value_corr_2;
-results_partition22.naive = value_naive_2;
+results_partition22.plugin = value_plugin_2;
 end

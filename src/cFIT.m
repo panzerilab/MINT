@@ -1,5 +1,5 @@
-function [cFIT_values, cFIT_naive, cFIT_nullDist, atom1, atom2] = cFIT(inputs, varargin)
-% *function [cFIT_values, cFIT_naive, cFIT_nullDist, atom1, atom2] = cFIT(inputs, reqOutputs, opts)*
+function [cFIT_values, cFIT_plugin, cFIT_nullDist, atom1, atom2] = cFIT(inputs, varargin)
+% *function [cFIT_values, cFIT_plugin, cFIT_nullDist, atom1, atom2] = cFIT(inputs, reqOutputs, opts)*
 %
 % The cFIT function computes the conditioned Feature-specific Information Transfer (cFIT) values between time series data.
 % Conditioned Feature-specific Information Transfer quantifies how much information about a specific feature (S)
@@ -22,7 +22,7 @@ function [cFIT_values, cFIT_naive, cFIT_nullDist, atom1, atom2] = cFIT(inputs, v
 %
 %   - varargin: Optional arguments, passed as a structure. Fields may include:
 %              - bias:               Specifies the bias correction method to be used.
-%                                    'naive'                      :(default) - No correction applied.
+%                                    'plugin'                      :(default) - No correction applied.
 %                                    'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
 %                                    'ShuffSub'                   :Shuffle Substraction (need to specify shuff as number of shufflings).
 %                                    'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
@@ -69,7 +69,7 @@ function [cFIT_values, cFIT_naive, cFIT_nullDist, atom1, atom2] = cFIT(inputs, v
 %
 % Outputs:
 %   - cFIT_values: A cell array containing the computed cFIT values as specified in the reqOutputs argument.
-%   - cFIT_naive: A cell array containing the naive cFIT estimates.
+%   - cFIT_plugin: A cell array containing the plugin cFIT estimates.
 %   - cFIT_nullDist: Results of the null distribution computation (0 if not performed).
 %   - atom1: A cell array containing the first atom values computed during the analysis.
 %   - atom2: A cell array containing the second atom values computed during the analysis.
@@ -77,7 +77,7 @@ function [cFIT_values, cFIT_naive, cFIT_nullDist, atom1, atom2] = cFIT(inputs, v
 % Example:
 %   To compute the Feature-specific Information Transfer from two neural populations X1, X2 given X3 about S,
 %   the function can be called as follows:
-%   [cFIT_values, cFIT_naive, cFIT_nullDist, atom1, atom2] = cFIT({X1, X2, X3, S}, {'cFIT(A->B;S|C)', 'cFIT(B->A;S|C)'}, opts);
+%   [cFIT_values, cFIT_plugin, cFIT_nullDist, atom1, atom2] = cFIT({X1, X2, X3, S}, {'cFIT(A->B;S|C)', 'cFIT(B->A;S|C)'}, opts);
 %
 % Here, 'opts' represents additional options you may want to include (see varargin options)
 
@@ -299,10 +299,10 @@ if any(opts.computeNulldist)
         nullDist_opts.recall = false;
         cFIT_nullDist = create_nullDist(inputs, reqOutputs, @cFIT, nullDist_opts);
 end
-if ~strcmp(corr, 'naive')  
+if ~strcmp(corr, 'plugin')  
     opts.recall = true;
     opts.computeNulldist = false;
-    [cFIT_values, cFIT_naive] = correction(inputs_1d, reqOutputs, corr, corefunc, opts);
+    [cFIT_values, cFIT_plugin] = correction(inputs_1d, reqOutputs, corr, corefunc, opts);
     return
 end
 
@@ -362,5 +362,5 @@ for i = 1:length(indices)
             atom2{i} = atoms(2);
     end
 end
-cFIT_naive = cFIT_values;
+cFIT_plugin = cFIT_values;
 end

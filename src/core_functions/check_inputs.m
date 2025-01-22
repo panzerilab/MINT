@@ -15,7 +15,7 @@ function [inputs, reqOutputs, opts] = check_inputs(corefunc,inputs,varargin)
 % along with this program.  If not, see <http://www.gnu.org/licenses
 
 defaultOpts.computeNulldist = false;
-defaultOpts.bias = 'naive';
+defaultOpts.bias = 'plugin';
 defaultOpts.bin_method = {'none'};
 
 defaultOutputs_MI      = {'I(A;B)'};

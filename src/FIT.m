@@ -1,5 +1,5 @@
-function [FIT_values, FIT_naive, FIT_nullDist, atom1, atom2] = FIT(inputs, varargin)
-% *function [FIT_values, FIT_naive, FIT_nullDist, atom1, atom2] = FIT(inputs, reqOutputs, opts)*
+function [FIT_values, FIT_plugin, FIT_nullDist, atom1, atom2] = FIT(inputs, varargin)
+% *function [FIT_values, FIT_plugin, FIT_nullDist, atom1, atom2] = FIT(inputs, reqOutputs, opts)*
 %
 % The FIT function computes the Feature-specific Information Transfer (FIT) values between time series data.
 % Feature-specific Information Transfer quantifies how much information about a specific feature (S)
@@ -20,7 +20,7 @@ function [FIT_values, FIT_naive, FIT_nullDist, atom1, atom2] = FIT(inputs, varar
 %
 %   - varargin: Optional arguments, passed as a structure. Fields may include:
 %              - bias:               Specifies the bias correction method to be used.
-%                                    'naive'                      :(default) - No correction applied.
+%                                    'plugin'                      :(default) - No correction applied.
 %                                    'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
 %                                    'ShuffSub'                   :Shuffle Substraction (need to specify shuff as number of shufflings).
 %                                    'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
@@ -66,7 +66,7 @@ function [FIT_values, FIT_naive, FIT_nullDist, atom1, atom2] = FIT(inputs, varar
 %
 % Outputs:
 %   - FIT_values: A cell array containing the computed FIT values as specified in the reqOutputs argument.
-%   - FIT_naive: A cell array containing the naive FIT estimates.
+%   - FIT_plugin: A cell array containing the plugin FIT estimates.
 %   - FIT_nullDist: Results of the null distribution computation (0 if not performed).
 %   - atom1: A cell array containing the first atom values computed during the analysis.
 %   - atom2: A cell array containing the second atom values computed during the analysis.
@@ -267,10 +267,10 @@ if any(opts.computeNulldist)
         nullDist_opts.recall = false;
         FIT_nullDist = create_nullDist(inputs, reqOutputs, @FIT, nullDist_opts);
 end
-if ~strcmp(corr, 'naive')  
+if ~strcmp(corr, 'plugin')  
     opts.recall = true;
     opts.computeNulldist = false;
-    [FIT_values, FIT_naive] = correction(inputs_1d, reqOutputs, corr, corefunc, opts);
+    [FIT_values, FIT_plugin] = correction(inputs_1d, reqOutputs, corr, corefunc, opts);
     return
 end
 
@@ -328,5 +328,5 @@ for i = 1:length(indices)
             atom2{i} = atoms(2);
     end
 end
-FIT_naive = FIT_values;
+FIT_plugin = FIT_values;
 end

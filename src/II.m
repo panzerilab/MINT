@@ -1,4 +1,4 @@
-function [II_values, II_naive, II_nullDist, atom1, atom2] = II(inputs, varargin)
+function [II_values, II_plugin, II_nullDist, atom1, atom2] = II(inputs, varargin)
 % II - Intersection Information (II) and related information-theoretic quantities
 %
 % This function calculates the intersection information (II) based on the provided inputs, 
@@ -30,7 +30,7 @@ function [II_values, II_naive, II_nullDist, atom1, atom2] = II(inputs, varargin)
 %                                    'I_min'   : redundancy measure proposed by (Williams and Beer, 2010)                              
 %     
 %              - bias:               Specifies the bias correction method to be used.
-%                                    'naive'                      :(default) - No correction applied.
+%                                    'plugin'                      :(default) - No correction applied.
 %                                    'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
 %                                    'ShuffSub'                   :Shuffle Substraction (need to specify shuff as number of shufflings).
 %                                    'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
@@ -71,7 +71,7 @@ function [II_values, II_naive, II_nullDist, atom1, atom2] = II(inputs, varargin)
 % 
 % Outputs:
 %   - II_values: A cell array containing the computed II values as specified in the reqOutputs argument.
-%   - II_naive: A cell array containing the naive II estimates.
+%   - II_plugin: A cell array containing the plugin II estimates.
 %   - II_nullDist: Results of the null distribution computation (0 if not performed).
 %   - atom1, atom2: The redundancy atoms between A and B about C (atom1), and between C and B about A (atom2).
 
@@ -190,9 +190,9 @@ if any(opts.computeNulldist)
         nullDist_opts.isBinned=true;
         II_nullDist = create_nullDist(inputs_b, reqOutputs, @II, nullDist_opts);
 end
-if ~strcmp(corr, 'naive')  
+if ~strcmp(corr, 'plugin')  
     opts.computeNulldist = false;
-    [II_values, II_naive] = correction(inputs_1d, reqOutputs, corr, corefunc, opts);
+    [II_values, II_plugin] = correction(inputs_1d, reqOutputs, corr, corefunc, opts);
     return
 end
 
@@ -274,5 +274,5 @@ for t = 1:nTimepoints
         end
     end
 end 
-II_naive = II_values;
+II_plugin = II_values;
 end

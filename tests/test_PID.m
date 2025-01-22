@@ -53,7 +53,7 @@ classdef test_PID < matlab.unittest.TestCase
             opts.bin_method = {'eqspace', 'eqpop', 'none'};
             opts.n_bins = {2, 2};
             testCase.verifyError(@()PID({X1, X2, Y}, opts), 'Correction:UndefinedFunction');
-            opts.bias = 'naive';
+            opts.bias = 'plugin';
             opts.bin_method  = {'invalid'};
             testCase.verifyError(@()PID({X1, X2, Y}, opts), 'Binning:UndefinedFunction');
             warning('on', 'all');
@@ -67,7 +67,7 @@ classdef test_PID < matlab.unittest.TestCase
             X2 = rand(1, 100);
             outputs = {'q_dist'};
             opts.redundancy_measure = 'I_BROJA';
-            opts.bias = 'naive';            
+            opts.bias = 'plugin';            
             opts.suppressWarnings = true;
             opts.bin_method = {'eqspace', 'eqpop', 'none'};
             opts.n_bins = {2, 2};

@@ -1,5 +1,5 @@
-function [corrected_v, naive_v, shuff_all, addOut] = shuffle_subtraction(inputs, outputs, corefunc, varargin)
-% shuffle_subtraction - Compute bias-corrected and naive information-theoretic values
+function [corrected_v, plugin_v, shuff_all, addOut] = shuffle_subtraction(inputs, outputs, corefunc, varargin)
+% shuffle_subtraction - Compute bias-corrected and plugin information-theoretic values
 %
 % Inputs:
 %   - inputs: A cell array containing the input variables, where each cell corresponds to a different input source. 
@@ -19,8 +19,8 @@ function [corrected_v, naive_v, shuff_all, addOut] = shuffle_subtraction(inputs,
 %
 % Outputs:
 %   - corrected_v: A cell array containing the bias-corrected values for each specified output, computed by subtracting
-%                  the shuffled contributions from the naive values.
-%   - naive_v: A cell array containing the naive (uncorrected) values, as computed from the original input-output 
+%                  the shuffled contributions from the plugin values.
+%   - plugin_v: A cell array containing the plugin (uncorrected) values, as computed from the original input-output 
 %              relationships.
 %   - shuff_all: A cell array containing the results of the shuffled computations across all trials and outputs, 
 %                used for bias subtraction.
@@ -51,8 +51,8 @@ if nargin > 5
     inputs_nD = varargin{2};
 end
 addOut = 0;
-naive_opts = opts;
-naive_opts.bias = 'naive';
+plugin_opts = opts;
+plugin_opts.bias = 'plugin';
 nVars = length(inputs);
 nTimepoints_all = 1;
 Dims_tmp = size(inputs{1});
@@ -66,7 +66,7 @@ end
 nTimepoints = max(nTimepoints_all);
 corrected_v = cell(1, length(outputs));
 if strcmp(func2str(corefunc), 'PID')
-    naive_v = repmat({zeros(1,nTimepoints)}, 1, length(outputs));
+    plugin_v = repmat({zeros(1,nTimepoints)}, 1, length(outputs));
     shuff_all = repmat({zeros(opts.shuff, nTimepoints)},1, length(outputs));
     nSources = length(inputs)-1;
     if ~isfield(opts, 'pid_constrained')
@@ -76,11 +76,11 @@ if strcmp(func2str(corefunc), 'PID')
             opts.pid_constrained = false;
         end
     end
-    PID_naive = feval(corefunc, inputs, outputs, naive_opts);
+    PID_plugin = feval(corefunc, inputs, outputs, plugin_opts);
     if opts.pid_constrained
-        I1_naive  = cell2mat(MI({inputs{1}, inputs{end}}, {'I(A;B)'}, naive_opts));
-        I2_naive  = cell2mat(MI({inputs{2}, inputs{end}}, {'I(A;B)'}, naive_opts));
-        I12_naive = cell2mat(MI({cat(1, inputs{1}, inputs{2}), inputs{end}}, {'I(A;B)'}, naive_opts));
+        I1_plugin  = cell2mat(MI({inputs{1}, inputs{end}}, {'I(A;B)'}, plugin_opts));
+        I2_plugin  = cell2mat(MI({inputs{2}, inputs{end}}, {'I(A;B)'}, plugin_opts));
+        I12_plugin = cell2mat(MI({cat(1, inputs{1}, inputs{2}), inputs{end}}, {'I(A;B)'}, plugin_opts));
         I1_shuff_all = zeros(opts.shuff, nTimepoints);
         I2_shuff_all = zeros(opts.shuff, nTimepoints);
         I12_shuff_all = zeros(opts.shuff, nTimepoints);
@@ -97,25 +97,25 @@ if strcmp(func2str(corefunc), 'PID')
                 inputs_sh{var} = (shuffle_core(0, inputs_sh{var}', 0, [1, 0]))';
             end
         end
-        shuff_v  = feval(corefunc, inputs_sh, outputs, naive_opts);
+        shuff_v  = feval(corefunc, inputs_sh, outputs, plugin_opts);
         for outIdx = 1:length(outputs)
             shuff_all{outIdx}(sIdx,:) = shuff_v{outIdx};
         end
         if opts.pid_constrained
-            I1_shuff_all(sIdx,:) = cell2mat(MI({inputs_sh{1}, inputs_sh{end}}, {'I(A;B)'}, naive_opts));
-            I2_shuff_all(sIdx,:) = cell2mat(MI({inputs_sh{2}, inputs_sh{end}}, {'I(A;B)'}, naive_opts));
-            I12_shuff_all(sIdx,:) = cell2mat(MI({cat(1, inputs_sh{1}, inputs_sh{2}), inputs_sh{end}}, {'I(A;B)'}, naive_opts));
+            I1_shuff_all(sIdx,:) = cell2mat(MI({inputs_sh{1}, inputs_sh{end}}, {'I(A;B)'}, plugin_opts));
+            I2_shuff_all(sIdx,:) = cell2mat(MI({inputs_sh{2}, inputs_sh{end}}, {'I(A;B)'}, plugin_opts));
+            I12_shuff_all(sIdx,:) = cell2mat(MI({cat(1, inputs_sh{1}, inputs_sh{2}), inputs_sh{end}}, {'I(A;B)'}, plugin_opts));
         end
     end
 
     if opts.pid_constrained
-        I1_corrected = I1_naive-mean(I1_shuff_all,1);
-        I2_corrected = I2_naive-mean(I2_shuff_all,1);
-        I12_corrected = I12_naive-mean(I12_shuff_all,1);
+        I1_corrected = I1_plugin-mean(I1_shuff_all,1);
+        I2_corrected = I2_plugin-mean(I2_shuff_all,1);
+        I12_corrected = I12_plugin-mean(I12_shuff_all,1);
     end
     for outIdx = 1:length(outputs)
-        PID_corrected{outIdx} = PID_naive{outIdx} - mean(shuff_all{outIdx},1);
-        naive_v{outIdx} = PID_naive{outIdx};
+        PID_corrected{outIdx} = PID_plugin{outIdx} - mean(shuff_all{outIdx},1);
+        plugin_v{outIdx} = PID_plugin{outIdx};
     end
     if opts.pid_constrained
         if ~isfield(opts, 'chosen_atom')
@@ -128,68 +128,68 @@ if strcmp(func2str(corefunc), 'PID')
                 syn = I12_corrected-I1_corrected-I2_corrected+red;
                 unq1 = I1_corrected-red;
                 unq2 = I2_corrected-red;
-                %naive
-                red_naive = PID_naive{pos};
-                syn_naive  = I12_naive-I1_naive-I2_naive+red_naive;
-                unq1_naive  = I1_naive-red_naive;
-                unq2_naive  = I2_naive-red_naive;
+                %plugin
+                red_plugin = PID_plugin{pos};
+                syn_plugin  = I12_plugin-I1_plugin-I2_plugin+red_plugin;
+                unq1_plugin  = I1_plugin-red_plugin;
+                unq2_plugin  = I2_plugin-red_plugin;
             case 'Unq1'
                 unq1 = PID_corrected{pos};
                 red = I1_corrected-unq1;
                 syn =  I12_corrected-I2_corrected-unq1;
                 unq2 = I2_corrected-I1_corrected+unq1;
-                %naive
-                unq1_naive = PID_naive{pos};
-                red_naive = I1_naive-unq1_naive;
-                syn_naive =  I12_naive-I2_naive-unq1_naive;
-                unq2_naive = I2_naive-I1_naive+unq1_naive;
+                %plugin
+                unq1_plugin = PID_plugin{pos};
+                red_plugin = I1_plugin-unq1_plugin;
+                syn_plugin =  I12_plugin-I2_plugin-unq1_plugin;
+                unq2_plugin = I2_plugin-I1_plugin+unq1_plugin;
             case 'Unq2'
                 unq2 = PID_corrected{pos};
                 red = I2_corrected-unq2;
                 syn =  I12_corrected-I1_corrected-unq2;
                 unq1 = I1_corrected-I2_corrected+unq2;
-                %naive
-                unq2_naive = PID_naive{pos};
-                red_naive = I2_naive-unq2_naive;
-                syn_naive =  I12_naive-I1_naive-unq2_naive;
-                unq1_naive = I1_naive-I2_naive+unq2_naive;
+                %plugin
+                unq2_plugin = PID_plugin{pos};
+                red_plugin = I2_plugin-unq2_plugin;
+                syn_plugin =  I12_plugin-I1_plugin-unq2_plugin;
+                unq1_plugin = I1_plugin-I2_plugin+unq2_plugin;
             case 'Syn'
                 syn = PID_corrected{pos};
                 red = I1_corrected+I2_corrected-I12_corrected+syn;
                 unq1 = I12_corrected-I2_corrected-syn;
                 unq2 = I12_corrected-I1_corrected-syn;
-                %naive
-                syn_naive  = PID_naive{pos};
-                red_naive  = I1_naive+I2_naive-I12_naive+syn_naive;
-                unq1_naive  = I12_naive-I2_naive-syn_naive;
-                unq2_naive  = I12_naive-I1_naive-syn_naive;
+                %plugin
+                syn_plugin  = PID_plugin{pos};
+                red_plugin  = I1_plugin+I2_plugin-I12_plugin+syn_plugin;
+                unq1_plugin  = I12_plugin-I2_plugin-syn_plugin;
+                unq2_plugin  = I12_plugin-I1_plugin-syn_plugin;
         end
         for i = 1:length(outputs)
             switch outputs{i}
                 case 'Syn'
                     PID_corrected{i} = syn;
-                    naive_v{i}       = syn_naive;
+                    plugin_v{i}       = syn_plugin;
                 case 'Red'
                     PID_corrected{i} = red;
-                    naive_v{i}       = red_naive;
+                    plugin_v{i}       = red_plugin;
                 case 'Unq1'
                     PID_corrected{i} = unq1;
-                    naive_v{i}       = unq1_naive;
+                    plugin_v{i}       = unq1_plugin;
                 case 'Unq2'
                     PID_corrected{i} = unq2;
-                    naive_v{i}       = unq2_naive;
+                    plugin_v{i}       = unq2_plugin;
                 case 'Unq'
                     PID_corrected{i} = unq1 + unq2;
-                    naive_v{i}       = unq1_naive + unq2_naive;
+                    plugin_v{i}       = unq1_plugin + unq2_plugin;
                 case 'Joint'
                     PID_corrected{i} = red+syn+unq1+unq2;
-                    naive_v{i}       = red_naive+syn_naive+unq1_naive+unq2_naive;
+                    plugin_v{i}       = red_plugin+syn_plugin+unq1_plugin+unq2_plugin;
                 case 'Union'
                     PID_corrected{i} = (red+syn+unq1+unq2) - syn;
-                    naive_v{i}       = (red_naive+syn_naive+unq1_naive+unq2_naive) - syn_naive;
+                    plugin_v{i}       = (red_plugin+syn_plugin+unq1_plugin+unq2_plugin) - syn_plugin;
                 otherwise
                     PID_corrected{i} = NaN;
-                    naive_v{i}       = NaN;
+                    plugin_v{i}       = NaN;
             end
         end
     end
@@ -198,7 +198,7 @@ elseif strcmp(func2str(corefunc), 'FIT') || strcmp(func2str(corefunc), 'cFIT')
     atom1_corrected = cell(1, length(outputs));
     atom2_corrected = cell(1, length(outputs));
     shuff_all = cell(1, length(outputs));
-    [naive_v,~,~,atom1_naive, atom2_naive] = feval(corefunc, inputs, outputs, naive_opts);
+    [plugin_v,~,~,atom1_plugin, atom2_plugin] = feval(corefunc, inputs, outputs, plugin_opts);
     addOut = cell(2,length(outputs));
     for sIdx = 1:opts.shuff
         inputs_sh = inputs;
@@ -211,7 +211,7 @@ elseif strcmp(func2str(corefunc), 'FIT') || strcmp(func2str(corefunc), 'cFIT')
                 inputs_sh{var} = (shuffle_core(0, inputs_sh{var}', 0, [1, 0]))';
             end
         end
-        [FIT_shuff, ~, ~, atom1_shuff, atom2_shuff]  = feval(corefunc, inputs_sh, outputs, naive_opts);
+        [FIT_shuff, ~, ~, atom1_shuff, atom2_shuff]  = feval(corefunc, inputs_sh, outputs, plugin_opts);
         for outIdx = 1:length(outputs)
             shuff_all{outIdx} = FIT_shuff;
             addOut{1,outIdx} = [addOut{1,outIdx}, atom1_shuff{outIdx}];
@@ -219,8 +219,8 @@ elseif strcmp(func2str(corefunc), 'FIT') || strcmp(func2str(corefunc), 'cFIT')
         end
     end
     for outIdx = 1:length(outputs)
-        atom1_corrected{outIdx} = atom1_naive{outIdx} - mean(addOut{1,outIdx});
-        atom2_corrected{outIdx} = atom2_naive{outIdx} - mean(addOut{1,outIdx});
+        atom1_corrected{outIdx} = atom1_plugin{outIdx} - mean(addOut{1,outIdx});
+        atom2_corrected{outIdx} = atom2_plugin{outIdx} - mean(addOut{1,outIdx});
         addOut{1,outIdx} = [addOut{1,outIdx},atom1_corrected{outIdx}];
         addOut{2,outIdx} = [addOut{2,outIdx},atom2_corrected{outIdx}];
         if  strcmp(func2str(corefunc), 'cFIT')
@@ -237,7 +237,7 @@ elseif strcmp(func2str(corefunc), 'II')
     shuff_all = 0;
     atom1_shuffall = repmat({zeros(opts.shuff, nTimepoints)},1, length(outputs));
     atom2_shuffall = repmat({zeros(opts.shuff, nTimepoints)},2, length(outputs));
-    [naive_v,~,~,atom1_naive, atom2_naive] = feval(corefunc, inputs, outputs, naive_opts);
+    [plugin_v,~,~,atom1_plugin, atom2_plugin] = feval(corefunc, inputs, outputs, plugin_opts);
     addOut = cell(2,length(outputs));
      for sIdx = 1:opts.shuff
         inputs_sh = inputs;
@@ -250,7 +250,7 @@ elseif strcmp(func2str(corefunc), 'II')
                 inputs_sh{var} = (shuffle_core(0, inputs_sh{var}', 0, [1, 0]))';
             end
         end
-        [~, ~, ~, atom1_shuff, atom2_shuff]  = feval(corefunc, inputs_sh, outputs, naive_opts);
+        [~, ~, ~, atom1_shuff, atom2_shuff]  = feval(corefunc, inputs_sh, outputs, plugin_opts);
         for outIdx = 1:length(outputs)            
             atom1_shuffall{outIdx}(sIdx,:) = atom1_shuff{outIdx};
             atom2_shuffall{outIdx}(sIdx,:) = atom2_shuff{outIdx};
@@ -258,15 +258,15 @@ elseif strcmp(func2str(corefunc), 'II')
 
      end
      for outIdx = 1:length(outputs)
-         atom1_corrected{outIdx} = atom1_naive{outIdx} - mean(atom1_shuffall{outIdx},1);
-         atom2_corrected{outIdx} = atom2_naive{outIdx} - mean(atom2_shuffall{outIdx},1);
+         atom1_corrected{outIdx} = atom1_plugin{outIdx} - mean(atom1_shuffall{outIdx},1);
+         atom2_corrected{outIdx} = atom2_plugin{outIdx} - mean(atom2_shuffall{outIdx},1);
          addOut{1,outIdx} = atom1_shuffall{outIdx};
          addOut{1,outIdx} = atom2_shuffall{outIdx};
          corrected_v{outIdx} = min(atom1_corrected{outIdx},atom2_corrected{outIdx});
      end
 elseif strcmp(func2str(corefunc), 'MI') || strcmp(func2str(corefunc), 'TE') || strcmp(func2str(corefunc), 'cTE') || strcmp(func2str(corefunc), 'cMI')
     shuff_all = repmat({zeros(opts.shuff, nTimepoints)},1, length(outputs));
-    naive_v = feval(corefunc, inputs, outputs, naive_opts);
+    plugin_v = feval(corefunc, inputs, outputs, plugin_opts);
     for sIdx = 1:opts.shuff
         inputs_sh = inputs;
         for var = 1:length(inputs)
@@ -278,13 +278,13 @@ elseif strcmp(func2str(corefunc), 'MI') || strcmp(func2str(corefunc), 'TE') || s
                 inputs_sh{var} = (shuffle_core(0, inputs_sh{var}', 0, [1, 0]))';
             end
         end
-        shuff_v  = feval(corefunc, inputs_sh, outputs, naive_opts);
+        shuff_v  = feval(corefunc, inputs_sh, outputs, plugin_opts);
         for outIdx = 1:length(outputs)
             shuff_all{outIdx}(sIdx,:) = shuff_v{outIdx};
         end
     end
      for outIdx = 1:length(outputs)      
-        corrected_v{outIdx} = naive_v{outIdx} - mean(shuff_all{outIdx},1);
+        corrected_v{outIdx} = plugin_v{outIdx} - mean(shuff_all{outIdx},1);
      end 
 end
 

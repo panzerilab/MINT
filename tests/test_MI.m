@@ -58,7 +58,7 @@ classdef test_MI < matlab.unittest.TestCase
                     S = [S i];
                 end
             end
-            opts.bias = 'naive';
+            opts.bias = 'plugin';
             opts.bin_method = {'eqpop'};
             opts.suppressWarnings  = true;
             opts.n_bins = {2, 3};
@@ -66,7 +66,7 @@ classdef test_MI < matlab.unittest.TestCase
             assert((MI_out{1} - 0.6205) < 0.01);
             opts.bias = 'invalid';
             testCase.verifyError(@()MI({R, S},opts), 'Correction:UndefinedFunction');
-            opts.bias = 'naive';
+            opts.bias = 'plugin';
             opts.bin_method  = {'invalid'};
             testCase.verifyError(@()MI({R, S},opts), 'Binning:UndefinedFunction');
         end

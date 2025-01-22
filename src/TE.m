@@ -1,5 +1,5 @@
-function [TE_values, TE_naive, TE_nullDist] = TE(inputs, varargin)
-% *function [TE_values, TE_naive, TE_nullDist] = TE(inputs, reqOutputs, opts)*
+function [TE_values, TE_plugin, TE_nullDist] = TE(inputs, varargin)
+% *function [TE_values, TE_plugin, TE_nullDist] = TE(inputs, reqOutputs, opts)*
 %
 % The TE function computes Transfer Entropy (TE) values from time series data.
 % Transfer entropy from a process A to another process B is the amount of uncertainty
@@ -35,7 +35,7 @@ function [TE_values, TE_naive, TE_nullDist] = TE(inputs, varargin)
 %                                    Default is length of A.
 %
 %              - bias:               Specifies the bias correction method to be used.
-%                                    'naive'                      :(default) - No correction applied.
+%                                    'plugin'                      :(default) - No correction applied.
 %                                    'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
 %                                    'ShuffSub'                   :Shuffle Substraction (need to specify shuff as number of shufflings).
 %                                    'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
@@ -78,7 +78,7 @@ function [TE_values, TE_naive, TE_nullDist] = TE(inputs, varargin)
 %
 % Outputs:
 %   - TE_values: A cell array containing the computed TE values as specified in the reqOutputs argument.
-%   - TE_naive: A cell array containing the naive TE estimates.
+%   - TE_plugin: A cell array containing the plugin TE estimates.
 %   - TE_nullDist: Results of the null distribution computation (0 if not performed).
 %
 % Note:
@@ -307,9 +307,9 @@ if opts.computeNulldist
 else
     TE_nullDist = 0;
 end
-if ~strcmp(corr, 'naive')
+if ~strcmp(corr, 'plugin')
     opts.computeNulldist = false;
-    [TE_values, TE_naive] = correction(inputs_1d, reqOutputs, corr, corefunc, opts);
+    [TE_values, TE_plugin] = correction(inputs_1d, reqOutputs, corr, corefunc, opts);
     return
 end
 
@@ -334,7 +334,7 @@ for ind = 1:length(indices)
 end
 required_entropies = unique(required_entropies);
 H_values = cell(1, length(required_entropies));
-H_naive = cell(1, length(required_entropies));
+H_plugin = cell(1, length(required_entropies));
 H_shuff_all = cell(1, length(required_entropies));
 
 opts_entropy = opts;
@@ -342,13 +342,13 @@ opts_entropy.computeNulldist = false;
 for i = 1:length(required_entropies)
     switch required_entropies{i}
         case 'H(B_pres|B_past)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{3}(1,:), inputs_1d{4}(1,:)}, {'H(A|B)'}, opts_entropy);
+            [H_values{i}, H_plugin{i}, H_shuff_all{i}] = H({inputs_1d{3}(1,:), inputs_1d{4}(1,:)}, {'H(A|B)'}, opts_entropy);
         case 'H(B_pres|B_past,A_past)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{3}(1,:), cat(1, inputs_1d{4}(1,:),inputs_1d{2}(1,:))}, {'H(A|B)'}, opts_entropy);
+            [H_values{i}, H_plugin{i}, H_shuff_all{i}] = H({inputs_1d{3}(1,:), cat(1, inputs_1d{4}(1,:),inputs_1d{2}(1,:))}, {'H(A|B)'}, opts_entropy);
         case 'H(A_pres|A_past)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{1}(1,:), inputs_1d{2}(1,:)}, {'H(A|B)'}, opts_entropy);
+            [H_values{i}, H_plugin{i}, H_shuff_all{i}] = H({inputs_1d{1}(1,:), inputs_1d{2}(1,:)}, {'H(A|B)'}, opts_entropy);
         case 'H(A_pres|A_past,B_past)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{1}(1,:), cat(1, inputs_1d{2}(1,:),inputs_1d{4}(1,:))}, {'H(A|B)'}, opts_entropy);
+            [H_values{i}, H_plugin{i}, H_shuff_all{i}] = H({inputs_1d{1}(1,:), cat(1, inputs_1d{2}(1,:),inputs_1d{4}(1,:))}, {'H(A|B)'}, opts_entropy);
     end
 end
 
@@ -357,7 +357,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Compute the TE values
 TE_values = cell(1, length(reqOutputs));
-TE_naive = cell(1, length(reqOutputs));
+TE_plugin = cell(1, length(reqOutputs));
 
 for i = 1:length(indices)
     idx = indices(i);

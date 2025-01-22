@@ -30,7 +30,7 @@ function bias = pt(C_ptr, Rtot, N)
     % Initialize PnonZero array
     PnonZero = zeros(1, NnonZeroCvalues);
     
-    % Read non-zero probability values and compute Rnaive
+    % Read non-zero probability values and compute Rplugin
     index = 1;
     for i = 1:Rtot
         if C_ptr(i) > 0
@@ -39,39 +39,39 @@ function bias = pt(C_ptr, Rtot, N)
         end
     end
     
-    % Rnaive is the number of non-null probability values
-    Rnaive = NnonZeroCvalues;
+    % Rplugin is the number of non-null probability values
+    Rplugin = NnonZeroCvalues;
     
-    if Rnaive < Rtot
+    if Rplugin < Rtot
         % Initial value for Rexpected
-        Rexpected = Rnaive;
+        Rexpected = Rplugin;
         for i = 1:NnonZeroCvalues
             Rexpected = Rexpected - (1 - PnonZero(i))^N;
         end
         
         % Initial values for deltaRprevious and deltaR
         deltaRprevious = Rtot;
-        deltaR = abs(Rnaive - Rexpected);
+        deltaR = abs(Rplugin - Rexpected);
         
-        R = Rnaive;
+        R = Rplugin;
         while deltaR < deltaRprevious && R < Rtot
             R = R + 1;
             
-            gamma = (R - Rnaive) * (1 - (N / (N + Rnaive))^(1 / N));
+            gamma = (R - Rplugin) * (1 - (N / (N + Rplugin))^(1 / N));
             
             Rexpected = 0;
             % Occupied bins
             for i = 1:NnonZeroCvalues
-                Pbayes = (PnonZero(i) * N + 1) / (N + Rnaive) * (1 - gamma);
+                Pbayes = (PnonZero(i) * N + 1) / (N + Rplugin) * (1 - gamma);
                 Rexpected = Rexpected + 1 - (1 - Pbayes)^N;
             end
             
             % Non-occupied bins
-            Pbayes = gamma / (R - Rnaive);
-            Rexpected = Rexpected + (R - Rnaive) * (1 - (1 - Pbayes)^N);
+            Pbayes = gamma / (R - Rplugin);
+            Rexpected = Rexpected + (R - Rplugin) * (1 - (1 - Pbayes)^N);
             
             deltaRprevious = deltaR;
-            deltaR = abs(Rnaive - Rexpected);
+            deltaR = abs(Rplugin - Rexpected);
         end
         
         R = R - 1;

@@ -90,13 +90,13 @@ FIT_opts.n_bins = {5, 5};                           % Specify an integer for the
 
 
 % To correct for sampling bias, you can specify methods for bias correction 
-% in the MINT toolbox. If its not naive you will get the naive values as
+% in the MINT toolbox. If its not plugin you will get the plugin values as
 % the  
 % second output of the functions. 
 % For more details type 'help correction' in your Command Window.
 % You can define the bias correction options using the following parameters:
-FIT_opts.bias = 'shuffSub';                 % Options:                                                      | (default: 'naive')
-                                            % 'naive' (no bias correction)                                                                   
+FIT_opts.bias = 'shuffSub';                 % Options:                                                      | (default: 'plugin')
+                                            % 'plugin' (no bias correction)                                                                   
                                             % 'qe' (Quadratic Extrapolation), 
                                             % 'le' (Linear Extrapolation), 
                                             % 'qe_shuffSub' (Quadratic with Shuffle Subtraction), 
@@ -148,7 +148,7 @@ FIT_opts.parallel_sampling = true;
 
 % No we defined all options and we can call the FIT function H() as
 % follows: 
-%[FIT_corrected, FIT_naive, FIT_nullDist] = FIT(inputs, outputList, FIT_opts); 
+%[FIT_corrected, FIT_plugin, FIT_nullDist] = FIT(inputs, outputList, FIT_opts); 
 
 
 % -------------------------------------------------------------------------
@@ -183,5 +183,5 @@ FIT_opts.bin_method = {'eqpop', 'eqpop', 'eqpop','none'};
 FIT_opts.n_bins = {5, 5, 5}; 
 FIT_opts.shuffling = {'AB_D'};
 FIT_opts.n_trials = num_trials*4;
-%[cFIT_corrected, cFIT_naive, cFIT_nullDist] = cFIT(inputs, outputList, FIT_opts); 
-[cFIT_corrected, cFIT_naive, cFIT_nullDist] = cFIT_old(S, X1,X2,X3, FIT_opts); 
+%[cFIT_corrected, cFIT_plugin, cFIT_nullDist] = cFIT(inputs, outputList, FIT_opts); 
+[cFIT_corrected, cFIT_plugin, cFIT_nullDist] = cFIT_old(S, X1,X2,X3, FIT_opts); 

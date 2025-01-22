@@ -1,5 +1,5 @@
-function [cMI_values, cMI_naive, cMI_nullDist] =  cMI(inputs, varargin)
-% *function [cMI_values, cMI_naive, cMI_nullDist] =  cMI(inputs, reqOutputs, opts)*
+function [cMI_values, cMI_plugin, cMI_nullDist] =  cMI(inputs, varargin)
+% *function [cMI_values, cMI_plugin, cMI_nullDist] =  cMI(inputs, reqOutputs, opts)*
 %
 % This function calculates conditional mutual information (cMI) 
 %
@@ -20,7 +20,7 @@ function [cMI_values, cMI_naive, cMI_nullDist] =  cMI(inputs, varargin)
 %             
 %   - varargin: Optional arguments, passed as a structure. Fields may include:
 %              - bias:             Specifies the bias correction method to be used.
-%                                  'naive'                      :(default) - No correction applied.
+%                                  'plugin'                      :(default) - No correction applied.
 %                                  'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
 %                                  'ShuffSub'                   :Shuffle Substraction (need to specify shuff as number of shufflings).
 %                                  'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
@@ -63,7 +63,7 @@ function [cMI_values, cMI_naive, cMI_nullDist] =  cMI(inputs, varargin)
 %
 % Outputs:
 %   - cMI_values: A cell array containing the computed cMI values as specified in the reqOutputs argument.
-%   - cMI_naive: A cell array containing the naive cMI estimates.
+%   - cMI_plugin: A cell array containing the plugin cMI estimates.
 %   - cMI_shuff_all: Results of the null distribution computation (0 if not performed).
 %
 % Example:
@@ -175,8 +175,8 @@ else
     cMI_nullDist = 0;
 end
 
-if ~strcmp(corr, 'naive')
-    [cMI_values, cMI_naive] = correction(inputs, reqOutputs, corr,  @cMI, opts);
+if ~strcmp(corr, 'plugin')
+    [cMI_values, cMI_plugin] = correction(inputs, reqOutputs, corr,  @cMI, opts);
     return
 end
 
@@ -198,7 +198,7 @@ for ind = 1:length(indices)
 end
 required_entropies = unique(required_entropies);
 H_values = cell(1, length(required_entropies));
-H_naive = cell(1, length(required_entropies));
+H_plugin = cell(1, length(required_entropies));
 H_shuff_all = cell(1, length(required_entropies));
 
 opts_entropy = opts;
@@ -206,9 +206,9 @@ opts_entropy.compute_nulldist = false;
 for i = 1:length(required_entropies)
     switch required_entropies{i}
         case 'H(A|C)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs{1}, inputs{3}}, {'H(A|B)'}, opts_entropy);          
+            [H_values{i}, H_plugin{i}, H_shuff_all{i}] = H({inputs{1}, inputs{3}}, {'H(A|B)'}, opts_entropy);          
         case 'H(A|B,C)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs{1}, cat(1,inputs{2}, inputs{3})}, {'H(A|B)'}, opts_entropy);
+            [H_values{i}, H_plugin{i}, H_shuff_all{i}] = H({inputs{1}, cat(1,inputs{2}, inputs{3})}, {'H(A|B)'}, opts_entropy);
     end
 end
 
@@ -217,7 +217,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Initialize cell for MI values
 cMI_values = cell(1, length(reqOutputs));
-cMI_naive = cell(1, length(reqOutputs));
+cMI_plugin = cell(1, length(reqOutputs));
 
 for t = 1:nTimepoints
     for i = 1:length(indices)

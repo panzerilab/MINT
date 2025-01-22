@@ -20,7 +20,7 @@ function null_distribution = create_nullDist(inputs, outputs, corefunc, varargin
 %   - varargin: Additional options provided as a structure. The options allow for flexibility
 %               in terms of binning methods, shuffle procedures, number of samples, and parallelization.
 %               Some key optional fields include:
-%               - `bias`: A string specifying bias correction methods (default: 'naive').
+%               - `bias`: A string specifying bias correction methods (default: 'plugin').
 %               - `bin_method`: A cell array for binning methods (default: {'none'}).
 %               - `n_bins`: The number of bins for discretizing continuous data (default: 3).
 %               - `shuff`: An integer specifying the number of shuffles to apply (default: 0).
@@ -57,7 +57,7 @@ function null_distribution = create_nullDist(inputs, outputs, corefunc, varargin
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 1: Check Inputs, Check OutputList, Fill missing opts with default values %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-default_opts.bias = 'naive';
+default_opts.bias = 'plugin';
 default_opts.bin_method = {'none'};
 default_opts.n_bins = {3};
 default_opts.n_samples = 100;

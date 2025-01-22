@@ -1,4 +1,4 @@
-function [PID_values, PID_naive, PID_nullDist] = PID(inputs, varargin)
+function [PID_values, PID_plugin, PID_nullDist] = PID(inputs, varargin)
 % PID - Calculate Partial Information Decomposition (PID) and related information-theoretic quantities
 %
 % This function calculates the atoms partial information decomposition
@@ -42,7 +42,7 @@ function [PID_values, PID_naive, PID_nullDist] = PID(inputs, varargin)
 %                                    'I_min'   : redundancy measure proposed by (Williams and Beer, 2010)                              
 %     
 %              - bias:               Specifies the bias correction method to be used.
-%                                    'naive'                      :(default) - No correction applied.
+%                                    'plugin'                      :(default) - No correction applied.
 %                                    'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
 %                                    'ShuffSub'                   :Shuffle Substraction (need to specify shuff as number of shufflings).
 %                                    'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
@@ -96,7 +96,7 @@ function [PID_values, PID_naive, PID_nullDist] = PID(inputs, varargin)
 %
 % Outputs:
 %   - PID_values: A cell array containing the computed MI values as specified in the reqOutputs argument.
-%   - PID_naive: A cell array containing the naive MI estimates.
+%   - PID_plugin: A cell array containing the plugin MI estimates.
 %   - PID_nullDist: Results of the null distribution computation (0 if not performed).
 %
 % EXAMPLE
@@ -171,13 +171,13 @@ if nSources < 2
     error('PID:NotEnoughSources', msg);
 end
 if ismember('q_dist', reqOutputs)
-    if ~strcmp(opts.bias, 'naive') || ~strcmp(opts.redundancy_measure, 'I_BROJA') || nSources > 2
+    if ~strcmp(opts.bias, 'plugin') || ~strcmp(opts.redundancy_measure, 'I_BROJA') || nSources > 2
         reqOutputs(ismember(reqOutputs, 'q_dist')) = [];
-        warning('q_dist has been removed from reqOutputs because opts.bias must be ''naive'', redundancy_measure must be ''I_BROJA'' and not more than 2 Sources in the input.');
+        warning('q_dist has been removed from reqOutputs because opts.bias must be ''plugin'', redundancy_measure must be ''I_BROJA'' and not more than 2 Sources in the input.');
     end
     if isempty(reqOutputs)
         PID_values = NaN; 
-        PID_naive= NaN;  
+        PID_plugin= NaN;  
         PID_nullDist= NaN; 
         return;
     end
@@ -254,8 +254,8 @@ end
 
 corr = opts.bias;
 corefunc = @PID;
-if ~strcmp(corr, 'naive')
-    [PID_values, PID_naive, PID_shuff_all] = correction(inputs_b, reqOutputs, corr, corefunc, opts);
+if ~strcmp(corr, 'plugin')
+    [PID_values, PID_plugin, PID_shuff_all] = correction(inputs_b, reqOutputs, corr, corefunc, opts);
     if ~opts.computeNulldist
         PID_nullDist = PID_shuff_all;
     end
@@ -340,7 +340,7 @@ for t = 1:nTimepoints
         end
     end
 end
-PID_naive = PID_values;
+PID_plugin = PID_values;
 if strcmp(opts.bias, 'shuffSub') && ~opts.computeNulldist
     PID_nullDist = PID_shuff_all;
 else

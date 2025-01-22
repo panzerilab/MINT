@@ -1,5 +1,5 @@
-function [corrected_v, naive_v, shuff_all] = correction(inputs, reqOutputs, corr, corefunc, varargin)
-% correction - Compute bias-corrected and naive information-theoretic values
+function [corrected_v, plugin_v, shuff_all] = correction(inputs, reqOutputs, corr, corefunc, varargin)
+% correction - Compute bias-corrected and plugin information-theoretic values
 %
 % The `correction` function computes bias-corrected values for the information measures implemented in the 
 % MINT toolbox, using various bias correction methods. The function allows users to select different correction 
@@ -35,13 +35,13 @@ function [corrected_v, naive_v, shuff_all] = correction(inputs, reqOutputs, corr
 %
 % Outputs:
 %   - corrected_v: The bias-corrected value computed by the specified correction method.
-%   - naive_v: The naive (uncorrected) value.
+%   - plugin_v: The plugin (uncorrected) value.
 %   - shuff_all: The result of shuffling correction (0 if not applicable).
 %
 % Example:
 %   To apply shuffle subtraction bias correction, call the function as:
 %   opts.bias = 'shuffSub'; 
-%   [corrected_v, naive_v, shuff_all] = correction(inputs, reqOutputs, 'shuffSub', @TE, opts);
+%   [corrected_v, plugin_v, shuff_all] = correction(inputs, reqOutputs, 'shuffSub', @TE, opts);
 %
 % Note:
 % Users can add their own custom correction functions in the 'tools' folder.
@@ -51,7 +51,7 @@ function [corrected_v, naive_v, shuff_all] = correction(inputs, reqOutputs, corr
 % Correction Methods:
 % The function supports several correction methods, such as quadratic and linear extrapolation, to compute
 % biases in the measures. Shuffle-based correction techniques involve random permutations of the
-% input data, followed by the subtraction of the mean shuffle values from the naive results.
+% input data, followed by the subtraction of the mean shuffle values from the plugin results.
 %
 % Custom Correction Strategies:
 % Users can define their own correction strategies by creating a MATLAB function that implements
@@ -61,7 +61,7 @@ function [corrected_v, naive_v, shuff_all] = correction(inputs, reqOutputs, corr
 % custom strategy.
 %
 % Save this function as `custom_correction.m`. To use it, call:
-%     [corrected_v, naive_v] = correction(inputs, reqOutputs, 'custom_correction', @my_corefunc, opts);
+%     [corrected_v, plugin_v] = correction(inputs, reqOutputs, 'custom_correction', @my_corefunc, opts);
 % This allows users to extend the correction process with tailored methods for specific analyses.
 
 % Copyright (C) 2024 Gabriel Matias Lorenz, Nicola Marie Engel
@@ -135,24 +135,24 @@ shuff_all = 0;
 
 switch corr
     case {'qe','le' }
-        [corrected_v, naive_v] = extrapolation(inputs, reqOutputs, corr, corefunc, opts);
+        [corrected_v, plugin_v] = extrapolation(inputs, reqOutputs, corr, corefunc, opts);
     case {'qe_shuffSub', 'le_shuffSub'}
-        [corrected_v, naive_v] = shuffSub_extrapolation(inputs, reqOutputs, corr, corefunc, opts);
+        [corrected_v, plugin_v] = shuffSub_extrapolation(inputs, reqOutputs, corr, corefunc, opts);
     case 'shuffSub'
-        [corrected_v, naive_v, shuff_all] = shuffle_subtraction(inputs, reqOutputs, corefunc, opts);
+        [corrected_v, plugin_v, shuff_all] = shuffle_subtraction(inputs, reqOutputs, corefunc, opts);
     case 'shuffCorr'
-        [corrected_v, naive_v] = shuffle_correction(inputs, reqOutputs, corefunc, opts);
+        [corrected_v, plugin_v] = shuffle_correction(inputs, reqOutputs, corefunc, opts);
     case 'ksg'
-        [corrected_v, naive_v] = ksg_correction(inputs, reqOutputs, corefunc, opts);
+        [corrected_v, plugin_v] = ksg_correction(inputs, reqOutputs, corefunc, opts);
     case 'nsb'
-        [corrected_v, naive_v] = ksg_correction(inputs, reqOutputs, corefunc, opts);
+        [corrected_v, plugin_v] = ksg_correction(inputs, reqOutputs, corefunc, opts);
     otherwise
         func_handle = str2func(corr);
         if exist(corr, 'file') == 2
             % You can change the reqOutputs and inputs_b of your function here,
             % but make sure that it fits the output definition of this
             % function.
-            [corrected_v, naive_v] = feval(func_handle, inputs, reqOutputs, opts);
+            [corrected_v, plugin_v] = feval(func_handle, inputs, reqOutputs, opts);
         else
             available_functions = {'qe', 'le', 'qe_shuffSub', 'le_shuffSub', 'shuffSub', 'pt', 'bub'};
             msg = sprintf(['The function "%s" is not defined in the tools folder.\n', ...

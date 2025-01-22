@@ -61,7 +61,7 @@ classdef test_cMI < matlab.unittest.TestCase
                 end
             end
             R2 = randi([1,3],1, 40);
-            opts.bias = 'naive';
+            opts.bias = 'plugin';
             opts.bin_method = {'eqpop', 'none', 'eqpop'};
             opts.suppressWarnings  = true;
             opts.n_bins = {2, 3};
@@ -69,7 +69,7 @@ classdef test_cMI < matlab.unittest.TestCase
             assert((cMI_out{1} - 0.6833) < 0.01);
             opts.bias = 'invalid';
             testCase.verifyError(@()cMI({R1, S, R2},opts), 'Correction:UndefinedFunction');
-            opts.bias = 'naive';
+            opts.bias = 'plugin';
             opts.bin_method  = {'invalid'};
             testCase.verifyError(@()cMI({R1, S, R2},opts), 'Binning:UndefinedFunction');
         end

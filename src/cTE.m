@@ -1,5 +1,5 @@
-function [cTE_values, cTE_naive, cTE_nullDist] = cTE(inputs, varargin)
-% *function [cTE_values, cTE_naive, cTE_nullDist] = cTE(inputs, reqOutputs, opts)*
+function [cTE_values, cTE_plugin, cTE_nullDist] = cTE(inputs, varargin)
+% *function [cTE_values, cTE_plugin, cTE_nullDist] = cTE(inputs, reqOutputs, opts)*
 %
 % The cTE function computes transfer entropy (cTE) between two
 % time series (A and B) conditioned on a third time series (C). The
@@ -42,7 +42,7 @@ function [cTE_values, cTE_naive, cTE_nullDist] = cTE(inputs, varargin)
 %                                    Default is length of A.
 %
 %              - bias:               Specifies the bias correction method to be used.
-%                                    'naive'                      :(default) - No correction applied.
+%                                    'plugin'                      :(default) - No correction applied.
 %                                    'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
 %                                    'ShuffSub'                   :Shuffle Substraction (need to specify shuff as number of shufflings).
 %                                    'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
@@ -85,7 +85,7 @@ function [cTE_values, cTE_naive, cTE_nullDist] = cTE(inputs, varargin)
 %
 % Outputs:
 %   - cTE_values: A cell array containing the computed cTE values as specified in the reqOutputs argument.
-%   - cTE_naive: A cell array containing the naive cTE estimates.
+%   - cTE_plugin: A cell array containing the plugin cTE estimates.
 %   - cTE_shuff_all: Results of the null distribution computation (0 if not performed).
 %
 % Note:
@@ -340,9 +340,9 @@ if opts.computeNulldist
 else
     cTE_nullDist = 0;
 end
-if ~strcmp(corr, 'naive')
+if ~strcmp(corr, 'plugin')
     opts.computeNulldist = false;
-    [cTE_values, cTE_naive] = correction(inputs_1d, reqOutputs, corr, corefunc, opts);
+    [cTE_values, cTE_plugin] = correction(inputs_1d, reqOutputs, corr, corefunc, opts);
     return
 end
 
@@ -366,7 +366,7 @@ for ind = 1:length(indices)
 end
 required_entropies = unique(required_entropies);
 H_values = cell(1, length(required_entropies));
-H_naive = cell(1, length(required_entropies));
+H_plugin = cell(1, length(required_entropies));
 H_shuff_all = cell(1, length(required_entropies));
 
 opts_entropy = opts;
@@ -374,13 +374,13 @@ opts_entropy.compute_nulldist = false;
 for i = 1:length(required_entropies)
     switch required_entropies{i}
         case 'H(B_pres|B_past,C_past)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] =  H({inputs_1d{3}, cat(1, inputs_1d{4},inputs_1d{5})}, {'H(A|B)'}, opts_entropy);
+            [H_values{i}, H_plugin{i}, H_shuff_all{i}] =  H({inputs_1d{3}, cat(1, inputs_1d{4},inputs_1d{5})}, {'H(A|B)'}, opts_entropy);
         case 'H(B_pres|B_past,A_past,C_past)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{3}, cat(1, inputs_1d{4},inputs_1d{2}, inputs_1d{5})}, {'H(A|B)'}, opts_entropy);
+            [H_values{i}, H_plugin{i}, H_shuff_all{i}] = H({inputs_1d{3}, cat(1, inputs_1d{4},inputs_1d{2}, inputs_1d{5})}, {'H(A|B)'}, opts_entropy);
         case 'H(A_pres|A_past,C_past)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] =  H({inputs_1d{1}, cat(1, inputs_1d{2},inputs_1d{5})}, {'H(A|B)'}, opts_entropy);
+            [H_values{i}, H_plugin{i}, H_shuff_all{i}] =  H({inputs_1d{1}, cat(1, inputs_1d{2},inputs_1d{5})}, {'H(A|B)'}, opts_entropy);
         case 'H(A_pres|A_past,B_past,C_past)'
-            [H_values{i}, H_naive{i}, H_shuff_all{i}] = H({inputs_1d{1}, cat(1, inputs_1d{2},inputs_1d{4}, inputs_1d{5})}, {'H(A|B)'}, opts_entropy);
+            [H_values{i}, H_plugin{i}, H_shuff_all{i}] = H({inputs_1d{1}, cat(1, inputs_1d{2},inputs_1d{4}, inputs_1d{5})}, {'H(A|B)'}, opts_entropy);
     end
 end
 
@@ -389,7 +389,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Compute the cTE values
 cTE_values = cell(1, length(reqOutputs));
-cTE_naive = cell(1, length(reqOutputs));
+cTE_plugin = cell(1, length(reqOutputs));
 for i = 1:length(indices)
     idx = indices(i);
     switch possibleOutputs{idx}

@@ -64,7 +64,7 @@ classdef test_II < matlab.unittest.TestCase
             end
             C = zeros(size(R));
             C(R > 2) = 1;
-            opts.bias = 'naive';
+            opts.bias = 'plugin';
             opts.bin_method = {'eqpop'};
             opts.suppressWarnings  = true;
             opts.n_bins = {2, 3, 2};
@@ -72,7 +72,7 @@ classdef test_II < matlab.unittest.TestCase
             assert((II_out{1} - 0.5969) < 0.01);
             opts.bias = 'invalid';
             testCase.verifyError(@()II({S, R, C},opts), 'Correction:UndefinedFunction');
-            opts.bias = 'naive';
+            opts.bias = 'plugin';
             opts.bin_method  = {'invalid'};
             testCase.verifyError(@()II({S, R, C},opts), 'Binning:UndefinedFunction');
         end

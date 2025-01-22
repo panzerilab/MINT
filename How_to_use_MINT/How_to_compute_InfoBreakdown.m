@@ -94,7 +94,7 @@ reqOutputs = {'I(A;B)','Ilin(A;B)','coI(A;B)','Iss(A)','Ic(A;B)','Ici(A;B)','Icd
 % * 'n_bins'                         : specifies the number of bins                                                                        
 % (default: 3)
 % * 'bias'                             : specifies the bias correction method                                                            
-% (default: naive)
+% (default: plugin)
 % * ('xtrp'/'shuff')                 : further specifIcation for the bias correction 
 % methods 'qe' and 'shuffSub'      (default: 10 xtrp/20 shuff)
 % * 'suppressWarnings'        : option to suppress warnings e.g. for mIssing opts 
@@ -115,11 +115,11 @@ MI_opts.bin_method = {'eqpop','none'};     % Options:
 MI_opts.n_bins = {3};                       % Specify an integer for the number of bins     
 
 
-% To correct for sampling bias, you can specify methods for bias correction in the MINT toolbox. If its not naive 
-% you will get the naive values as the second output of the functions. 
+% To correct for sampling bias, you can specify methods for bias correction in the MINT toolbox. If its not plugin 
+% you will get the plugin values as the second output of the functions. 
 % For more details type 'help correction' in your Command Window.
 MI_opts.bias = 'shuffSub';                  % Options:                                           
-                                            % 'naive' (no bias correction)                                                                       
+                                            % 'plugin' (no bias correction)                                                                       
                                             % 'qe' (QuadratIc Extrapolation), 
                                             % 'le' (linear Extrapolation), 
                                             % 'qe_shuffSub' (QuadratIc with Shuffle Subtraction), 
@@ -150,10 +150,10 @@ MI_opts.NaN_handling = 'removeTrial';        % Options:
 % # *MI_values*: This is a cell array containing the information values based 
 % on the specified reqOutputs argument. Each cell represents one requested output 
 % in the same order as specified
-% # *MI_naive*: This cell array contains the naive estimates. These estimates 
+% # *MI_plugin*: This cell array contains the plugin estimates. These estimates 
 % are calculated without any bias correction. It is important to note that if 
 % no bias correction is performed during the computation, the MI_values will be 
-% identIcal to the MI_naive values.
+% identIcal to the MI_plugin values.
 % # *MI_nullDist*: This output contains the results of the null distribution 
 % computation, whIch is useful for signifIcance testing. If the null distribution 
 % is not computed, this output will be zero.   

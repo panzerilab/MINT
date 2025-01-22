@@ -1,4 +1,4 @@
-function [corrected_v, naive_v] = ksg_correction(inputs, outputs, corefunc, varargin)
+function [corrected_v, plugin_v] = ksg_correction(inputs, outputs, corefunc, varargin)
 % Copyright (C) 2024 Gabriel Matias Lorenz, Nicola Marie Engel
 % This file is part of MINT.
 % This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@ function [corrected_v, naive_v] = ksg_correction(inputs, outputs, corefunc, vara
 
 new_outputs = outputs;
 new_opts = varargin{1};
-new_opts.bias = {'naive'};
+new_opts.bias = {'plugin'};
 new_opts.isKSG = true;
 for i = 1:length(outputs)
     switch outputs{i}
@@ -25,6 +25,6 @@ for i = 1:length(outputs)
     end
 end
 
-[corrected_v, naive_v] = corefunc(inputs, new_outputs, new_opts);
+[corrected_v, plugin_v] = corefunc(inputs, new_outputs, new_opts);
 
 end

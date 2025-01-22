@@ -85,7 +85,7 @@ classdef test_FIT < matlab.unittest.TestCase
             opts.n_bins = {2, 2};
             testCase.verifyError(@()FIT({X, Y, S}, opts), 'Correction:UndefinedFunction');
 
-            opts.bias = 'naive';
+            opts.bias = 'plugin';
             opts.bin_method  = {'invalid'};
             testCase.verifyError(@()FIT({X, Y, S}, opts), 'Binning:UndefinedFunction');
             warning('on', 'all');

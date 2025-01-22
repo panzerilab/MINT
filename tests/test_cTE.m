@@ -85,7 +85,7 @@ classdef test_cTE < matlab.unittest.TestCase
             opts.n_bins = {2, 2};
             testCase.verifyError(@()cTE({X, Y, Z}, opts), 'Correction:UndefinedFunction');
 
-            opts.bias = 'naive';
+            opts.bias = 'plugin';
             opts.bin_method  = {'invalid'};
             testCase.verifyError(@()cTE({X, Y, Z}, opts), 'Binning:UndefinedFunction');
             warning('on', 'all');
