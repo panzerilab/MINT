@@ -185,6 +185,10 @@ if ~isfield(opts, 'NaN_handling')
     opts.NaN_handling = 'error';
 end
 
+if strcmp(opts.bias, 'ksg')
+    opts.isKSG = true;
+end
+
 inputs = nan_method(inputs, opts.NaN_handling);
 opts.isChecked = true;
 end
