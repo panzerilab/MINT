@@ -257,7 +257,7 @@ legend('show');
 hold off;
 
 %%
-PID_opts.bias = 'ksg';  
+PID_opts.bias = 'nsb';  
 [PID_corrected, PID_naive, PID_nullDist] =   PID(inputs, reqOutputs, PID_opts); 
 % Plot Results
 

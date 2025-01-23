@@ -276,19 +276,27 @@ switch opts.redundancy_measure
             opts.function = @pidimin;
         end
     case 'I_MMI'
-        opts.function = @pidimmi;
+        if opts.isKSG
+            opts.function = @pidimmiksg;
+        else
+            opts.function = @pidimmi;
+        end
     case 'I_min'
         opts.function = @pidimin;
 end
 
 [p_distr] = prob_estimator({inputs_1d{end}, inputs_1d{1:end-1}}, {'P(A,B,C)'}, opts);
-for t = 1:nTimepoints
-    if strcmp(opts.redundancy_measure,'I_BROJA')
-        [PID_terms{t}, q_dist{t}] = opts.function(p_distr{t});
-    else
-        PID_terms{t} = opts.function(p_distr{t});
-    end
-end 
+if opts.isKSG
+    PID_terms = opts.function(inputs);
+else
+    for t = 1:nTimepoints
+        if strcmp(opts.redundancy_measure,'I_BROJA')
+            [PID_terms{t}, q_dist{t}] = opts.function(p_distr{t});
+        else
+            PID_terms{t} = opts.function(p_distr{t});
+        end
+    end 
+end
 if opts.pid_constrained
         I1 = MI({inputs_1d{1}, inputs_1d{end}}, {'I(A;B)'}, opts);
         I2  = MI({inputs_1d{2}, inputs_1d{end}}, {'I(A;B)'}, opts);
