@@ -296,7 +296,7 @@ elseif strcmp(func2str(corefunc), 'II')
     plugin_opts = opts;
     plugin_opts.bias = 'plugin';
     plugin_opts.recall = true;
-    [~,~,~,atom1_plugin, atom2_plugin] = feval(corefunc, inputs, outputs, plugin_opts);
+    [plugin_v,~,~,atom1_plugin, atom2_plugin] = feval(corefunc, inputs, outputs, plugin_opts);
     nTrials = size(inputs{1},length(size(inputs{1})));
     for i=1:opts.xtrp
         randidx = randperm(nTrials, nTrials);

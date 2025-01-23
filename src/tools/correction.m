@@ -145,7 +145,7 @@ switch corr
     case 'ksg'
         [corrected_v, plugin_v] = ksg_correction(inputs, reqOutputs, corefunc, opts);
     case 'nsb'
-        [corrected_v, plugin_v] = ksg_correction(inputs, reqOutputs, corefunc, opts);
+        [corrected_v, plugin_v] = nsb_correction(inputs, reqOutputs, corefunc, opts);
     otherwise
         func_handle = str2func(corr);
         if exist(corr, 'file') == 2
