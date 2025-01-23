@@ -84,4 +84,4 @@ RUN git clone https://github.com/panzerilab/MINT.git /home/matlab/MINT
 WORKDIR /home/matlab/MINT
 
 # Run BuildMINT.m script
-# RUN matlab -batch "BuildMINT.m"
+RUN matlab -batch "BuildMINT.m"

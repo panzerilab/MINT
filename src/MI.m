@@ -276,7 +276,7 @@ for t = 1:nTimepoints
                 A = reshape(A,size(A,1),size(A,3));
                 B = inputs_b{2}(:,t,:);
                 B = reshape(B,size(B,1),size(B,3));
-                MI_values{i}(1,t) = MIxnyn_matlab(A,B,6,pwd);
+                MI_values{i}(1,t) = MIxnyn_matlab_mint(A,B,6);
 
             case 'Insb(A;B)'
                 H_A  = H_values{strcmp(required_entropies, 'Hnsb(A)')}(t);

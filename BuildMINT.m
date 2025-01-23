@@ -15,7 +15,7 @@ function BuildMINT()
     
     % Build and test PID components (called when you execute this function)
     PID_BuildAndTest(configdir, ecosdir);
-    
+    compile_KSGmex_file(scriptdir, fullfile(scriptdir, 'extern', 'ContinuousMIEstimation','bin'));
     % Add the necessary paths to MATLAB startup by modifying the startupMINT.m
     addReqToStartup(scriptdir);
     
@@ -181,4 +181,26 @@ function PID_BuildAndTest(configdir, ecosdir)
     
     % Add the new startup file to MATLAB's startup sequence
     add_to_startup(startupfile);
+end
+
+function compile_KSGmex_file(scriptdir, outputdir)
+    % This function compiles the Mxnyn.C file using the mex command and places the output in the specified folder
+    
+    % Define the path to the Mxnyn.C file
+    mexfile = fullfile(scriptdir, 'extern', 'ContinuousMIEstimation', 'MIxnynmint.C');
+    
+    % Check if the Mxnyn.C file exists
+    if exist(mexfile, 'file') == 2
+        % Ensure the output directory exists
+        if ~exist(outputdir, 'dir')
+            mkdir(outputdir);  % Create the output directory if it doesn't exist
+        end
+        
+        % If the file exists, compile the file and specify the output folder
+        disp('Compiling Mxnynmint.C using mex...');
+        mex('-outdir', outputdir, mexfile);  % Compile the C file and specify output directory
+    else
+        % If the file does not exist, display an error message
+        error('The Mxnynmint.C file was not found in the script directory.');
+    end
 end

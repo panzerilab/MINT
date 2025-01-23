@@ -115,7 +115,7 @@ MI_opts.n_bins = {3};                       % Specify an integer for the number 
 % you will get the naive values as the second output of the functions. 
 % For more details type 'help correction' in your Command Window.
 MI_opts.bias = 'ksg';             % Options:                                           
-                                            % 'naive' (no bias correction)                                                                       
+                                            % 'plugin' (no bias correction)                                                                       
                                             % 'qe' (Quadratic Extrapolation), 
                                             % 'le' (Linear Extrapolation), 
                                             % 'qe_shuffSub' (Quadratic with Shuffle Subtraction), 
@@ -134,7 +134,7 @@ MI_opts.xtrp = 5;
 % using the default it will inform you. If you don't want to get these warning you can supress them with the opts field 
 % supressWarnings (default: false).
 MI_opts.supressWarnings = true;
-
+MI_opts.computeNulldist = false;
 MI_opts.NaN_handling = 'removeTrial';        % Options:                                          
                                              % 'error' (Throws an error if NaN values are detected in any input)
                                              % 'removeTrial' (Removes trials (across all variables) that contain NaN values)  
@@ -212,6 +212,7 @@ MI_opts.parallel_sampling = true;
 MI_opts.n_samples = 100;
 MI_opts.shuffling = {'A'};
 MI_opts.dim_shuffle = {'Trials'};
+
 
 timePointInfo = find(MI_singleNeuron(respond_to_stimulus1(1),:) > 0.4);
 neuron_data = neural_data(respond_to_stimulus1(1),:,:);
