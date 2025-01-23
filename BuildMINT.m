@@ -25,7 +25,6 @@ function BuildMINT()
     disp('Congratulations - You are now ready to use the MINT Toolbox. Happy coding!');
 end
 
-
 function find_and_replace_in(templatefile, newfile, findstr, replacestr)
     % This function replaces placeholder strings in the template file with actual values 
     % and saves the modified content to a new file.
