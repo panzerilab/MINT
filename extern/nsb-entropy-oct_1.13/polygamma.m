@@ -5,7 +5,7 @@ function f = polygamma (n, x)
   %% Input:
   %%   n - a scalar, the order of the polygamma to be calculated;
   %%       0<=n<...infty, we floor n to the nearest integer;
-  %%       for n=0 (digamma), psi(x) is evaluated.
+  %%       for n=0 (digamma), psi_nsb(x) is evaluated.
   %%   x - arguments, at which polygamma is to be evaluated; any
   %%       matrix, x's may not be complex.
   %%
@@ -13,7 +13,7 @@ function f = polygamma (n, x)
   %%   f - value of the function, same dimensions as x
   %%
   %% Depends on:
-  %%   psi.m
+  %%   psi_nsb.m
   %%
   %% We use the analytical derivative of the Stirling's series for the
   %% digamma function to calculate the higher order polygamma's
@@ -75,7 +75,7 @@ function f = polygamma (n, x)
   if (length(n)~=1) usage('n must be a scalar.'); end;
   n=floor(n);
   if (n==0)			% calling psi(x) for digamma
-    f=psi(x);
+    f=psi_nsb(x);
     return;
   end;
 

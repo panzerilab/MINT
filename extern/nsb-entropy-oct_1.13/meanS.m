@@ -22,7 +22,7 @@ function f = meanS (B,kx,nx,K)
   %%     f   - value of the expected entropy; same size as B.
   %%
   %% Depends on:
-  %%     B_xiK.m, psi.m
+  %%     B_xiK.m, psi_nsb.m
   %%
   %% Addition Reference: 
   %%     Wolpert and Wolf, 1995
@@ -73,9 +73,9 @@ function f = meanS (B,kx,nx,K)
 
   f=zeros(size(B));
   %% sum is written in a form to avoid the lossof precision as K->Inf
-  f = psi(N+B+1) - (ovrNB*osn).*(osB*nx + ...
-			  B/K*osn).*psi(osB*nx+B/K*osn+1)*kx(:) - ...
-      B.*ovrNB*(1-K1/K).*psi(1+B/K);
+  f = psi_nsb(N+B+1) - (ovrNB*osn).*(osB*nx + ...
+			  B/K*osn).*psi_nsb(osB*nx+B/K*osn+1)*kx(:) - ...
+      B.*ovrNB*(1-K1/K).*psi_nsb(1+B/K);
 
   f(find(B==Inf)) = log(K);
 

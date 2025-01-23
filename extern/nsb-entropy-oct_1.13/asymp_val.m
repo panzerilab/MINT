@@ -107,7 +107,7 @@ function [S_as dS_as D] = asymp_val (path, inname, ...)
       N  = sum(kx.*nx);
       K1 = sum(kx);
       D(i)= N-K1;
-      S_as(i) = -psi(1) -log(2) +2*log(N)-psi(D(i));
+      S_as(i) = -psi_nsb(1) -log(2) +2*log(N)-psi_nsb(D(i));
       dS_as(i)= sqrt(polygamma(1,D(i)));
 
       

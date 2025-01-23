@@ -1,4 +1,4 @@
-function [f] = psi(z)
+function [f] = psi_nsb(z)
 %%Psi     Psi (or Digamma) function valid in the entire complex plane.
 %%
 %%                 d

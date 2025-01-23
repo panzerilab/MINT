@@ -15,7 +15,7 @@ function xi = xi_KB (K, B)
   %%
   %%
   %% Depends on:
-  %%   psi.m
+  %%   psi_nsb.m
   %%
   %% (c) Ilya Nemenman, 2002--2006
   %% Distributed under GPL, version 2
@@ -42,7 +42,7 @@ function xi = xi_KB (K, B)
   %% See the GNU General Public License for more details.
 
   if ((all(size(K)==size(B))) | (length(K)==1) | (length(B)==1))   
-    xi=psi(B+1) - psi(1+B./K);
+    xi=psi_nsb(B+1) - psi_nsb(1+B./K);
   else
     error('Dimensions of K and B mismatch.');
   end; 

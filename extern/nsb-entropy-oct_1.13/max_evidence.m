@@ -29,7 +29,7 @@ function [Bcl, xicl, dxi, errcode] = max_evidence(kx, nx, K, precision)
   %                               for fractional countsendif
   %
   % Depends on:
-  %     psi.m, polygamma.m
+  %     psi_nsb.m, polygamma.m
   %
   % (c) Ilya Nemenman, 2002--2006
   % Distributed under GPL, version 2
@@ -151,7 +151,7 @@ function [Bcl, xicl, dxi, errcode] = max_evidence(kx, nx, K, precision)
     counter = 0;
     while ~((abs(dB0) < abs(B0*precision)) | (counter>maxcounter));
       counter = counter + 1 ;   
-      F   =  K1/B0 + psi(B0) - psi(B0+N);
+      F   =  K1/B0 + psi_nsb(B0) - psi_nsb(B0+N);
       dF  =  - K1/B0^2 + polygamma(1, B0) - polygamma(1,B0+N);
       dB0 =  - F/dF;
       B0 = B0 + dB0;
@@ -173,7 +173,7 @@ function [Bcl, xicl, dxi, errcode] = max_evidence(kx, nx, K, precision)
     B   = zeros(1,order_K);
 
     % temporary variables
-    EG = - psi(1);		% euler's gamma
+    EG = - psi_nsb(1);		% euler's gamma
     pg1B0  = polygamma(1, B0);
     pg1NB0 = polygamma(1, N+B0);
     denum  = K1/B0^2 - pg1B0 + pg1NB0; % denumerator
@@ -185,7 +185,7 @@ function [Bcl, xicl, dxi, errcode] = max_evidence(kx, nx, K, precision)
     pg4B0  = polygamma(4, B0);
     pg4NB0 = polygamma(4, N+B0);
 
-    f0   = sum(kx(ng1).*psi(nx(ng1)));
+    f0   = sum(kx(ng1).*psi_nsb(nx(ng1)));
     d1f0 = sum(kx(ng1).*polygamma(1, nx(ng1)));
     d2f0 = sum(kx(ng1).*polygamma(2, nx(ng1)));
     d3f0 = sum(kx(ng1).*polygamma(3, nx(ng1)));
@@ -228,14 +228,14 @@ function [Bcl, xicl, dxi, errcode] = max_evidence(kx, nx, K, precision)
     while ~((abs(dBcl) < abs(Bcl*precision)) | (counter>maxcounter));
       counter=counter+1;
       if(ints==1)		% integer counts
-        F    =  1/K*sum(kx(ng1).*psi(nx(ng1) + Bcl/K)) - K2/K*psi(1+Bcl/K) + ...
-            K1/Bcl + psi(Bcl) - psi(Bcl+N);
+        F    =  1/K*sum(kx(ng1).*psi_nsb(nx(ng1) + Bcl/K)) - K2/K*psi_nsb(1+Bcl/K) + ...
+            K1/Bcl + psi_nsb(Bcl) - psi_nsb(Bcl+N);
         dF   =  1/(K^2)*sum(kx(ng1).*polygamma(1, nx(ng1) + Bcl/K)) - ...
             K2/(K^2)*polygamma(1,1+Bcl/K) - K1/Bcl^2 + polygamma(1, Bcl) - ...
             polygamma(1, Bcl +N);
       else			% fractional counts
-        F    =  1/K*sum(kx.*psi(nx + Bcl/K)) - K1/K*psi(Bcl/K) + ...
-            psi(Bcl) - psi(Bcl+N);
+        F    =  1/K*sum(kx.*psi_nsb(nx + Bcl/K)) - K1/K*psi_nsb(Bcl/K) + ...
+            psi_nsb(Bcl) - psi_nsb(Bcl+N);
         dF   =  1/(K^2)*sum(kx.*polygamma(1, nx + Bcl/K))  - ...
             K1/(K^2)*polygamma(1,Bcl/K)  + polygamma(1, Bcl) - ...
             polygamma(1, Bcl +N);

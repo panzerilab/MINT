@@ -26,7 +26,7 @@
   B   = zeros(1,order_K);
 
   ## temporary variables
-  EG = - psi(1);		# euler's gamma
+  EG = - psi_nsb(1);		# euler's gamma
   pg1B0  = polygamma(1, B0);
   pg1NB0 = polygamma(1, N+B0);
   denum  = K1/B0^2 - pg1B0 + pg1NB0; # denumerator
@@ -61,7 +61,7 @@
   B02    = B0^2;
 
 
-  f0   = sum(kx(nx>1).*psi(nx(nx>1)));
+  f0   = sum(kx(nx>1).*psi_nsb(nx(nx>1)));
   d1f0 = sum(kx(nx>1).*polygamma(1, nx(nx>1)));
   d2f0 = sum(kx(nx>1).*polygamma(2, nx(nx>1)));
   d3f0 = sum(kx(nx>1).*polygamma(3, nx(nx>1)))

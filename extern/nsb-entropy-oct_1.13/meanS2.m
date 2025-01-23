@@ -23,7 +23,7 @@ function f = meanS2 (B,kx,nx,K)
   %%           same size as B.
   %%
   %% Depends on:
-  %%     polygamma.m, psi.m
+  %%     polygamma.m, psi_nsb.m
   %%
   %% Addition Reference: 
   %%     Wolpert and Wolf, 1995
@@ -76,10 +76,10 @@ function f = meanS2 (B,kx,nx,K)
     b = Bi/K;
     nxb = nx+b;
     nib = nxb';
-    pnxb1 = psi(nxb+1);
+    pnxb1 = psi_nsb(nxb+1);
     pnib1 = pnxb1';
     
-    p0NB2 = psi(N+Bi+2);
+    p0NB2 = psi_nsb(N+Bi+2);
     p1NB2 = polygamma(1, N+Bi+2);
 
     %------------------------------------------------------
@@ -92,10 +92,10 @@ function f = meanS2 (B,kx,nx,K)
                 (nib.*ki)*(nxb.*kx)*p1NB2));
 
     % ni*b contribution    
-    f(ii) = f(ii) + 2*Bi*(1-K1/K)*nxb.*((pnxb1-p0NB2)*(psi(b+1)-p0NB2) - p1NB2)*ki;
+    f(ii) = f(ii) + 2*Bi*(1-K1/K)*nxb.*((pnxb1-p0NB2)*(psi_nsb(b+1)-p0NB2) - p1NB2)*ki;
     
     % b*b contribution 
-    f(ii) = f(ii) + (1-K1/K)*(1-(K1+1)/K)*Bi^2*((psi(b+1)-p0NB2)^2-p1NB2);
+    f(ii) = f(ii) + (1-K1/K)*(1-(K1+1)/K)*Bi^2*((psi_nsb(b+1)-p0NB2)^2-p1NB2);
 
     %correcting for the overcounting
     f(ii) = f(ii) -(nxb.*(pnxb1-p0NB2)).^2*ki + nxb.*nxb*ki*p1NB2;
@@ -104,10 +104,10 @@ function f = meanS2 (B,kx,nx,K)
     % i term
     
     % ni contribution
-    f(ii) = f(ii) + (nxb.*(nxb+1).* ((psi(nxb+2) - p0NB2).^2 + ...
+    f(ii) = f(ii) + (nxb.*(nxb+1).* ((psi_nsb(nxb+2) - p0NB2).^2 + ...
 			     polygamma(1,nxb+2) - p1NB2))*ki;
    
-    f(ii) = f(ii) + Bi*(1-K1/K)*(1+b) * ((psi(2+b)-p0NB2)^2 + polygamma(1,b+2) ...
+    f(ii) = f(ii) + Bi*(1-K1/K)*(1+b) * ((psi_nsb(2+b)-p0NB2)^2 + polygamma(1,b+2) ...
 					 - p1NB2);
 
     %-----------------------------------------------------
