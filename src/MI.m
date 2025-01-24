@@ -18,7 +18,7 @@ function [MI_values, MI_plugin, MI_nullDist] = MI(inputs, varargin)
 %   - reqOutputs: A cell array of strings specifying which entropies to compute.
 %               - 'I(A;B)'    : Mutual Information I(A;B)
 %               - 'Ilin(A;B)' : Linear MI Ilin(A;B)
-%               - 'RSI(A;B)'  : Co-information RSI(A;B)
+%               - 'RSI(A;B)'  : Redundancy-Synergy Index RSI(A;B)
 %               - 'Iss(A)'    : Sig. Sim Information Iss(A)
 %               - 'Ic(A;B)'   : Sum of Ici and Icd - Ic(A;B)
 %               - 'Ici(A;B)'  : Correlation Independent Information Ici(A;B)
