@@ -34,16 +34,16 @@
 ### Build with Docker
 1. If you have Docker installed, you can build the Dockerfile in this package by running 
 ``` 
-docker build --build-arg ADDITIONAL_PRODUCTS="Statistics_and_Machine_Learning_Toolbox Optimization_Toolbox Parallel_Computing_Toolbox Signal_processing_Toolbox" -t matlab4mint:R2024b .
+docker build --platform=linux/amd64 -t matlab4mint:R2024b .                            
 ```
 2. After the Docker image has been built with all the necessary toolboxes, run 
 ```
-docker run --init -v /path/on/host:/home/matlab/shared -e MLM_LICENSE_FILE=27000@MyServerName matlab4mint:R2024b 
+docker run --init --platform=linux/amd64 -v /path/on/host:/home/matlab/Documents -it matlab4mint:R2024b
 ``` 
-Where /path/on/host can be replaced with the directory in your computer where you can work persistently after the Docker image is used. If you do not know your license hostname, you can skip -e MLM_LICENSE_FILE=27000@MyServerName and you can login with your username and password when you are inside the container.
+Where /path/on/host can be replaced with the directory in your computer where you can work persistently after the Docker image is used, be sure that MINT is inside that directory. If you do not know your license hostname, you can skip -e MLM_LICENSE_FILE=27000@MyServerName and you can login with your username and password when you are inside the container.
 3. Once inside the container, write
 ```
-cd /home/matlab/MINT
+cd /path/to/MINT
 run('BuildMINT.m')
 ``` 
 

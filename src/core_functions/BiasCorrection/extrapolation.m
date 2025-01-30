@@ -55,95 +55,201 @@ if strcmp(func2str(corefunc), 'PID')
     end
     nTrials = size(inputs{1},length(size(inputs{1})));
 
-    for i=1:opts.xtrp
-        randidx = randperm(nTrials, nTrials);
-        npartition = [1 2 4];
-        PID2 =  repmat({zeros(1,nTimepoints)}, 1, length(outputs));
-        PID4 =  repmat({zeros(1,nTimepoints)}, 1, length(outputs));
-        I1_2  = 0;
-        I2_2  = 0;
-        I12_2 = 0;
-        I1_4  = 0;
-        I2_4  = 0;
-        I12_4 = 0;
-        inputs_s = inputs;
-        idx = repmat({':'}, 1, ndims(inputs{1}));
-        idx{end} = randidx;
-        for var = 1:length(inputs)
-            inputs_s{var} = inputs{var}(idx{:});
-        end
-        for np=2:length(npartition)
-            for pidx = 1:npartition(np)
-                inputs_p = partition(inputs_s, npartition(np), pidx,0);
-                PID_p = feval(corefunc, inputs_p, outputs, plugin_opts);
-                for outIdx = 1:length(outputs)
-                    if npartition(np)==2
-                        PID2{outIdx} = PID2{outIdx} + PID_p{outIdx}/2;
-                    elseif npartition(np)==4
-                        PID4{outIdx} =  PID4{outIdx} + PID_p{outIdx}/4;
+    if opts.parallel
+        noutputs = length(outputs);
+        corrected_v_par = zeros(opts.xtrp,nTimepoints);
+        I1_corrected_par = zeros(opts.xtrp,nTimepoints);
+        I2_corrected_par = zeros(opts.xtrp,nTimepoints);
+        I12_corrected_par = zeros(opts.xtrp,nTimepoints);
+        parfor i=1:opts.xtrp
+            randidx = randperm(nTrials, nTrials);
+            npartition = [1 2 4];
+            PID2 =  repmat({zeros(1,nTimepoints)}, 1, length(outputs));
+            PID4 =  repmat({zeros(1,nTimepoints)}, 1, length(outputs));
+            I1_2  = 0;
+            I2_2  = 0;
+            I12_2 = 0;
+            I1_4  = 0;
+            I2_4  = 0;
+            I12_4 = 0;
+            inputs_s = inputs;
+            idx = repmat({':'}, 1, ndims(inputs{1}));
+            idx{end} = randidx;
+            for var = 1:length(inputs)
+                inputs_s{var} = inputs{var}(idx{:});
+            end
+            for np=2:length(npartition)
+                for pidx = 1:npartition(np)
+                    inputs_p = partition(inputs_s, npartition(np), pidx,0);
+                    PID_p = feval(corefunc, inputs_p, outputs, plugin_opts);
+                    for outIdx = 1:noutputs
+                        if npartition(np)==2
+                            PID2{outIdx} = PID2{outIdx} + PID_p{outIdx}/2;
+                        elseif npartition(np)==4
+                            PID4{outIdx} =  PID4{outIdx} + PID_p{outIdx}/4;
+                        end
+                    end
+                    if opts.pid_constrained
+                        I1_p = MI({inputs_p{1}, inputs_p{end}}, {'I(A;B)'}, plugin_opts);
+                        I2_p = MI({inputs_p{2}, inputs_p{end}}, {'I(A;B)'}, plugin_opts);
+                        I12_p = MI({cat(1, inputs_p{1}, inputs_p{2}), inputs_p{end}}, {'I(A;B)'}, plugin_opts);
+                        if npartition(np)==2
+                            I1_2 = I1_2 + I1_p{1}/2;
+                            I2_2 = I2_2 + I2_p{1}/2;
+                            I12_2 = I12_2 + I12_p{1}/2;
+                        elseif npartition(np)==4
+                            I1_4 = I1_4 + I1_p{1}/4;
+                            I2_4 = I2_4 + I2_p{1}/4;
+                            I12_4 = I12_4 + I12_p{1}/4;
+                        end
                     end
                 end
-                if opts.pid_constrained
-                    I1_p = MI({inputs_p{1}, inputs_p{end}}, {'I(A;B)'}, plugin_opts);
-                    I2_p = MI({inputs_p{2}, inputs_p{end}}, {'I(A;B)'}, plugin_opts);
-                    I12_p = MI({cat(1, inputs_p{1}, inputs_p{2}), inputs_p{end}}, {'I(A;B)'}, plugin_opts);
-                    if npartition(np)==2
-                        I1_2 = I1_2 + I1_p{1}/2;
-                        I2_2 = I2_2 + I2_p{1}/2;
-                        I12_2 = I12_2 + I12_p{1}/2;
-                    elseif npartition(np)==4
-                        I1_4 = I1_4 + I1_p{1}/4;
-                        I2_4 = I2_4 + I2_p{1}/4;
-                        I12_4 = I12_4 + I12_p{1}/4;
-                    end
-                end
             end
-        end
-        x_extrap = npartition./nTrials;
-        if strcmp(opts.bias,'qe')
-            for t = 1:nTimepoints
-                for outIdx = 1:length(outputs)
-                    y = [plugin_v{outIdx}(t), PID2{outIdx}(t), PID4{outIdx}(t)];
-                    p = polyfit(x_extrap, y, 2);
-                    corrected_v{outIdx}(1,t)  =  corrected_v{outIdx}(t) + p(3)/xtrp;
-                end
-            end
-        elseif strcmp(opts.bias,'le')
-            for t = 1:nTimepoints
-                for outIdx = 1:length(outputs)
-                    y = [plugin_v{outIdx}(t), PID2{outIdx}(t)];
-                    p = polyfit(x_extrap, y, 1);
-                    corrected_v{outIdx}(1,t) = corrected_v{outIdx}(t) + p(2)/xtrp;
-                end
-            end
-        end
-        if opts.pid_constrained
+            x_extrap = npartition./nTrials;
             if strcmp(opts.bias,'qe')
                 for t = 1:nTimepoints
-                    y = [I1_plugin(t), I1_2(t), I1_4(t)];
-                    p = polyfit(x_extrap, y, 2);
-                    I1_corrected(t) = I1_corrected(t) + p(3)/xtrp;
-                    y = [I2_plugin(t), I2_2(t), I2_4(t)];
-                    p = polyfit(x_extrap, y, 2);
-                    I2_corrected(t) = I2_corrected(t) + p(3)/xtrp;
-                    y = [I12_plugin(t), I12_2(t), I12_4(t)];
-                    p = polyfit(x_extrap, y, 2);
-                    I12_corrected(t) = I12_corrected(t) + p(3)/xtrp;
+                    for outIdx = 1:noutputs
+                        y = [plugin_v{outIdx}(t), PID2{outIdx}(t), PID4{outIdx}(t)];
+                        p = polyfit(x_extrap, y, 2);
+                        corrected_v_par(outIdx, i, t) = p(3);
+                    end
                 end
             elseif strcmp(opts.bias,'le')
                 for t = 1:nTimepoints
-                    y = [I1_plugin(t), I1_2(t)];
-                    p = polyfit(x_extrap, y, 1);
-                    I1_corrected(t) = I1_corrected(t) +  p(2)/xtrp;
-                    y = [I2_plugin(t), I2_2(t)];
-                    p = polyfit(x_extrap, y, 1);
-                    I2_corrected(t) = I2_corrected(t) +  p(2)/xtrp;
-                    y = [I12_plugin(t), I12_2(t)];
-                    p = polyfit(x_extrap, y, 1);
-                    I12_corrected(t) = I12_corrected(t) +  p(2)/xtrp;
+                    for outIdx = 1:noutputs
+                        y = [plugin_v{outIdx}(t), PID2{outIdx}(t)];
+                        p = polyfit(x_extrap, y, 1);
+                        corrected_v_par(outIdx, i, t) = p(2);
+                    end
+                end
+            end
+            if opts.pid_constrained
+                if strcmp(opts.bias,'qe')
+                    for t = 1:nTimepoints
+                        y = [I1_plugin(t), I1_2(t), I1_4(t)];
+                        p = polyfit(x_extrap, y, 2);
+                        I1_corrected_par(i,t) = p(3);
+                        y = [I2_plugin(t), I2_2(t), I2_4(t)];
+                        p = polyfit(x_extrap, y, 2);
+                        I2_corrected_par(i,t) =  p(3);
+                        y = [I12_plugin(t), I12_2(t), I12_4(t)];
+                        p = polyfit(x_extrap, y, 2);
+                        I12_corrected_par(i,t) = p(3);
+                    end
+                elseif strcmp(opts.bias,'le')
+                    for t = 1:nTimepoints
+                        y = [I1_plugin(t), I1_2(t)];
+                        p = polyfit(x_extrap, y, 1);
+                        I1_corrected_par(i,t) = p(2);
+                        y = [I2_plugin(t), I2_2(t)];
+                        p = polyfit(x_extrap, y, 1);
+                        I2_corrected_par(i,t) = p(2);
+                        y = [I12_plugin(t), I12_2(t)];
+                        p = polyfit(x_extrap, y, 1);
+                        I12_corrected_par(i,t) = p(2);
+                    end
                 end
             end
         end
+        for spar=1:noutputs
+            corrected_v{spar}(1,:) = mean(corrected_v_par(spar,:,:),2);
+        end
+        I1_corrected = mean(I1_corrected_par,1);
+        I2_corrected = mean(I2_corrected_par,1);
+        I12_corrected = mean(I12_corrected_par,1);
+
+    else
+        for i=1:opts.xtrp
+            randidx = randperm(nTrials, nTrials);
+            npartition = [1 2 4];
+            PID2 =  repmat({zeros(1,nTimepoints)}, 1, length(outputs));
+            PID4 =  repmat({zeros(1,nTimepoints)}, 1, length(outputs));
+            I1_2  = 0;
+            I2_2  = 0;
+            I12_2 = 0;
+            I1_4  = 0;
+            I2_4  = 0;
+            I12_4 = 0;
+            inputs_s = inputs;
+            idx = repmat({':'}, 1, ndims(inputs{1}));
+            idx{end} = randidx;
+            for var = 1:length(inputs)
+                inputs_s{var} = inputs{var}(idx{:});
+            end
+            for np=2:length(npartition)
+                for pidx = 1:npartition(np)
+                    inputs_p = partition(inputs_s, npartition(np), pidx,0);
+                    PID_p = feval(corefunc, inputs_p, outputs, plugin_opts);
+                    for outIdx = 1:length(outputs)
+                        if npartition(np)==2
+                            PID2{outIdx} = PID2{outIdx} + PID_p{outIdx}/2;
+                        elseif npartition(np)==4
+                            PID4{outIdx} =  PID4{outIdx} + PID_p{outIdx}/4;
+                        end
+                    end
+                    if opts.pid_constrained
+                        I1_p = MI({inputs_p{1}, inputs_p{end}}, {'I(A;B)'}, plugin_opts);
+                        I2_p = MI({inputs_p{2}, inputs_p{end}}, {'I(A;B)'}, plugin_opts);
+                        I12_p = MI({cat(1, inputs_p{1}, inputs_p{2}), inputs_p{end}}, {'I(A;B)'}, plugin_opts);
+                        if npartition(np)==2
+                            I1_2 = I1_2 + I1_p{1}/2;
+                            I2_2 = I2_2 + I2_p{1}/2;
+                            I12_2 = I12_2 + I12_p{1}/2;
+                        elseif npartition(np)==4
+                            I1_4 = I1_4 + I1_p{1}/4;
+                            I2_4 = I2_4 + I2_p{1}/4;
+                            I12_4 = I12_4 + I12_p{1}/4;
+                        end
+                    end
+                end
+            end
+            x_extrap = npartition./nTrials;
+            if strcmp(opts.bias,'qe')
+                for t = 1:nTimepoints
+                    for outIdx = 1:length(outputs)
+                        y = [plugin_v{outIdx}(t), PID2{outIdx}(t), PID4{outIdx}(t)];
+                        p = polyfit(x_extrap, y, 2);
+                        corrected_v{outIdx}(1,t)  =  corrected_v{outIdx}(t) + p(3)/xtrp;
+                    end
+                end
+            elseif strcmp(opts.bias,'le')
+                for t = 1:nTimepoints
+                    for outIdx = 1:length(outputs)
+                        y = [plugin_v{outIdx}(t), PID2{outIdx}(t)];
+                        p = polyfit(x_extrap, y, 1);
+                        corrected_v{outIdx}(1,t) = corrected_v{outIdx}(t) + p(2)/xtrp;
+                    end
+                end
+            end
+            if opts.pid_constrained
+                if strcmp(opts.bias,'qe')
+                    for t = 1:nTimepoints
+                        y = [I1_plugin(t), I1_2(t), I1_4(t)];
+                        p = polyfit(x_extrap, y, 2);
+                        I1_corrected(t) = I1_corrected(t) + p(3)/xtrp;
+                        y = [I2_plugin(t), I2_2(t), I2_4(t)];
+                        p = polyfit(x_extrap, y, 2);
+                        I2_corrected(t) = I2_corrected(t) + p(3)/xtrp;
+                        y = [I12_plugin(t), I12_2(t), I12_4(t)];
+                        p = polyfit(x_extrap, y, 2);
+                        I12_corrected(t) = I12_corrected(t) + p(3)/xtrp;
+                    end
+                elseif strcmp(opts.bias,'le')
+                    for t = 1:nTimepoints
+                        y = [I1_plugin(t), I1_2(t)];
+                        p = polyfit(x_extrap, y, 1);
+                        I1_corrected(t) = I1_corrected(t) +  p(2)/xtrp;
+                        y = [I2_plugin(t), I2_2(t)];
+                        p = polyfit(x_extrap, y, 1);
+                        I2_corrected(t) = I2_corrected(t) +  p(2)/xtrp;
+                        y = [I12_plugin(t), I12_2(t)];
+                        p = polyfit(x_extrap, y, 1);
+                        I12_corrected(t) = I12_corrected(t) +  p(2)/xtrp;
+                    end
+                end
+            end
+        end
+        
     end
     if opts.pid_constrained
         if ~isfield(opts, 'chosen_atom')
@@ -232,6 +338,10 @@ elseif strcmp(func2str(corefunc), 'FIT') || strcmp(func2str(corefunc), 'cFIT')
     plugin_opts.bias = 'plugin';
     plugin_opts.recall = true;
     nTrials = size(inputs{1},length(size(inputs{1})));
+
+    if opts.parallel
+    else
+    end
     for i=1:opts.xtrp
         randidx = randperm(nTrials, nTrials);
         npartition = [1 2 4];

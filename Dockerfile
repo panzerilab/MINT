@@ -5,7 +5,7 @@
 ARG MATLAB_RELEASE=R2024b
 
 # Specify the extra products to install into the image. These products can either be toolboxes or support packages.
-ARG ADDITIONAL_PRODUCTS="Symbolic_Math_Toolbox Deep_Learning_Toolbox_Model_for_ResNet-50_Network"
+ARG ADDITIONAL_PRODUCTS="Statistics_and_Machine_Learning_Toolbox Optimization_Toolbox Parallel_Computing_Toolbox Signal_Processing_Toolbox"
 
 # This Dockerfile builds on the Ubuntu-based mathworks/matlab image.
 # To check the available matlab images, see: https://hub.docker.com/r/mathworks/matlab
@@ -29,8 +29,11 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && rm -rf /var/lib/apt/lists/*
 
 # Install C compiler (gcc)
-RUN apt-get update && apt-get install -y gcc g++ && rm -rf /var/lib/apt/lists/*
-
+RUN sed -i 's|http://archive.ubuntu.com|http://mirror.math.princeton.edu/pub/mirrors|' /etc/apt/sources.list && \
+    apt-get update && \
+    apt-get install -y gcc g++ && \
+    rm -rf /var/lib/apt/lists/*
+    
 # Run mpm to install MathWorks products into the existing MATLAB installation directory,
 # and delete the mpm installation afterwards.
 # Modify it by setting the ADDITIONAL_PRODUCTS defined above,
@@ -77,11 +80,11 @@ ENV MW_DDUX_FORCE_ENABLE=true MW_CONTEXT_TAGS=$MW_CONTEXT_TAGS,MATLAB:TOOLBOXES:
 WORKDIR /home/matlab
 # Inherit ENTRYPOINT and CMD from base image.
 # Install git for cloning the repository
-RUN sudo apt-get update && sudo apt-get install -y git && sudo apt-get clean
+# RUN apt-get update && apt-get install -y git && apt-get clean
 
 # Clone the MINT repository and set working directory
-RUN git clone https://github.com/panzerilab/MINT.git /home/matlab/MINT
-WORKDIR /home/matlab/MINT
+# RUN git clone https://github.com/panzerilab/MINT.git /home/matlab/MINT
+# WORKDIR /home/matlab/MINT
 
 # Run BuildMINT.m script
-RUN matlab -batch "BuildMINT.m"
+# RUN matlab -batch "BuildMINT.m"
