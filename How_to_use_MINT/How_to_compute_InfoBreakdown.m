@@ -65,7 +65,7 @@
 % the response array (Joint information)
 % * 'Ilin(A;B)'           : the sum of the information carried by each element 
 % of the response array (positive value)
-% * 'coI(A;B)'           : the co Information is a measure for the information 
+% * 'RSI(A;B)'           : the co Information is a measure for the information 
 % encoding dynamic (negative: redundant encoding, positive: synergistic encoding)
 % * 'Iss(A)'              : the reduction in total information due to signal 
 % correlation (it's called Iss(A), because this measure is only dependent on the 
@@ -80,7 +80,7 @@
 % To compute the Information Breakdown components we can therefore specify the 
 % |req|O|utputs| list as follows:
 
-reqOutputs = {'I(A;B)','Ilin(A;B)','coI(A;B)','Iss(A)','Ic(A;B)','Ici(A;B)','Icd(A;B)'};
+reqOutputs = {'I(A;B)','Ilin(A;B)','RSI(A;B)','Iss(A)','Ic(A;B)','Ici(A;B)','Icd(A;B)'};
 %% 
 % The |MI| function provides an array of optional parameters that can be specified 
 % using a structure. These options allow for customization of the Information 
@@ -191,7 +191,7 @@ tPoints = 500;
 bdw_bins = 5;% number of bins used to discretize spike counts for information breakdown calculations
 
 nReps = 5;
-info_bdw_terms = {'Joint','Ilin','coInf','Iss','Ic','Ici','Icd'};
+info_bdw_terms = {'Joint','Ilin','RSI','Iss','Ic','Ici','Icd'};
 for repIdx = 1:nReps
     disp(['Repetition number ', num2str(repIdx)])
     
@@ -248,7 +248,7 @@ end
 
 [meanJoint, errJoint] = mean_SEM(Joint_all);
 [meanIlin, errIlin] = mean_SEM(Ilin_all);
-[meancoI, errcoI] = mean_SEM(coInf_all);
+[meanRSI, errRSI] = mean_SEM(RSI_all);
 [meanIss, errIss] = mean_SEM(Iss_all);
 [meanIc, errIc] = mean_SEM(Ic_all);
 [meanIci, errIci] = mean_SEM(Ici_all);
@@ -271,8 +271,8 @@ bar(scIdx, meanIlin, 'FaceColor', colorInfoBreak + colorShift, 'DisplayName', 'I
 errorbar(scIdx, meanIlin, errIlin, 'k--');
 
 scIdx = scIdx + 1;
-bar(scIdx, meancoI, 'FaceColor', colorInfoBreak + 2*colorShift, 'DisplayName', 'Ilin');
-errorbar(scIdx, meancoI, errcoI, 'k--');
+bar(scIdx, meanRSI, 'FaceColor', colorInfoBreak + 2*colorShift, 'DisplayName', 'Ilin');
+errorbar(scIdx, meanRSI, errRSI, 'k--');
 
 scIdx = scIdx + 1;
 bar(scIdx, meanIss, 'FaceColor', colorInfoBreak + 3*colorShift, 'DisplayName', 'Iss');
@@ -292,7 +292,7 @@ errorbar(scIdx, meanIcd, errIcd, 'k--');
 
 ylabel('Information [bits]', 'FontSize', fontsize);
 xticks(1:scIdx);
-xticklabels({'Joint', 'Ilin','coI','Iss', 'Ic', 'Ici', 'Icd'});
+xticklabels({'Joint', 'Ilin','RSI','Iss', 'Ic', 'Ici', 'Icd'});
 
 ylim([-0.05, 0.22]); 
 set(gca, 'FontSize', fontsize);
@@ -326,7 +326,7 @@ tPoints = 500;
 bdw_bins = 5;% number of bins used to discretize spike counts for information breakdown calculations
 
 nReps = 5;
-info_bdw_terms = {'Joint','Ilin','coInf','Iss','Ic','Ici','Icd'};
+info_bdw_terms = {'Joint','Ilin','RSI','Iss','Ic','Ici','Icd'};
 for repIdx = 1:nReps
     disp(['Repetition number ', num2str(repIdx)])
     
@@ -383,7 +383,7 @@ end
 
 [meanJoint, errJoint] = mean_SEM(Joint_all);
 [meanIlin, errIlin] = mean_SEM(Ilin_all);
-[meancoI, errcoI] = mean_SEM(coInf_all);
+[meanRSI, errRSI] = mean_SEM(RSI_all);
 [meanIss, errIss] = mean_SEM(Iss_all);
 [meanIc, errIc] = mean_SEM(Ic_all);
 [meanIci, errIci] = mean_SEM(Ici_all);
@@ -406,8 +406,8 @@ bar(scIdx, meanIlin, 'FaceColor', colorInfoBreak + colorShift, 'DisplayName', 'I
 errorbar(scIdx, meanIlin, errIlin, 'k--');
 
 scIdx = scIdx + 1;
-bar(scIdx, meancoI, 'FaceColor', colorInfoBreak + 2*colorShift, 'DisplayName', 'Ilin');
-errorbar(scIdx, meancoI, errcoI, 'k--');
+bar(scIdx, meanRSI, 'FaceColor', colorInfoBreak + 2*colorShift, 'DisplayName', 'Ilin');
+errorbar(scIdx, meanRSI, errRSI, 'k--');
 
 scIdx = scIdx + 1;
 bar(scIdx, meanIss, 'FaceColor', colorInfoBreak + 3*colorShift, 'DisplayName', 'Iss');
@@ -427,7 +427,7 @@ errorbar(scIdx, meanIcd, errIcd, 'k--');
 
 ylabel('Information [bits]', 'FontSize', fontsize);
 xticks(1:scIdx);
-xticklabels({'Joint', 'Ilin','coI','Iss', 'Ic', 'Ici', 'Icd'});
+xticklabels({'Joint', 'Ilin','RSI','Iss', 'Ic', 'Ici', 'Icd'});
 
 ylim([-0.005, 0.04]); 
 set(gca, 'FontSize', fontsize);

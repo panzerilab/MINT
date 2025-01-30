@@ -18,7 +18,7 @@ function [MI_values, MI_plugin, MI_nullDist] = MI(inputs, varargin)
 %   - reqOutputs: A cell array of strings specifying which entropies to compute.
 %               - 'I(A;B)'    : Mutual Information I(A;B)
 %               - 'Ilin(A;B)' : Linear MI Ilin(A;B)
-%               - 'coI(A;B)'  : Co-information coI(A;B)
+%               - 'RSI(A;B)'  : Redundancy-Synergy Index RSI(A;B)
 %               - 'Iss(A)'    : Sig. Sim Information Iss(A)
 %               - 'Ic(A;B)'   : Sum of Ici and Icd - Ic(A;B)
 %               - 'Ici(A;B)'  : Correlation Independent Information Ici(A;B)
@@ -122,7 +122,7 @@ if length(varargin) > 1
 else
     [inputs, reqOutputs, opts] = check_inputs('MI',inputs,varargin{:});
 end
-possibleOutputs = {'I(A;B)', 'Ish(A;B)',  'Ilin(A;B)', 'coI(A;B)', 'coIsh(A;B)', ...
+possibleOutputs = {'I(A;B)', 'Ish(A;B)',  'Ilin(A;B)', 'RSI(A;B)', 'RSIsh(A;B)', ...
     'Iss(A)', 'Ic(A;B)', 'Icsh(A;B)', 'Ici(A;B)', 'Icd(A;B)', 'Icdsh(A;B)', 'Iksg(A;B)', 'Insb(A;B)'};
 [isMember, indices] = ismember(reqOutputs, possibleOutputs);
 if any(~isMember)
@@ -202,8 +202,8 @@ entropy_dependencies = struct( ...
     'I_A_B', {{'H(A)', 'H(A|B)'}}, ...
     'Ish_A_B', {{'H(A)', 'H(A|B)', 'Hsh(A|B)', 'Hind(A|B)'}}, ...
     'Ilin_A_B', {{'Hlin(A)', 'H(A|B)', 'Hind(A|B)'}}, ...
-    'coI_A_B', {{'H(A)', 'H(A|B)', 'Hlin(A)', 'Hind(A|B)'}}, ...
-    'coIsh_A_B', {{'H(A)', 'H(A|B)', 'Hsh(A|B)', 'Hlin(A)'}}, ...
+    'RSI_A_B', {{'H(A)', 'H(A|B)', 'Hlin(A)', 'Hind(A|B)'}}, ...
+    'RSIsh_A_B', {{'H(A)', 'H(A|B)', 'Hsh(A|B)', 'Hlin(A)'}}, ...
     'Iss_A', {{'Hind(A)', 'Hlin(A)'}}, ...
     'Ic_A_B', {{'H(A)', 'H(A|B)', 'Hind(A|B)', 'Hind(A)'}}, ...
     'Icsh_A_B', {{'H(A)', 'H(A|B)', 'Hsh(A|B)', 'Hind(A)'}}, ...
@@ -222,10 +222,10 @@ for ind = 1:length(indices)
             required_entropies = [required_entropies, entropy_dependencies.Ish_A_B{:}];
         case 'Ilin(A;B)'
             required_entropies = [required_entropies, entropy_dependencies.Ilin_A_B{:}];
-        case 'coI(A;B)'
-            required_entropies = [required_entropies, entropy_dependencies.coI_A_B{:}];
-        case 'coIsh(A;B)'
-            required_entropies = [required_entropies, entropy_dependencies.coIsh_A_B{:}];
+        case 'RSI(A;B)'
+            required_entropies = [required_entropies, entropy_dependencies.RSI_A_B{:}];
+        case 'RSIsh(A;B)'
+            required_entropies = [required_entropies, entropy_dependencies.RSIsh_A_B{:}];
         case 'Iss(A)'
             required_entropies = [required_entropies, entropy_dependencies.Iss_A{:}];
         case 'Ic(A;B)'
@@ -308,8 +308,8 @@ for t = 1:nTimepoints
                     Hind_A_B_n = H_plugin{strcmp(required_entropies, 'Hind(A|B)')}(t);
                     MI_plugin{i}(1,t) = Hlin_A_n - Hind_A_B_n;
                 end
-            case 'coI(A;B)'
-                % coI(A;B) = H(A) - H(A|B) - Hlin(A) + Hind(A|B)
+            case 'RSI(A;B)'
+                % RSI(A;B) = H(A) - H(A|B) - Hlin(A) + Hind(A|B)
                 H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
                 Hlin_A = H_values{strcmp(required_entropies, 'Hlin(A)')}(t);
                 H_A_B = H_values{strcmp(required_entropies, 'H(A|B)')}(t);
@@ -322,8 +322,8 @@ for t = 1:nTimepoints
                     Hind_A_B_n = H_plugin{strcmp(required_entropies, 'Hind(A|B)')}(t);
                     MI_plugin{i}(1,t) = H_A_n - H_A_B_n - Hlin_A_n + Hind_A_B_n;
                 end
-            case 'coIsh(A;B)'
-                % coIsh(A;B) = H(A) + Hsh(A|B) - H(A|B) - Hlin(A)
+            case 'RSIsh(A;B)'
+                % RSIsh(A;B) = H(A) + Hsh(A|B) - H(A|B) - Hlin(A)
                 H_A = H_values{strcmp(required_entropies, 'H(A)')}(t);
                 Hlin_A = H_values{strcmp(required_entropies, 'Hlin(A)')}(t);
                 Hsh_A_B = H_values{strcmp(required_entropies, 'Hsh(A|B)')}(t);
