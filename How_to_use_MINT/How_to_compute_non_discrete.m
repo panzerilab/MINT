@@ -156,7 +156,7 @@ PID_opts.redundancy_measure = 'I_MMI';      % Options:
 % To bin your data, you must specify both the binning method and the number of bins. You can set different methods 
 % or number of bins for each input. If only one is provided, it will be applied to all inputs. 
 % For more details type 'help binning' in your Command Window.
-PID_opts.bin_method = {'eqpop', 'eqpop', 'none'};   % Options:                                         
+PID_opts.bin_method = {'none'};   % Options:                                         
                                                     % 'eqpop' (equal population), 
                                                     % 'eqspace' (equal spacing)
                                                     % 'threshold'
@@ -180,7 +180,7 @@ PID_opts.bias = 'ksg';                            % Options:
 % Several functions give you warning, e.g. if you did not specify an opts field that is needed and the function is 
 % using the default it will inform you. If you don't want to get these warning you can supress them with the opts field 
 % supressWarnings (default: false).
-PID_opts.supressWarnings = false;
+PID_opts.supressWarnings = true;
 
 PID_opts.NaN_handling = 'removeTrial';              % Options:                                          
                                                     % 'error' (Throws an error if NaN values are detected in any input)
@@ -208,6 +208,7 @@ PID_opts.parallel_sampling = true;
 PID_opts.n_samples = 20;
 PID_opts.shuffling = {'AB', 'A'};
 PID_opts.dim_shuffle = {'Trials'};
+PID_opts.pid_constrained = false;
 % PID Outputs
 % The function can output three variables based on the specified settings:
 % # *PID_values*: This is a cell array containing the PID values based on the 
@@ -257,6 +258,8 @@ legend('show');
 hold off;
 
 %%
+PID_opts.bin_method = {'eqpop','eqpop', 'none'};                               
+PID_opts.n_bins = {5, 5}; 
 PID_opts.bias = 'nsb';  
 [PID_corrected, PID_plugin, PID_nullDist] =   PID(inputs, reqOutputs, PID_opts); 
 % Plot Results

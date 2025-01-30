@@ -17,8 +17,15 @@ function BuildMINT()
     PID_BuildAndTest(configdir, ecosdir);
     compile_KSGmex_file(scriptdir, fullfile(scriptdir, 'extern', 'ContinuousMIEstimation','bin'));
     % Add the necessary paths to MATLAB startup by modifying the startupMINT.m
-    addReqToStartup(scriptdir);
-    
+    prompt = "Do you want to add MINT to the MATLAB path permanently? [Y]/N : ";
+    txt = input(prompt,"s");
+    if isempty(txt)
+        txt = 'Y';
+    end
+    if strcmp(txt,'Y')
+        addReqToStartup(scriptdir);
+    end
+    addpath(genpath(scriptdir));
     % Print success message
     disp('_________________________________________________________________________');
     disp('Installation Successful.');

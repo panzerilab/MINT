@@ -86,25 +86,55 @@ if strcmp(func2str(corefunc), 'PID')
         I12_shuff_all = zeros(opts.shuff, nTimepoints);
     end
     PID_corrected = cell(1, length(outputs));
-    for sIdx = 1:opts.shuff
-        inputs_sh = inputs;
-        for var = 1:length(inputs)
-            if length(size(inputs_sh{var}))>2
-                inputs_sh{var} = permute(inputs_sh{var}, [3, 1, 2]);
-                shuffle_vals =  (shuffle_core(0, inputs_sh{var}, 0, [1, 0]));
-                inputs_sh{var} = permute(shuffle_vals, [2, 3, 1]);
-            else
-                inputs_sh{var} = (shuffle_core(0, inputs_sh{var}', 0, [1, 0]))';
+    if opts.parallel
+        shuff_all_par = zeros(length(outputs),opts.shuff, nTimepoints);
+        noutputs = length(outputs);
+        parfor sIdx = 1:opts.shuff
+            inputs_sh = inputs;
+            for var = 1:length(inputs)
+                if length(size(inputs_sh{var}))>2
+                    inputs_sh{var} = permute(inputs_sh{var}, [3, 1, 2]);
+                    shuffle_vals =  (shuffle_core(0, inputs_sh{var}, 0, [1, 0]));
+                    inputs_sh{var} = permute(shuffle_vals, [2, 3, 1]);
+                else
+                    inputs_sh{var} = (shuffle_core(0, inputs_sh{var}', 0, [1, 0]))';
+                end
+            end
+            shuff_v  = feval(corefunc, inputs_sh, outputs, plugin_opts);
+            for outIdx = 1:noutputs
+                shuff_all_par(outIdx,sIdx,:) = shuff_v{outIdx};
+            end
+            if opts.pid_constrained
+                I1_shuff_all(sIdx,:) = cell2mat(MI({inputs_sh{1}, inputs_sh{end}}, {'I(A;B)'}, plugin_opts));
+                I2_shuff_all(sIdx,:) = cell2mat(MI({inputs_sh{2}, inputs_sh{end}}, {'I(A;B)'}, plugin_opts));
+                I12_shuff_all(sIdx,:) = cell2mat(MI({cat(1, inputs_sh{1}, inputs_sh{2}), inputs_sh{end}}, {'I(A;B)'}, plugin_opts));
             end
         end
-        shuff_v  = feval(corefunc, inputs_sh, outputs, plugin_opts);
-        for outIdx = 1:length(outputs)
-            shuff_all{outIdx}(sIdx,:) = shuff_v{outIdx};
+        for spar =1:noutputs
+            shuff_all{spar}(:,:) = reshape(shuff_all_par(spar,:,:), [opts.shuff, nTimepoints]);
         end
-        if opts.pid_constrained
-            I1_shuff_all(sIdx,:) = cell2mat(MI({inputs_sh{1}, inputs_sh{end}}, {'I(A;B)'}, plugin_opts));
-            I2_shuff_all(sIdx,:) = cell2mat(MI({inputs_sh{2}, inputs_sh{end}}, {'I(A;B)'}, plugin_opts));
-            I12_shuff_all(sIdx,:) = cell2mat(MI({cat(1, inputs_sh{1}, inputs_sh{2}), inputs_sh{end}}, {'I(A;B)'}, plugin_opts));
+
+    else
+        for sIdx = 1:opts.shuff
+            inputs_sh = inputs;
+            for var = 1:length(inputs)
+                if length(size(inputs_sh{var}))>2
+                    inputs_sh{var} = permute(inputs_sh{var}, [3, 1, 2]);
+                    shuffle_vals =  (shuffle_core(0, inputs_sh{var}, 0, [1, 0]));
+                    inputs_sh{var} = permute(shuffle_vals, [2, 3, 1]);
+                else
+                    inputs_sh{var} = (shuffle_core(0, inputs_sh{var}', 0, [1, 0]))';
+                end
+            end
+            shuff_v  = feval(corefunc, inputs_sh, outputs, plugin_opts);
+            for outIdx = 1:length(outputs)
+                shuff_all{outIdx}(sIdx,:) = shuff_v{outIdx};
+            end
+            if opts.pid_constrained
+                I1_shuff_all(sIdx,:) = cell2mat(MI({inputs_sh{1}, inputs_sh{end}}, {'I(A;B)'}, plugin_opts));
+                I2_shuff_all(sIdx,:) = cell2mat(MI({inputs_sh{2}, inputs_sh{end}}, {'I(A;B)'}, plugin_opts));
+                I12_shuff_all(sIdx,:) = cell2mat(MI({cat(1, inputs_sh{1}, inputs_sh{2}), inputs_sh{end}}, {'I(A;B)'}, plugin_opts));
+            end
         end
     end
 
@@ -200,22 +230,49 @@ elseif strcmp(func2str(corefunc), 'FIT') || strcmp(func2str(corefunc), 'cFIT')
     shuff_all = cell(1, length(outputs));
     [plugin_v,~,~,atom1_plugin, atom2_plugin] = feval(corefunc, inputs, outputs, plugin_opts);
     addOut = cell(2,length(outputs));
-    for sIdx = 1:opts.shuff
-        inputs_sh = inputs;
-        for var = 1:length(inputs)
-            if length(size(inputs_sh{var}))>2
-                inputs_sh{var} = permute(inputs_sh{var}, [3, 1, 2]);
-                shuffle_vals =  (shuffle_core(0, inputs_sh{var}, 0, [1, 0]));
-                inputs_sh{var} = permute(shuffle_vals, [2, 3, 1]);
-            else
-                inputs_sh{var} = (shuffle_core(0, inputs_sh{var}', 0, [1, 0]))';
+    if opts.parallel
+        shuff_all_par = zeros(length(outputs),opts.shuff, nTimepoints);
+        addOut_par    = zeros(2,length(outputs),opts.shuff, nTimepoints);
+        noutputs = length(outputs);
+        parfor sIdx = 1:opts.shuff
+            inputs_sh = inputs;
+            for var = 1:length(inputs)
+                if length(size(inputs_sh{var}))>2
+                    inputs_sh{var} = permute(inputs_sh{var}, [3, 1, 2]);
+                    shuffle_vals =  (shuffle_core(0, inputs_sh{var}, 0, [1, 0]));
+                    inputs_sh{var} = permute(shuffle_vals, [2, 3, 1]);
+                else
+                    inputs_sh{var} = (shuffle_core(0, inputs_sh{var}', 0, [1, 0]))';
+                end
             end
+            [FIT_shuff, ~, ~, atom1_shuff, atom2_shuff]  = feval(corefunc, inputs_sh, outputs, plugin_opts);
+            for outIdx = 1:noutputs
+                shuff_all_par(outIdx,sIdx,:) = FIT_shuff;
+                addOut(:,outIdx,sIdx,:) =  [atom1_shuff{outIdx}; atom2_shuff{outIdx}];
+            end
+        end   
+        for spar =1:noutputs
+            shuff_all{spar}(:,:) = reshape(shuff_all_par(spar,:,:),opts.shuff, nTimepoints);
+            addOut{spar}(:,:)    = reshape(addOut_par(spar,:,:),opts.shuff, nTimepoints);
         end
-        [FIT_shuff, ~, ~, atom1_shuff, atom2_shuff]  = feval(corefunc, inputs_sh, outputs, plugin_opts);
-        for outIdx = 1:length(outputs)
-            shuff_all{outIdx} = FIT_shuff;
-            addOut{1,outIdx} = [addOut{1,outIdx}, atom1_shuff{outIdx}];
-            addOut{2,outIdx} = [addOut{2,outIdx}, atom2_shuff{outIdx}];
+    else
+        for sIdx = 1:opts.shuff
+            inputs_sh = inputs;
+            for var = 1:length(inputs)
+                if length(size(inputs_sh{var}))>2
+                    inputs_sh{var} = permute(inputs_sh{var}, [3, 1, 2]);
+                    shuffle_vals =  (shuffle_core(0, inputs_sh{var}, 0, [1, 0]));
+                    inputs_sh{var} = permute(shuffle_vals, [2, 3, 1]);
+                else
+                    inputs_sh{var} = (shuffle_core(0, inputs_sh{var}', 0, [1, 0]))';
+                end
+            end
+            [FIT_shuff, ~, ~, atom1_shuff, atom2_shuff]  = feval(corefunc, inputs_sh, outputs, plugin_opts);
+            for outIdx = 1:length(outputs)
+                shuff_all{outIdx} = FIT_shuff;
+                addOut{1,outIdx} = [addOut{1,outIdx}, atom1_shuff{outIdx}];
+                addOut{2,outIdx} = [addOut{2,outIdx}, atom2_shuff{outIdx}];
+            end
         end
     end
     for outIdx = 1:length(outputs)
@@ -239,25 +296,52 @@ elseif strcmp(func2str(corefunc), 'II')
     atom2_shuffall = repmat({zeros(opts.shuff, nTimepoints)},2, length(outputs));
     [plugin_v,~,~,atom1_plugin, atom2_plugin] = feval(corefunc, inputs, outputs, plugin_opts);
     addOut = cell(2,length(outputs));
-     for sIdx = 1:opts.shuff
-        inputs_sh = inputs;
-        for var = 1:length(inputs)
-            if length(size(inputs_sh{var}))>2
-                inputs_sh{var} = permute(inputs_sh{var}, [3, 1, 2]);
-                shuffle_vals =  (shuffle_core(0, inputs_sh{var}, 0, [1, 0]));
-                inputs_sh{var} = permute(shuffle_vals, [2, 3, 1]);
-            else
-                inputs_sh{var} = (shuffle_core(0, inputs_sh{var}', 0, [1, 0]))';
+    if opts.parallel
+        noutputs = length(outputs);
+        atom1_shuffall_par = zeros(noutputs, opts.shuff, nTimepoints);
+        atom2_shuffall_par = zeros(noutputs, opts.shuff, nTimepoints);
+        parfor sIdx = 1:opts.shuff
+            inputs_sh = inputs;
+            for var = 1:length(inputs)
+                if length(size(inputs_sh{var}))>2
+                    inputs_sh{var} = permute(inputs_sh{var}, [3, 1, 2]);
+                    shuffle_vals =  (shuffle_core(0, inputs_sh{var}, 0, [1, 0]));
+                    inputs_sh{var} = permute(shuffle_vals, [2, 3, 1]);
+                else
+                    inputs_sh{var} = (shuffle_core(0, inputs_sh{var}', 0, [1, 0]))';
+                end
+            end
+            [~, ~, ~, atom1_shuff, atom2_shuff]  = feval(corefunc, inputs_sh, outputs, plugin_opts);
+            for outIdx = 1:noutputs            
+                atom1_shuffall_par(outIdx,sIdx,:) = atom1_shuff{outIdx};
+                atom2_shuffall_par(outIdx,sIdx,:) = atom2_shuff{outIdx};
             end
         end
-        [~, ~, ~, atom1_shuff, atom2_shuff]  = feval(corefunc, inputs_sh, outputs, plugin_opts);
-        for outIdx = 1:length(outputs)            
-            atom1_shuffall{outIdx}(sIdx,:) = atom1_shuff{outIdx};
-            atom2_shuffall{outIdx}(sIdx,:) = atom2_shuff{outIdx};
+        for spar=1:noutputs
+            atom1_shuffall{noutputs} = reshape(atom1_shuffall_par(noutputs,:,:),opts.shuff, nTimepoints);
+            atom2_shuffall{noutputs} = reshape(atom2_shuffall_par(noutputs,:,:),opts.shuff, nTimepoints);
         end
 
-     end
-     for outIdx = 1:length(outputs)
+    else
+        for sIdx = 1:opts.shuff
+            inputs_sh = inputs;
+            for var = 1:length(inputs)
+                if length(size(inputs_sh{var}))>2
+                    inputs_sh{var} = permute(inputs_sh{var}, [3, 1, 2]);
+                    shuffle_vals =  (shuffle_core(0, inputs_sh{var}, 0, [1, 0]));
+                    inputs_sh{var} = permute(shuffle_vals, [2, 3, 1]);
+                else
+                    inputs_sh{var} = (shuffle_core(0, inputs_sh{var}', 0, [1, 0]))';
+                end
+            end
+            [~, ~, ~, atom1_shuff, atom2_shuff]  = feval(corefunc, inputs_sh, outputs, plugin_opts);
+            for outIdx = 1:length(outputs)            
+                atom1_shuffall{outIdx}(sIdx,:) = atom1_shuff{outIdx};
+                atom2_shuffall{outIdx}(sIdx,:) = atom2_shuff{outIdx};
+            end
+        end
+    end
+    for outIdx = 1:length(outputs)
          atom1_corrected{outIdx} = atom1_plugin{outIdx} - mean(atom1_shuffall{outIdx},1);
          atom2_corrected{outIdx} = atom2_plugin{outIdx} - mean(atom2_shuffall{outIdx},1);
          addOut{1,outIdx} = atom1_shuffall{outIdx};
@@ -267,24 +351,48 @@ elseif strcmp(func2str(corefunc), 'II')
 elseif strcmp(func2str(corefunc), 'MI') || strcmp(func2str(corefunc), 'TE') || strcmp(func2str(corefunc), 'cTE') || strcmp(func2str(corefunc), 'cMI')
     shuff_all = repmat({zeros(opts.shuff, nTimepoints)},1, length(outputs));
     plugin_v = feval(corefunc, inputs, outputs, plugin_opts);
-    for sIdx = 1:opts.shuff
-        inputs_sh = inputs;
-        for var = 1:length(inputs)
-            if length(size(inputs_sh{var}))>2
-                inputs_sh{var} = permute(inputs_sh{var}, [3, 1, 2]);
-                shuffle_vals =  (shuffle_core(0, inputs_sh{var}, 0, [1, 0]));
-                inputs_sh{var} = permute(shuffle_vals, [2, 3, 1]);
-            else
-                inputs_sh{var} = (shuffle_core(0, inputs_sh{var}', 0, [1, 0]))';
+    if opts.parallel
+        noutputs = length(outputs);
+        shuffall_par = zeros(noutputs, opts.shuff, nTimepoints);
+        parfor sIdx = 1:opts.shuff
+            inputs_sh = inputs;
+            for var = 1:length(inputs)
+                if length(size(inputs_sh{var}))>2
+                    inputs_sh{var} = permute(inputs_sh{var}, [3, 1, 2]);
+                    shuffle_vals =  (shuffle_core(0, inputs_sh{var}, 0, [1, 0]));
+                    inputs_sh{var} = permute(shuffle_vals, [2, 3, 1]);
+                else
+                    inputs_sh{var} = (shuffle_core(0, inputs_sh{var}', 0, [1, 0]))';
+                end
+            end
+            shuff_v  = feval(corefunc, inputs_sh, outputs, plugin_opts);
+            for outIdx = 1:noutputs
+                shuffall_par(outIdx,sIdx,:) = shuff_v{outIdx};
             end
         end
-        shuff_v  = feval(corefunc, inputs_sh, outputs, plugin_opts);
-        for outIdx = 1:length(outputs)
-            shuff_all{outIdx}(sIdx,:) = shuff_v{outIdx};
+        for spar=1:noutputs
+            shuff_all{noutputs} = reshape(shuffall_par(noutputs,:,:),opts.shuff, nTimepoints);
+        end
+    else
+        for sIdx = 1:opts.shuff
+            inputs_sh = inputs;
+            for var = 1:length(inputs)
+                if length(size(inputs_sh{var}))>2
+                    inputs_sh{var} = permute(inputs_sh{var}, [3, 1, 2]);
+                    shuffle_vals =  (shuffle_core(0, inputs_sh{var}, 0, [1, 0]));
+                    inputs_sh{var} = permute(shuffle_vals, [2, 3, 1]);
+                else
+                    inputs_sh{var} = (shuffle_core(0, inputs_sh{var}', 0, [1, 0]))';
+                end
+            end
+            shuff_v  = feval(corefunc, inputs_sh, outputs, plugin_opts);
+            for outIdx = 1:length(outputs)
+                shuff_all{outIdx}(sIdx,:) = shuff_v{outIdx};
+            end
         end
     end
-     for outIdx = 1:length(outputs)      
+    for outIdx = 1:length(outputs)      
         corrected_v{outIdx} = plugin_v{outIdx} - mean(shuff_all{outIdx},1);
-     end 
+    end 
 end
 

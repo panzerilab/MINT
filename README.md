@@ -2,32 +2,29 @@
 ## Software requirements
 #### Linux:
 - MATLAB supported C/C++ compiler (tested with gcc and g++ version > 6.3.1)
-- MATLAB (tested with versions > r2019b but earlier version should be compatible)
+- MATLAB (tested with versions > r2018b but earlier version should be compatible)
   - Statistics and Machine Learning toolbox
   - Optimization toolbox
   - Parallel Computing Toolbox
-  - Communications Toolbox
-  - DSP System Toolbox
+  - Signal Processing Toolbox
 
 #### MacOS:
 - MATLAB supported C/C++compiler
-- MATLAB (tested with versions > r2019b but earlier version should be compatible)
+- MATLAB (tested with versions > r2018b but earlier version should be compatible)
   - Statistics and Machine Learning toolbox
   - Optimization toolbox
   - Parallel Computing Toolbox
-  - Communications Toolbox
-  - DSP System Toolbox
+  - Signal Processing Toolbox
 
 #### Windows:
 - MATLAB supported C/C++ compiler (tested with MinGW-w64, see installation instructions [here](https://it.mathworks.com/matlabcentral/fileexchange/52848-matlab-support-for-mingw-w64-c-c-compiler))
 - Microsoft Visual C++
 - Microsoft Visual C++ build tools
-- MATLAB (tested with versions > r2019b but earlier version should be compatible)
+- MATLAB (tested with versions > r2018b but earlier version should be compatible)
   - Statistics and Machine Learning toolbox
   - Optimization toolbox
   - Parallel Computing Toolbox
-  - Communications Toolbox
-  - DSP System Toolbox
+  - Signal Processing Toolbox
 
 ## Build instructions
 1. Before starting the installation make sure that all software requirements described above are satisfied.
@@ -37,7 +34,7 @@
 ### Build with Docker
 1. If you have Docker installed, you can build the Dockerfile in this package by running 
 ``` 
-docker build --build-arg ADDITIONAL_PRODUCTS="Statistics_and_Machine_Learning_Toolbox Optimization_Toolbox Parallel_Computing_Toolbox Communications_Toolbox DSP_System_Toolbox" -t matlab4mint:R2024b .
+docker build --build-arg ADDITIONAL_PRODUCTS="Statistics_and_Machine_Learning_Toolbox Optimization_Toolbox Parallel_Computing_Toolbox Signal_processing_Toolbox" -t matlab4mint:R2024b .
 ```
 2. After the Docker image has been built with all the necessary toolboxes, run 
 ```
@@ -47,7 +44,6 @@ Where /path/on/host can be replaced with the directory in your computer where yo
 3. Once inside the container, write
 ```
 cd /home/matlab/MINT
-addpath(genpath('MINT'))
 run('BuildMINT.m')
 ``` 
 

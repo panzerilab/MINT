@@ -125,8 +125,8 @@ function [S_nsb, dS_nsb, S_cl, dS_cl, xi_cl, S_ml, errcode] = ...
   if((errcode==1) | (errcode==2) | (errcode==3) | (errcode==4))
     % if no coincidences, or no covergence in NR polishing,
     % or bad power-series expansion results
-    disp(['  FIND_NSB_ENTROPY: Switching to integration over the full range of xi due to ' ...
-        'prior errors.'])
+    % disp(['  FIND_NSB_ENTROPY: Switching to integration over the full range of xi due to ' ...
+    %     'prior errors.'])
     if (B_cl>0)
         nsb_mlog_quad  = mlog_evidence(B_cl, kx, nx, K); % this is the best guess value for mlog_evidence
                     % but it can be wrong if finding the saddle point
@@ -143,8 +143,8 @@ function [S_nsb, dS_nsb, S_cl, dS_cl, xi_cl, S_ml, errcode] = ...
     xi_cl = Inf ;
   else
     S_cl = meanS(B_cl, kx, nx, K);
-    disp(['  FIND_NSB_ENTROPY: Expect S to be near ' num2str(S_cl) ', and sigma(S) near ' ...
-        num2str(dS_cl) '.']);
+    % disp(['  FIND_NSB_ENTROPY: Expect S to be near ' num2str(S_cl) ', and sigma(S) near ' ...
+    %     num2str(dS_cl) '.']);
     nsb_mlog_quad = mlog_evidence(B_cl, kx, nx, K); % value at the saddle
 
     % limits of integration determination
@@ -153,7 +153,7 @@ function [S_nsb, dS_nsb, S_cl, dS_cl, xi_cl, S_ml, errcode] = ...
     % sqrt(2) is there because erf is defined as
     % int_0^x exp(-t^2)dt
     delta = erfinv(1-precision)*sqrt(2);
-    disp(['  FIND_NSB_ENTROPY: Integrating around the peak.']);
+    % disp(['  FIND_NSB_ENTROPY: Integrating around the peak.']);
   end; 
 
 
@@ -232,9 +232,9 @@ function [S_nsb, dS_nsb, S_cl, dS_cl, xi_cl, S_ml, errcode] = ...
     end;
 
 
-    disp(['  FIND_NSB_ENTROPY: Doing ' deblank(msgs(i,:)) ' integral. ' ...
-        'Limits: ' num2str(xi_lim(1)) ' < xi < ' num2str(xi_lim(2)) ...
-        '.']);
+    % disp(['  FIND_NSB_ENTROPY: Doing ' deblank(msgs(i,:)) ' integral. ' ...
+    %     'Limits: ' num2str(xi_lim(1)) ' < xi < ' num2str(xi_lim(2)) ...
+    %     '.']);
 
     if(qfun==1)
       % quad integrator is used
@@ -265,22 +265,22 @@ function [S_nsb, dS_nsb, S_cl, dS_cl, xi_cl, S_ml, errcode] = ...
 
     % now do the error tracking
     if(ec(i))
-      disp(['warning: FIND_NSB_ENTROPY: Problem in ' deblank(msgs(i,:)) ...
-            ' integral. ' deblank(ecmsgs(ec(i),:))]);
+      % disp(['warning: FIND_NSB_ENTROPY: Problem in ' deblank(msgs(i,:)) ...
+      %       ' integral. ' deblank(ecmsgs(ec(i),:))]);
     end
     if(err(i)>precision)
-      disp(['warning: FIND_NSB_ENTROPY: Precision of ' num2str(precision) ...
-            ' required, but only ' num2str(err(i)) ' achieved.']);
-      disp(['                           ' num2str(nfun(i)) ' function ' ...
-            'evaluations perfomed.']);
+      % disp(['warning: FIND_NSB_ENTROPY: Precision of ' num2str(precision) ...
+      %       ' required, but only ' num2str(err(i)) ' achieved.']);
+      % disp(['                           ' num2str(nfun(i)) ' function ' ...
+      %       'evaluations perfomed.']);
     end
   end
 
 
   S_nsb  = nsb_val_quad(2)/nsb_val_quad(1);
   dS_nsb = sqrt(abs(nsb_val_quad(3)/nsb_val_quad(1)- S_nsb^2));
-  disp(['  FIND_NSB_ENTROPY: Found S = ' num2str(S_nsb) ', and sigma(S) = ' ...
-	num2str(dS_nsb) '.'])
+  % disp(['  FIND_NSB_ENTROPY: Found S = ' num2str(S_nsb) ', and sigma(S) = ' ...
+	% num2str(dS_nsb) '.'])
   errcode =  errcode + ec(1)*10 + ec(2)*100 + ec(3)*1000;
   
   N  = sum (kx.*nx);

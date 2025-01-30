@@ -83,7 +83,7 @@ function [MI_values, MI_plugin, MI_nullDist] = MI(inputs, varargin)
 % Y = cat(1, Y1, Y2);  % Concatenates Y1 and Y2 along the first dimension (neurons)
 %
 % To compute the Mutual Information and the Shuffled MI from X to Y, the function can be called as:
-% MI_values = MI({X, Y}, {'I(A;B)', Ish(A;B}, opts);
+% MI_values = MI({X, Y}, {'I(A;B)', 'Ish(A;B)'}, opts);
 %
 % Here, 'opts' represents additional options you may want to include (see varargin options)
 

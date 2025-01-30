@@ -36,7 +36,7 @@ classdef test_PID < matlab.unittest.TestCase
             opts.suppressWarnings = true;
             opts.bin_method = {'eqspace', 'eqpop', 'none'};
             opts.n_bins = {2, 2};
-            PID_out = PID({X1, X2, Y}, opts); 
+            PID_out = PID({X1, X2, Y}, opts);
             assert(all(cell2mat(PID_out) < 0.1), 'All values should be approximately zero.');
             warning('on', 'all');
         end

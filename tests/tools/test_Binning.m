@@ -13,7 +13,7 @@ classdef test_Binning < matlab.unittest.TestCase
             uniqueX = unique(binned_data{1});
             uniqueY_1 = unique(binned_data{1, 2}(1,:,:));
             uniqueY_2 = unique(binned_data{1, 2}(2,:,:));
-            assert(length(unique(uniqueX)) == 5, 'Number of bins is incorrect');
+            assert(length(unique(uniqueX))   == 5, 'Number of bins is incorrect');
             assert(length(unique(uniqueY_1)) == 6, 'Number of bins is incorrect');
             assert(length(unique(uniqueY_2)) == 2, 'Number of bins is incorrect'); 
 

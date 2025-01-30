@@ -5,7 +5,7 @@ import numpy as np
 eng = matlab.engine.start_matlab('-nojvm')
 
 # Add the MINT toolbox path to MATLAB (check if this path is correct)
-eng.eval('addpath(genpath(fullfile(\'/home\', \'matias\', \'Documents\', \'Projects\', \'MINT\')));', nargout=0)
+eng.eval('addpath(genpath(fullfile(\'/home\', \'username\', \'Documents\', \'Projects\', \'MINT\')));', nargout=0)
 eng.eval('disp(matlabroot)', nargout=0)
 
 # Check if MI function exists

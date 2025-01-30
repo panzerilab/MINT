@@ -55,6 +55,7 @@ if isempty(varargin)
     opts.isBinned = false;
     opts.isChecked = false;
     opts.isKSG = false;
+    opts.isNSB = false;
     opts.parallel = false;
     opts.n_bins = {3};
     opts.suppressWarnings = false;
@@ -67,6 +68,7 @@ elseif isscalar(varargin)
         opts.n_bins = {3};
         opts.isChecked = false;
         opts.isKSG = false;
+        opts.isNSB = false;
         opts.parallel = false;
         opts.suppressWarnings = false;
         if ~opts.suppressWarnings
@@ -140,6 +142,9 @@ else
     if ~isfield(opts, 'isKSG')
         opts.isKSG = false;
     end
+    if ~isfield(opts, 'isNSB')
+        opts.isNSB = false;
+    end
     if ~opts.isChecked
         default_fields= fieldnames(defaultOpts);
         is_field_present = ismember(default_fields, fieldnames(opts));
@@ -188,7 +193,9 @@ end
 if strcmp(opts.bias, 'ksg')
     opts.isKSG = true;
 end
-
+if strcmp(opts.bias, 'nsb')
+    opts.isNSB = true;
+end
 inputs = nan_method(inputs, opts.NaN_handling);
 opts.isChecked = true;
 end

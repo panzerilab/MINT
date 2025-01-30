@@ -125,7 +125,7 @@ if length(opts.n_bins) < nVars
 end
 
 % Check Outputslist
-possibleOutputs = {'H(A)', 'H(B)','H(A|B)', 'Hlin(A)', 'Hind(A)', 'Hind(A|B)', 'Chi(A)','Hsh(A)', 'Hsh(A|B)'};
+possibleOutputs = {'H(A)', 'H(B)','H(A|B)', 'Hlin(A)', 'Hind(A)', 'Hind(A|B)', 'Chi(A)','Hsh(A)', 'Hsh(A|B)', 'Hnsb(A)', 'Hnsb(A,B)', 'Hnsb(B)'};
 [isMember, indices] = ismember(reqOutputs, possibleOutputs);
 if any(~isMember)
     nonMembers = reqOutputs(~isMember);
@@ -214,7 +214,10 @@ entropy_distributions = struct( ...
     'Hind_A_B', {{'Pind(A|B)', 'P(B)'}}, ...
     'Chi_A', {{'P(A)','Pind(A)'}}, ...
     'Hsh_A', {{'Psh(A)'}}, ...
-    'Hsh_A_B', {{'Psh(A)','Psh(A|B)', 'P(B)'}} ...
+    'Hsh_A_B', {{'Psh(A)','Psh(A|B)', 'P(B)'}}, ...
+    'Hnsb_A', {{'P(A)'}}, ...
+    'Hnsb_B', {{'P(B)'}}, ...
+    'Hnsb_AB', {{'P(A,B)'}} ...
     );
 
 required_distributions = {};
@@ -239,6 +242,12 @@ for ind = 1:length(indices)
             required_distributions = [required_distributions, entropy_distributions.Hsh_A{:}];
         case 'Hsh(A|B)'
             required_distributions = [required_distributions, entropy_distributions.Hsh_A_B{:}];
+        case 'Hnsb(A)'
+            required_distributions = [required_distributions, entropy_distributions.Hnsb_A{:}];
+        case 'Hnsb(B)'
+            required_distributions = [required_distributions, entropy_distributions.Hnsb_B{:}];
+        case 'Hnsb(A,B)'
+            required_distributions = [required_distributions, entropy_distributions.Hnsb_AB{:}];
     end
 end
 required_distributions = unique(required_distributions);
@@ -411,9 +420,9 @@ for t = 1:nTimepoints
             case 'Hnsb(A)'
                 qfun = 1;
                 precision = .1;
-                
-                nb = inputs_1d{1};
-                K = length(nb);
+                P_A = prob_dists{t, strcmp(required_distributions, 'P(A)')};
+                nb  = P_A' * nTrials;
+                K   = length(nb);
                 nxa = nb(nb>0);
                 kxb = ones(size(nxa));
                 
@@ -423,9 +432,9 @@ for t = 1:nTimepoints
             case 'Hnsb(B)'
                 qfun = 1;
                 precision = .1;
-                
-                nb = inputs_1d{2};
-                K = length(nb);
+                P_B = prob_dists{t, strcmp(required_distributions, 'P(B)')};
+                nb  = P_B'*nTrials;
+                K   = length(nb);
                 nxb = nb(nb>0);
                 kxb = ones(size(nxb));
                 
@@ -435,12 +444,12 @@ for t = 1:nTimepoints
             case 'Hnsb(A,B)'
                 qfun = 1;
                 precision = .1;
-                
-                nab = reduce_dim([inputs_1d{1}; inputs_1d{2}],1); 
+                P_AB = prob_dists{t, strcmp(required_distributions, 'P(A,B)')};
+                nab  = P_AB(:)'*nTrials;
                 K = length(nab);
                 nxab = nab(nab>0);
                 kxab = ones(size(nxab));
-                
+ 
                 [Sab_nsb, ~, ~, ~, ~, S_ml,~]=find_nsb_entropy (kxab, nxab, K, precision,qfun);
                 entropies_plugin{i}(1,t) = S_ml;
                 entropies{i}(1,t) = Sab_nsb;
@@ -449,3 +458,4 @@ for t = 1:nTimepoints
     end
 end
 end
+%

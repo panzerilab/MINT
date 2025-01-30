@@ -77,7 +77,7 @@ function B = B_xiK (xi, K)
   %% dxi/dB is small at large B and we can easily overshoot
   %% to negative B if the original B was too large.
  if(~loaded)			% no variable in memory
-    disp(['      B_XIK: Creating the B(xi) interpolation data for K=' num2str(K) '.']);
+    % disp(['      B_XIK: Creating the B(xi) interpolation data for K=' num2str(K) '.']);
     K_interp_in = K;            % need to create it
 
     %% first guess at intervals for interpolation table
@@ -93,7 +93,7 @@ function B = B_xiK (xi, K)
     %% into the new interpolation table
     dxi = [1e-3:log(K)*1e-3:log(K)-1e-3];
     Bxi_interp_in = [dxi; B_xiK(dxi,K)];
-    disp('      B_XIK: Done creating interpolation data.');
+    % disp('      B_XIK: Done creating interpolation data.');
  end;
 
 

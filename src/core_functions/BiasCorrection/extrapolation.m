@@ -222,6 +222,8 @@ if strcmp(func2str(corefunc), 'PID')
         end
     end
 elseif strcmp(func2str(corefunc), 'FIT') || strcmp(func2str(corefunc), 'cFIT') 
+    plugin_opts = opts;
+    plugin_opts.bias = 'plugin';
     [~,~,~,atom1_plugin, atom2_plugin] = feval(corefunc, inputs, outputs, plugin_opts);
     numAtoms = length(atom1_plugin);
     atom1_corr = repmat({zeros(1,numAtoms)}, 1, length(outputs));
