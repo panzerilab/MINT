@@ -143,7 +143,7 @@ else
 end
 
 possibleOutputs = {'', 'Syn',  'Red', 'Unq1', 'Unq2', ...
-    'Unq', 'PID_atoms', 'Joint', 'Union', 'q_dist'};
+    'Unq', 'PID_atoms', 'Joint', 'Union', 'q_dist', 'p_dist'};
 if ismember('', reqOutputs)
     reqOutputs = {'Syn', 'Red', 'Unq1', 'Unq2'};
 elseif ismember('PID_atoms', reqOutputs)
@@ -153,9 +153,9 @@ elseif ismember('PID_atoms', reqOutputs)
     reqOutputs = [reqOutputs(1:pid_idx-1), new_atoms, reqOutputs(pid_idx:end)];
 elseif ismember('all', reqOutputs)
     if strcmp(opts.redundancy_measure, 'I_BROJA')
-        reqOutputs = {'Syn', 'Red', 'Unq1', 'Unq2', 'Unq', 'Joint', 'Union'};
+        reqOutputs = {'Syn', 'Red', 'Unq1', 'Unq2', 'Unq', 'Joint', 'Union', 'p_dist'};
     else 
-        reqOutputs = {'Syn', 'Red', 'Unq1', 'Unq2', 'Unq', 'Joint', 'Union', 'q_dist'};
+        reqOutputs = {'Syn', 'Red', 'Unq1', 'Unq2', 'Unq', 'Joint', 'Union', 'q_dist', 'p_dist'};
     end 
 end
 [isMember, ~] = ismember(reqOutputs, possibleOutputs);
@@ -174,6 +174,18 @@ if ismember('q_dist', reqOutputs)
     if ~strcmp(opts.bias, 'plugin') || ~strcmp(opts.redundancy_measure, 'I_BROJA') || nSources > 2
         reqOutputs(ismember(reqOutputs, 'q_dist')) = [];
         warning('q_dist has been removed from reqOutputs because opts.bias must be ''plugin'', redundancy_measure must be ''I_BROJA'' and not more than 2 Sources in the input.');
+    end
+    if isempty(reqOutputs)
+        PID_values = NaN; 
+        PID_plugin= NaN;  
+        PID_nullDist= NaN; 
+        return;
+    end
+end
+if ismember('p_dist', reqOutputs)
+    if ~strcmp(opts.bias, 'plugin') || ~strcmp(opts.redundancy_measure, 'I_BROJA') || nSources > 2
+        reqOutputs(ismember(reqOutputs, 'p_dist')) = [];
+        warning('p_dist has been removed from reqOutputs because opts.bias must be ''plugin'', redundancy_measure must be ''I_BROJA'' and not more than 2 Sources in the input.');
     end
     if isempty(reqOutputs)
         PID_values = NaN; 
@@ -344,10 +356,12 @@ for t = 1:nTimepoints
                 PID_values{i}(1,t) = sum(PID_terms{t})-PID_terms{t}(4);
             case 'q_dist'
                 if strcmp(opts.redundancy_measure,'I_BROJA') 
-                   PID_values{i} = q_dist;                              
+                   PID_values{i} = q_dist{1};                              
                 else
                    PID_values{i} = NaN;
                 end
+            case 'p_dist'
+                PID_values{i} = p_distr{1};                              
         end
     end
 end

@@ -2,7 +2,7 @@
 ## Software requirements
 #### Linux:
 - MATLAB supported C/C++ compiler (tested with gcc and g++ version > 6.3.1)
-- MATLAB (tested with versions > r2018b but earlier version should be compatible)
+- MATLAB (tested with versions > r2018b but earlier versions should be compatible)
   - Statistics and Machine Learning toolbox
   - Optimization toolbox
   - Parallel Computing Toolbox
@@ -10,7 +10,7 @@
 
 #### MacOS:
 - MATLAB supported C/C++compiler
-- MATLAB (tested with versions > r2018b but earlier version should be compatible)
+- MATLAB (tested with versions > r2018b but earlier versions should be compatible)
   - Statistics and Machine Learning toolbox
   - Optimization toolbox
   - Parallel Computing Toolbox
@@ -20,7 +20,7 @@
 - MATLAB supported C/C++ compiler (tested with MinGW-w64, see installation instructions [here](https://it.mathworks.com/matlabcentral/fileexchange/52848-matlab-support-for-mingw-w64-c-c-compiler))
 - Microsoft Visual C++
 - Microsoft Visual C++ build tools
-- MATLAB (tested with versions > r2018b but earlier version should be compatible)
+- MATLAB (tested with versions > r2018b but earlier versions should be compatible)
   - Statistics and Machine Learning toolbox
   - Optimization toolbox
   - Parallel Computing Toolbox
