@@ -83,5 +83,5 @@ function bias = pt(C_ptr, Rtot, N)
     end
     
     % Estimating bias
-    bias = (R - 1) / (2 * N * log(2));
+    bias = -(R - 1) / (2 * N * log(2));
 end
