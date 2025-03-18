@@ -28,9 +28,11 @@ function [entropies, entropies_plugin, entropies_nullDist, prob_dists] = H(input
 %
 %   - varargin: Optional arguments, passed as a structure. Fields may include:
 %              - bias:             Specifies the bias correction method to be used.
-%                                  'plugin'                      :(default) - No correction applied.
+%                                  'plugin'                     :(default) - No correction applied.
 %                                  'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
 %                                  'nsb'                        :correction using the NSB algorithm (Nemenman, Bialek and van Steveninck, 2019) 
+%                                  'pt'                         :Panzeri-Treves bias correction (Panzeri and Treves 1996).
+%                                  'bub'                        :best upper bound(Paninsky, 2003)
 %                                  Users can also define their own custom bias correction method
 %                                  (type 'help correction' for more information)
 %  
