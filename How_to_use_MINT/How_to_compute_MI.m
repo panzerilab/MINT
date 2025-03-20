@@ -11,11 +11,11 @@
 % baseline activity. You can change the parameters of the simulation in order 
 % to explore the influence on the results.
 
-clc, clear
+% clc, clear
 rng(0)
 nNeurons = 20;          
 nTimepoints = 60;  %ms      
-nTrials = 100;  
+nTrials = 50;  
 
 baselineActivity = 0.2;  % Baseline activity level
 noiseLevel = 0.9;        % Level of random noise in baseline activity
@@ -114,7 +114,7 @@ MI_opts.n_bins = {3};                       % Specify an integer for the number 
 % To correct for sampling bias, you can specify methods for bias correction in the MINT toolbox. If its not naive 
 % you will get the naive values as the second output of the functions. 
 % For more details type 'help correction' in your Command Window.
-MI_opts.bias = 'ksg';             % Options:                                           
+MI_opts.bias = 'infoCorr';             % Options:                                           
                                             % 'plugin' (no bias correction)                                                                       
                                             % 'qe' (Quadratic Extrapolation), 
                                             % 'le' (Linear Extrapolation), 
@@ -127,7 +127,7 @@ MI_opts.bias = 'ksg';             % Options:
 
 % If you use 'qe' you have to specify the number of extrapolations (opts.xtrp) the correction function should to. 
 % If you use 'shuffSub' you have to specify the number of shufflings (opts.shuff) the correction function should to. 
-MI_opts.shuff = 2;   
+MI_opts.shuff = 20;   
 MI_opts.xtrp = 5; 
 
 % Several functions give you warning, e.g. if you did not specify an opts field that is needed and the function is 

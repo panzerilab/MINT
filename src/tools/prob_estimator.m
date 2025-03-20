@@ -185,7 +185,7 @@ for t = 1:max(1, nTimepoints)
 
     
     %% Joint Probability Distribution of B (p_B)
-    if any(strcmp(reqOutputs,'Pind(A|B)')) || any(strcmp(reqOutputs,'Pind(A)')) ||any(strcmp(reqOutputs,'Psh(A|B)')) || any(strcmp(reqOutputs,'Psh(A)'))|| any(strcmp(reqOutputs,'P(B)'))|| any(strcmp(reqOutputs,'P(A|B)'))
+    if any(strcmp(reqOutputs,'P(A,B)')) ||any(strcmp(reqOutputs,'Pind(A|B)')) || any(strcmp(reqOutputs,'Pind(A)')) ||any(strcmp(reqOutputs,'Psh(A|B)')) || any(strcmp(reqOutputs,'Psh(A)'))|| any(strcmp(reqOutputs,'P(B)'))|| any(strcmp(reqOutputs,'P(A|B)'))
         B_t = data_t.B;
         unique_values = unique(B_t);
         ranks = 1:length(unique_values); % Rank values in ascending order

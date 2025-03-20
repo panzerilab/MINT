@@ -22,6 +22,7 @@ function [corrected_v, plugin_v, shuff_all] = correction(inputs, reqOutputs, cor
 %           - 'pt'         : Panzeri-Treves bias correction.
 %           - 'bub'        : best upper bound correction.
 %           - 'shuffCorr'  : Shuffle correction.
+%           - 'inforCorr'  : informative correction
 %
 %   - corefunc: A function call representing the core function to be used for bias correction 
 %               (e.g., @TE for Transfer Entropy).
@@ -146,6 +147,8 @@ switch corr
         [corrected_v, plugin_v] = ksg_correction(inputs, reqOutputs, corefunc, opts);
     case 'nsb'
         [corrected_v, plugin_v] = nsb_correction(inputs, reqOutputs, corefunc, opts);
+    case 'infoCorr'    
+        [corrected_v, plugin_v] = informative_correction(inputs, reqOutputs, corefunc, opts);
     otherwise
         func_handle = str2func(corr);
         if exist(corr, 'file') == 2

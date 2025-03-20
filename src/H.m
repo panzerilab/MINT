@@ -120,11 +120,12 @@ end
 
 nVars = length(inputs);
 if length(opts.bin_method) < nVars
-    opts.bin_method{(end+1):nVars} = opts.bin_method{end};
+    opts.bin_method(end+1:nVars) = {opts.bin_method{end}};
 end
 if length(opts.n_bins) < nVars
-    opts.n_bins{(end+1):nVars} = opts.n_bins{end};
+    opts.n_bins(end+1:nVars) = {opts.n_bins{end}};
 end
+
 
 % Check Outputslist
 possibleOutputs = {'H(A)', 'H(B)','H(A|B)', 'Hlin(A)', 'Hind(A)', 'Hind(A|B)', 'Chi(A)','Hsh(A)', 'Hsh(A|B)', 'Hnsb(A)', 'Hnsb(A,B)', 'Hnsb(B)'};
