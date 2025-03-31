@@ -143,7 +143,7 @@ else
 end
 
 possibleOutputs = {'', 'Syn',  'Red', 'Unq1', 'Unq2', ...
-    'Unq', 'PID_atoms', 'Joint', 'Union', 'q_dist', 'p_dist'};
+    'Unq', 'PID_atoms', 'Joint', 'Union', 'q_dist', 'p_dist', 'p_ind'};
 if ismember('', reqOutputs)
     reqOutputs = {'Syn', 'Red', 'Unq1', 'Unq2'};
 elseif ismember('PID_atoms', reqOutputs)
@@ -153,9 +153,9 @@ elseif ismember('PID_atoms', reqOutputs)
     reqOutputs = [reqOutputs(1:pid_idx-1), new_atoms, reqOutputs(pid_idx:end)];
 elseif ismember('all', reqOutputs)
     if strcmp(opts.redundancy_measure, 'I_BROJA')
-        reqOutputs = {'Syn', 'Red', 'Unq1', 'Unq2', 'Unq', 'Joint', 'Union', 'p_dist'};
+        reqOutputs = {'Syn', 'Red', 'Unq1', 'Unq2', 'Unq', 'Joint', 'Union', 'p_dist','p_ind'};
     else 
-        reqOutputs = {'Syn', 'Red', 'Unq1', 'Unq2', 'Unq', 'Joint', 'Union', 'q_dist', 'p_dist'};
+        reqOutputs = {'Syn', 'Red', 'Unq1', 'Unq2', 'Unq', 'Joint', 'Union', 'q_dist', 'p_dist', 'p_ind'};
     end 
 end
 [isMember, ~] = ismember(reqOutputs, possibleOutputs);
@@ -321,7 +321,7 @@ PID_values = cell(1, length(reqOutputs));
 for t = 1:nTimepoints
     if opts.pid_constrained
         if ~isfield(opts, 'chosen_atom')
-            opts.chosen_atom = 'Syn';
+            opts.chosen_atom = 'Red';
         end
         if strcmp(opts.chosen_atom, 'Red')
             red = PID_terms{t}(1);
@@ -355,13 +355,51 @@ for t = 1:nTimepoints
             case 'Union'
                 PID_values{i}(1,t) = sum(PID_terms{t})-PID_terms{t}(4);
             case 'q_dist'
-                if strcmp(opts.redundancy_measure,'I_BROJA') 
-                   PID_values{i} = q_dist{1};                              
+                if strcmp(opts.redundancy_measure,'I_BROJA')
+                   PID_values{i} = permute(q_dist{1}, [2 3 1]);                              
                 else
                    PID_values{i} = NaN;
                 end
             case 'p_dist'
-                PID_values{i} = p_distr{1};                              
+                PID_values{i} = p_distr{1};    
+            case 'p_ind'
+                [PP] = prob_estimator(inputs_1d, {'P(A,B,C)'}, opts);
+                P = PP{1};
+                % Compute P(S)
+                P_S = squeeze(sum(P, [1, 2])); % Summing over X1 and X2
+                X1_size =size(P,1);
+                X2_size =size(P,2);
+                S_size  =size(P,3);
+                % Compute P(X1 | S) and P(X2 | S)
+                P_X1_given_S = zeros(X1_size, S_size);
+                P_X2_given_S = zeros(X2_size, S_size);
+                
+                for s = 1:S_size
+                    P_X1_given_S(:, s) = sum(P(:, :, s), 2) ./ P_S(s); % Conditional P(X1 | S)
+                    P_X2_given_S(:, s) = sum(P(:, :, s), 1) ./ P_S(s); % Conditional P(X2 | S)
+                end
+                
+                % Compute Pind(X1, X2 | S)
+                Pind_X1_X2_given_S = zeros(X1_size, X2_size, S_size);
+                for s = 1:S_size
+                    for x1 = 1:X1_size
+                        for x2 = 1:X2_size
+                            Pind_X1_X2_given_S(x1, x2, s) = P_X1_given_S(x1, s) * P_X2_given_S(x2, s);
+                        end
+                    end
+                end
+                
+                % Convert to joint probability using P(S)
+                Pind = zeros(X1_size, X2_size, S_size);
+                for s = 1:S_size
+                    Pind(:, :, s) = Pind_X1_X2_given_S(:, :, s) * P_S(s);
+                end
+                
+                % Normalize Pind to ensure it is a valid probability distribution
+                Pind = Pind ./ sum(Pind, 'all');
+                PID_values{i} = Pind{1}; 
+
+                
         end
     end
 end
