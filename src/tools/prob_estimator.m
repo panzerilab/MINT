@@ -297,9 +297,9 @@ for t = 1:max(1, nTimepoints)
         %     psh_AB_sum = psh_AB_sum + psh_AB_tmp;
         % end
         % pind_ABtest = psh_AB_sum ./ num_shuffles;
-        % pind_A_Btest = (pind_ABtest' ./ p_B)';
-        % pind_Atest = sum(pind_ABtest, 2);
-        %
+        % pind_A_B = (pind_ABtest' ./ p_B)';
+        % pind_A = sum(pind_ABtest, 2);
+
         UniqueA = unique(A_t);
         UniqueB = unique(B_t);
         plin_A_B = [];
@@ -325,8 +325,8 @@ for t = 1:max(1, nTimepoints)
         end
         % pind_A_B = plin_A_B;
         pind_AB = pind_A_B;% * p_B(p_B>0);
-        for rowi=1:length(UniqueA)
-            pind_AB(rowi,:) = pind_A_B(rowi,:) .* p_B(p_B>0)';
+        for rowi=1:size(pind_AB,1)
+            pind_AB(rowi,:) = pind_A_B(rowi,:) .* p_B';
         end
         zero_positions = find(p_B == 0);
         if length(p_B) > size(pind_A_B,2)
@@ -379,47 +379,47 @@ for t = 1:max(1, nTimepoints)
 end
 
 
-    function p = prob_estimator_simple(A)
-        warning('off', 'all');
+function p = prob_estimator_simple(A)
+    warning('off', 'all');
 
-        if size(A, 2) == 2
-            % For 2D case
-            % Using accumarray to compute joint histogram for two variables
-            p = accumarray(A, 1);  % Increment A to avoid zero-indexing issues
-            p = p / sum(p(:));  % Normalize to get probabilities
-        else
-            % For 1D case
-            % Using accumarray to compute histogram
-            p = accumarray(A, 1);  % Increment A to avoid zero-indexing issues
-            p = p / sum(p);  % Normalize to get probabilities
-        end
-        warning('on', 'all');
+    if size(A, 2) == 2
+        % For 2D case
+        % Using accumarray to compute joint histogram for two variables
+        p = accumarray(A, 1);  % Increment A to avoid zero-indexing issues
+        p = p / sum(p(:));  % Normalize to get probabilities
+    else
+        % For 1D case
+        % Using accumarray to compute histogram
+        p = accumarray(A, 1);  % Increment A to avoid zero-indexing issues
+        p = p / sum(p);  % Normalize to get probabilities
+    end
+    warning('on', 'all');
+end
+
+function products = calculate_products(A)
+    % This function calculates all possible products across the rows of the input matrix A.
+
+    % Get the number of rows and columns in the input matrix
+    [num_rows, num_cols] = size(A);
+
+    % Initialize cell array to hold each row for ndgrid
+    row_cells = cell(1, num_rows);
+
+    % Fill the cell array with each row of the matrix
+    for i = 1:num_rows
+        row_cells{i} = A(i, :);
     end
 
-    function products = calculate_products(A)
-        % This function calculates all possible products across the rows of the input matrix A.
+    % Use ndgrid to create grids for all combinations
+    [grids{1:num_rows}] = ndgrid(row_cells{:});
 
-        % Get the number of rows and columns in the input matrix
-        [num_rows, num_cols] = size(A);
-
-        % Initialize cell array to hold each row for ndgrid
-        row_cells = cell(1, num_rows);
-
-        % Fill the cell array with each row of the matrix
-        for i = 1:num_rows
-            row_cells{i} = A(i, :);
-        end
-
-        % Use ndgrid to create grids for all combinations
-        [grids{1:num_rows}] = ndgrid(row_cells{:});
-
-        % Compute the products across all dimensions
-        products = 1;
-        for i = 1:num_rows
-            products = products .* grids{i};
-        end
-
-        % Reshape the output to a proper size
-        products = reshape(products, [], num_cols^num_rows);
+    % Compute the products across all dimensions
+    products = 1;
+    for i = 1:num_rows
+        products = products .* grids{i};
     end
+
+    % Reshape the output to a proper size
+    products = reshape(products, [], num_cols^num_rows);
+end
 end

@@ -114,7 +114,7 @@ MI_opts.n_bins = {3};                       % Specify an integer for the number 
 % To correct for sampling bias, you can specify methods for bias correction in the MINT toolbox. If its not naive 
 % you will get the naive values as the second output of the functions. 
 % For more details type 'help correction' in your Command Window.
-MI_opts.bias = 'infoCorr';             % Options:                                           
+MI_opts.bias = 'shuffCorr';             % Options:                                           
                                             % 'plugin' (no bias correction)                                                                       
                                             % 'qe' (Quadratic Extrapolation), 
                                             % 'le' (Linear Extrapolation), 

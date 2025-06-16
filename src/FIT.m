@@ -3,7 +3,7 @@ function [FIT_values, FIT_plugin, FIT_nullDist, atom1, atom2] = FIT(inputs, vara
 %
 % The FIT function computes the Feature-specific Information Transfer (FIT) values between time series data.
 % Feature-specific Information Transfer quantifies how much information about a specific feature (S)
-% flows between two regions (A)(B). 
+% flows between two regions (A)(B).
 %
 % Inputs:
 %   - inputs: A cell array containing the input data with N sources and one target:
@@ -12,10 +12,10 @@ function [FIT_values, FIT_plugin, FIT_nullDist, atom1, atom2] = FIT(inputs, vara
 %             - inputs{2}:   Second data (B) with dimensions
 %                            nDims X nTimepoints X nTrials
 %             - inputs{3}:   Feature data (S) with dimensions
-%                            nDims X (nTimepoints X) nTrials  
+%                            nDims X (nTimepoints X) nTrials
 %
 %   - reqOutputs: A cell array of strings specifying which FIT values to compute.
-%              - 'FIT(A->B;S)' 
+%              - 'FIT(A->B;S)'
 %              - 'FIT(B->A;S)'
 %
 %   - varargin: Optional arguments, passed as a structure. Fields may include:
@@ -42,7 +42,7 @@ function [FIT_values, FIT_plugin, FIT_nullDist, atom1, atom2] = FIT(inputs, vara
 %                                    Users can also define their own custom binning method
 %                                    If one entry is provided, it will be applied to both A and B.
 %                                    (type 'help binning' for more information).
-%     
+%
 %              - n_bins:             Specifies the number of bins to use for binning.
 %                                    It can be a single integer or a cell array with one or two entries.
 %                                    Default number of bins is {3}.
@@ -51,16 +51,16 @@ function [FIT_values, FIT_plugin, FIT_nullDist, atom1, atom2] = FIT(inputs, vara
 %                                    based on the specified inputs and core function.
 %                                    When this option is enabled, the following can be specified:
 %                                     - `n_samples`: The number of null samples to generate (default: 100).
-%                                     - 'shuffling': Additional shuffling options to determine the variables to be 
+%                                     - 'shuffling': Additional shuffling options to determine the variables to be
 %                                        shuffled during the computation of the null distribution (default: {'A'}).
 %                                        (type 'help hShuffle' for more information).
-%   
+%
 %              - suppressWarnings:    Boolean (true/false) to suppress warning messages.
 %                                     Default is false, meaning warnings will be shown
 %
 %              - NaN_handling:     Specifies how NaN values should be handled in the data.
 %                                  Options include:
-%                                  'removeTrial' : Removes trials containing NaN in any variable 
+%                                  'removeTrial' : Removes trials containing NaN in any variable
 %                                                  from all input data.
 %                                  'error'       : (default) Throws an error if NaN values are detected.
 %
@@ -76,21 +76,21 @@ function [FIT_values, FIT_plugin, FIT_nullDist, atom1, atom2] = FIT(inputs, vara
 %   the function can be called as follows:
 %   inputs = {X1, X2, S};
 %   FIT_values = FIT({X1, X2, S}s, {'FIT(A->B;S)', 'FIT(B->A;S)'}, opts);
-% 
+%
 % Here, 'opts' represents additional options you may want to include (see varargin options)
 
 % Copyright (C) 2024 Gabriel Matias Lorenz, Nicola Marie Engel
-% This file is part of MINT. 
+% This file is part of MINT.
 % This program is free software: you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation, either version 3 of the License, or
 % (at your option) any later version.
-% 
+%
 % This program is distributed in the hope that it will be useful,
 % but WITHOUT ANY WARRANTY; without even the implied warranty of
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % GNU General Public License for more details.
-% 
+%
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses
 
@@ -136,10 +136,7 @@ if ~opts.recall
         msg = sprintf('The number of trials for A (%d), B (%d) and S (%d) are not consistent. Ensure both variables have the same number of trials.',DimsA(3),DimsB(3),DimsS(3));
         error('FIT:InvalidInput', msg);
     end
-    nTrials = DimsA(3);
 
-    nTimepointsA = DimsA(2);
-    nTimepointsB = DimsB(2);
 
     if iscell(opts.tau)
         if numel(opts.tau) == 1
@@ -168,46 +165,101 @@ if ~opts.recall
     %        Step 2: Prepare Data (Shift based on tau,tpres/bin/reduce dims)        %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    A_delayed = zeros(DimsA(1), length(Atau), nTrials); %(nDims x nTaus x nTrials)
-    for tau = 1:length(Atau) 
-        index = opts.tpres{1} - Atau(tau);
-        if index > 0 && index <= nTimepointsA
-            A_delayed(:,tau, :) = inputs{1}(:, index, :);
-        else
-            msg = "The specified delay for A is not available for the timeseries.";
-            error('FIT:InvalidInput', msg);
+    if ndims(inputs{1})==2
+        nTrials = min([DimsA(2)-max(Atau), DimsB(2)-max(Btau)]);
+        nTimepointsA = DimsA(2);
+        nTimepointsB = DimsB(2);
+        A_delayed = zeros(DimsA(1), length(Atau), nTrials); %(nDims x nTaus x nTrials)
+        S_delayed = zeros(DimsS(1), length(Atau), nTrials);
+        for tau = 1:length(Atau)
+            if Atau(tau) >= 0 && Atau(tau) <= nTimepointsA
+                start_point = nTimepointsA-nTrials-Atau(tau)+1; % so we alway have nTrials
+                end_point = nTimepointsA-Atau(tau);
+                A_delayed(:,tau, :) = inputs{1}(:, start_point:end_point);
+                S_delayed(:,tau, :) = inputs{end}(:, start_point:end_point);
+            else
+                msg = "The specified delay for A is not available for the timeseries.";
+                error('FIT:InvalidInput', msg);
+            end
+        end
+        B_delayed = zeros(DimsB(1), length(Btau), nTrials); %(nDims x nTaus x nTrials)
+        for tau = 1:length(Btau)
+            if Btau(tau) >= 0 && Btau(tau) <= nTimepointsB
+                start_point = nTimepointsB-nTrials-Btau(tau)+1; % so we alway have nTrials
+                end_point = nTimepointsB-Btau(tau);
+                B_delayed(:,tau, :) = inputs{2}(:, start_point:end_point);
+                
+            else
+                msg = "The specified delay for B is not available for the timeseries.";
+                error('FIT:InvalidInput', msg);
+            end
+        end
+
+        A_pres = squeeze(A_delayed(:, 1, :));
+        B_pres = squeeze(B_delayed(:, 1, :));
+        B_past = squeeze(B_delayed(:, 2:end, :));
+        A_past = squeeze(A_delayed(:, 2:end, :));
+        S = squeeze(S_delayed(:, 2:end, :));
+        if size(A_past,1) == nTrials
+            A_past = A_past';
+        end
+        if size(A_pres,1) == nTrials
+            A_pres = A_pres';
+        end
+        if size(B_past,1) == nTrials
+            B_past = B_past';
+        end
+        if size(B_pres,1) == nTrials
+            B_pres = B_pres';
+        end
+        if size(S,1) == nTrials
+            S = S';
+        end
+    else
+        nTrials = DimsA(3);
+
+        nTimepointsA = DimsA(2);
+        nTimepointsB = DimsB(2);
+        A_delayed = zeros(DimsA(1), length(Atau), nTrials); %(nDims x nTaus x nTrials)
+        for tau = 1:length(Atau)
+            index = opts.tpres{1} - Atau(tau);
+            if index > 0 && index <= nTimepointsA
+                A_delayed(:,tau, :) = inputs{1}(:, index, :);
+            else
+                msg = "The specified delay for A is not available for the timeseries.";
+                error('FIT:InvalidInput', msg);
+            end
+        end
+        B_delayed = zeros(DimsB(1), length(Btau), nTrials); %(nDims x nTaus x nTrials)
+        for tau = 1:length(Btau)
+            index = opts.tpres{2} - Btau(tau);
+            if index > 0 && index <= nTimepointsB
+                B_delayed(:,tau, :) = inputs{2}(:, index, :);
+            else
+                msg = "The specified delay for B is not available for the timeseries.";
+                error('FIT:InvalidInput', msg);
+            end
+        end
+
+        A_pres = squeeze(A_delayed(:, 1, :));
+        B_pres = squeeze(B_delayed(:, 1, :));
+        B_past = squeeze(B_delayed(:, 2:end, :));
+        A_past = squeeze(A_delayed(:, 2:end, :));
+        S = inputs{end};
+
+        if size(A_past,1) == nTrials
+            A_past = A_past';
+        end
+        if size(A_pres,1) == nTrials
+            A_pres = A_pres';
+        end
+        if size(B_past,1) == nTrials
+            B_past = B_past';
+        end
+        if size(B_pres,1) == nTrials
+            B_pres = B_pres';
         end
     end
-    B_delayed = zeros(DimsB(1), length(Btau), nTrials); %(nDims x nTaus x nTrials)
-    for tau = 1:length(Btau)
-        index = opts.tpres{2} - Btau(tau);
-        if index > 0 && index <= nTimepointsB
-            B_delayed(:,tau, :) = inputs{2}(:, index, :);
-        else
-            msg = "The specified delay for B is not available for the timeseries.";
-            error('FIT:InvalidInput', msg);
-        end
-    end
-
-    A_pres = squeeze(A_delayed(:, 1, :));
-    B_pres = squeeze(B_delayed(:, 1, :));
-    B_past = squeeze(B_delayed(:, 2:end, :));
-    A_past = squeeze(A_delayed(:, 2:end, :));
-    S = inputs{end};
-
-    if size(A_past,1) == nTrials
-        A_past = A_past';
-    end
-    if size(A_pres,1) == nTrials
-        A_pres = A_pres';
-    end
-    if size(B_past,1) == nTrials
-        B_past = B_past';
-    end
-    if size(B_pres,1) == nTrials
-        B_pres = B_pres';
-    end
-
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %               Step 3: Binning, reduce dimensions if necessary                 %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -234,7 +286,7 @@ if ~opts.recall
     if ~opts.isBinned
         inputs_b = binning({A_pres,A_past,B_pres,B_past, S} ,opts);
         opts.isBinned = true;
-    end 
+    end
     inputs_1d = inputs_b;
     % Reduce the Dimensions if necessary
     for var = 1:length(inputs_b)
@@ -243,7 +295,7 @@ if ~opts.recall
             inputs_1d{var} = reduce_dim(inputs_1d{var}, 1);
         end
     end
-     opts.recall = true;
+    opts.recall = true;
 else
     inputs_1d = inputs;
 end
@@ -264,10 +316,10 @@ FIT_nullDist = 0;
 corr = opts.bias;
 corefunc = @FIT;
 if any(opts.computeNulldist)
-        nullDist_opts.recall = false;
-        FIT_nullDist = create_nullDist(inputs, reqOutputs, @FIT, nullDist_opts);
+    nullDist_opts.recall = false;
+    FIT_nullDist = create_nullDist(inputs, reqOutputs, @FIT, nullDist_opts);
 end
-if ~strcmp(corr, 'plugin')  
+if ~strcmp(corr, 'plugin')
     opts.recall = true;
     opts.computeNulldist = false;
     [FIT_values, FIT_plugin] = correction(inputs_1d, reqOutputs, corr, corefunc, opts);

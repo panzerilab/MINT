@@ -153,10 +153,10 @@ inputs_b = inputs;
 
 for var = 1:nVars
     unique_vals = unique(inputs{var})';
-    if strcmp(opts.bin_method{var}, 'none') && length(unique_vals) > 100
+    if strcmp(opts.bin_method{var}, 'none') && length(unique_vals) > 1000
         opts.bin_method{var} = 'eqpop';
         opts.n_bins{var} = 100;
-        warning('No binning procedure defined for a variable with more than 100 unique values. Binning method is set to eqpop and n_bins to 100');
+        warning('No binning procedure defined for a variable with more than 1000 unique values. Binning method is set to eqpop and n_bins to 100');
     end
     if ~strcmp(opts.bin_method{var}, 'none')
         data = inputs{var};

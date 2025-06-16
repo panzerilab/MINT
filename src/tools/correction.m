@@ -22,7 +22,7 @@ function [corrected_v, plugin_v, shuff_all] = correction(inputs, reqOutputs, cor
 %           - 'pt'         : Panzeri-Treves bias correction.
 %           - 'bub'        : best upper bound correction.
 %           - 'shuffCorr'  : Shuffle correction.
-%           - 'inforCorr'  : informative correction
+%           - 'resample'   : resampling correction
 %
 %   - corefunc: A function call representing the core function to be used for bias correction 
 %               (e.g., @TE for Transfer Entropy).
@@ -89,7 +89,7 @@ if nargin < 5
 end
 
 opts = varargin{1};
-if strcmp(corr, 'shuffSub')
+if ismember(corr, {'shuffSub', 'resample'})
     defaultOpts.shuff = 20;
     defaultOpts.parallel = 0;
 elseif ismember(corr, {'qe', 'le'})
@@ -147,8 +147,8 @@ switch corr
         [corrected_v, plugin_v] = ksg_correction(inputs, reqOutputs, corefunc, opts);
     case 'nsb'
         [corrected_v, plugin_v] = nsb_correction(inputs, reqOutputs, corefunc, opts);
-    case 'infoCorr'    
-        [corrected_v, plugin_v] = informative_correction(inputs, reqOutputs, corefunc, opts);
+    case 'resample'    
+        [corrected_v, plugin_v] = resampling_correction(inputs, reqOutputs, corefunc, opts);
     otherwise
         func_handle = str2func(corr);
         if exist(corr, 'file') == 2
@@ -157,7 +157,7 @@ switch corr
             % function.
             [corrected_v, plugin_v] = feval(func_handle, inputs, reqOutputs, opts);
         else
-            available_functions = {'qe', 'le', 'qe_shuffSub', 'le_shuffSub', 'shuffSub', 'pt', 'bub'};
+            available_functions = {'qe', 'le', 'qe_shuffSub', 'le_shuffSub', 'shuffSub', 'pt', 'bub', 'resample'};
             msg = sprintf(['The function "%s" is not defined in the tools folder.\n', ...
                 'Available options are: %s.\n', ...
                 'You can define additional functions by defining your own correction function in a "%s" file in the tools folder.'], ...

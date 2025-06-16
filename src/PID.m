@@ -356,7 +356,7 @@ for t = 1:nTimepoints
                 PID_values{i}(1,t) = sum(PID_terms{t})-PID_terms{t}(4);
             case 'q_dist'
                 if strcmp(opts.redundancy_measure,'I_BROJA')
-                   PID_values{i} = permute(q_dist{1}, [2 3 1]);                              
+                   PID_values{i} = q_dist{1};                              
                 else
                    PID_values{i} = NaN;
                 end
@@ -397,7 +397,7 @@ for t = 1:nTimepoints
                 
                 % Normalize Pind to ensure it is a valid probability distribution
                 Pind = Pind ./ sum(Pind, 'all');
-                PID_values{i} = Pind{1}; 
+                PID_values{i} = permute(Pind,[3 1 2]); 
 
                 
         end

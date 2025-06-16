@@ -41,6 +41,7 @@ elseif strcmp(corefunc, 'FIT') || strcmp(corefunc, 'cFIT')
     defaultOpts.tpres = size(inputs{1}, 2);
 elseif strcmp(corefunc, 'II')
     defaultOpts.redundancy_measure = 'I_BROJA';
+    defaultOpts.pid_constrained = false;
 elseif strcmp(corefunc, 'PID')
     defaultOpts.redundancy_measure = 'I_BROJA';
     defaultOpts.pid_constrained = true;

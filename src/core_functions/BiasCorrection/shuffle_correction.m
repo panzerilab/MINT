@@ -30,6 +30,7 @@ for i = 1:length(outputs)
     end
 end
 
-[corrected_v, plugin_v] = corefunc(inputs, new_outputs, new_opts);
-
+[all_output_values] = corefunc(inputs, [new_outputs, outputs], new_opts);
+corrected_v = all_output_values(1:length(new_outputs));
+plugin_v = all_output_values(length(new_outputs)+1:end);
 end
