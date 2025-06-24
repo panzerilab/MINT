@@ -32,7 +32,7 @@ function [TE_values, TE_plugin, TE_nullDist] = TE(inputs, varargin)
 %                                    opts.tpres{1} = present for A;
 %                                    opts.tpres{2} = present for B;
 %                                    If only a single value or cell is given, it applies to both.
-%                                    Default is length of A.
+%                                    Default is length of A, and it is not needed if singleTimepoint is false.
 %
 %              - bias:               Specifies the bias correction method to be used.
 %                                    'plugin'                      :(default) - No correction applied.
@@ -188,19 +188,19 @@ if ~opts.recall
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     if ~opts.singleTimepoint
-        presA = opts.tpres{1};
-        presB = opts.tpres{2};
+        presA = nTimepointsA;
+        presB = nTimepointsB;
 
-        minA_tp = presA - max(Atau);
-        minB_tp = presB - max(Btau);
+        minA_tp = nTimepointsA - max(Atau);
+        minB_tp = nTimepointsB - max(Btau);
         tPoints = min(minA_tp,minB_tp);
 
         A_delayed =  zeros(DimsA(1), length(Atau), tPoints, nTrials);
-        A_delayed(:,1,:,:) = inputs{1}(:,(presA-tPoints+1):presA,:);
-        for tau = 2:length(Atau)
-            start_p = (presA-Atau(tau))-tPoints+1;
-            end_p = (presA-Atau(tau));
-            A_delayed(:,tau,:,:) = inputs{1}(:,start_p:end_p,:);
+        A_delayed(:,1,:,:) = inputs{1}(:,(max(Atau)+1):end,:);
+        for tau_idx = 2:length(Atau)
+            start_p = (presA-Atau(tau_idx))-tPoints+1; % (max(Atau)+1)-Atau(tau_idx); %
+            end_p   = (presA-Atau(tau_idx)); %  nTimepointsA-Atau(tau_idx); %
+            A_delayed(:,tau_idx,:,:) = inputs{1}(:,start_p:end_p,:);
         end
         B_delayed =  zeros(DimsB(1), length(Btau), tPoints, nTrials);
         B_delayed(:,1,:,:) = inputs{1}(:,(presB-tPoints+1):presB,:);
@@ -213,7 +213,6 @@ if ~opts.recall
         B_pres = B_delayed(:, 1, :);
         B_past = B_delayed(:, 2:end, :);
         A_past = A_delayed(:, 2:end, :);
-        % S = inputs{end};
     else
         A_delayed = zeros(DimsA(1), length(Atau), nTrials); %(nDims x nTaus x nTrials)
         for tau = 1:length(Atau)
@@ -235,11 +234,7 @@ if ~opts.recall
                 error('TE:InvalidInput', msg);
             end
         end
-        A_pres = squeeze(A_delayed(:, 1, :));
-        B_pres = squeeze(B_delayed(:, 1, :));
-        B_past = squeeze(B_delayed(:, 2:end, :));
-        A_past = squeeze(A_delayed(:, 2:end, :));
-        % S = inputs{end};
+
         A_pres = reshape(A_delayed(:, 1, :), DimsA(1), DimsA(3));  % Shape [nDims, nTrials]
         B_pres = reshape(B_delayed(:, 1, :), DimsB(1), DimsB(3));  % Shape [nDims, nTrials]
 
