@@ -13,8 +13,8 @@ function [TE_values, TE_plugin, TE_nullDist] = TE(inputs, varargin)
 %                          nDims X nTimepoints X nTrials
 %
 %   - reqOutputs: A cell array of strings specifying which transfer entropies to compute:
-%              - 'TE(A->B;S)' : Transfer entropy from A to B
-%              - 'TE(B->A;S)' : Transfer entropy from B to A
+%              - 'TE(A->B)' : Transfer entropy from A to B
+%              - 'TE(B->A)' : Transfer entropy from B to A
 %
 %   - varargin: Optional arguments, passed as a structure. Fields may include:
 %              - singleTimepoint:    Boolean (true/false) indicating whether to compute Transfer Entropy
@@ -95,7 +95,7 @@ function [TE_values, TE_plugin, TE_nullDist] = TE(inputs, varargin)
 % Y = cat(1, Y1, Y2);   Concatenates Y1 and Y2 along the first dimension (neurons)
 %
 % To compute the Transfer Entropy from time series A (X) to B (Y), the function can be called as:
-% TE_values = TE({X, Y}, {'TE(A->B;S)', 'TE(B->A;S)'}, opts);
+% TE_values = TE({X, Y}, {'TE(A->B)', 'TE(B->A)'}, opts);
 %
 % Here, 'opts' represents additional options you may want to include (see varargin options)
 
@@ -213,7 +213,7 @@ if ~opts.recall
         B_pres = B_delayed(:, 1, :);
         B_past = B_delayed(:, 2:end, :);
         A_past = A_delayed(:, 2:end, :);
-        S = inputs{end};
+        % S = inputs{end};
     else
         A_delayed = zeros(DimsA(1), length(Atau), nTrials); %(nDims x nTaus x nTrials)
         for tau = 1:length(Atau)
@@ -239,7 +239,7 @@ if ~opts.recall
         B_pres = squeeze(B_delayed(:, 1, :));
         B_past = squeeze(B_delayed(:, 2:end, :));
         A_past = squeeze(A_delayed(:, 2:end, :));
-        S = inputs{end};
+        % S = inputs{end};
         A_pres = reshape(A_delayed(:, 1, :), DimsA(1), DimsA(3));  % Shape [nDims, nTrials]
         B_pres = reshape(B_delayed(:, 1, :), DimsB(1), DimsB(3));  % Shape [nDims, nTrials]
 
