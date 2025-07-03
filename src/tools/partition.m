@@ -75,13 +75,22 @@ if conservePs==1 && length(shape_data)==2
         Ytotstim =  Y(mask);
         X1totstim = X1(mask);
         X2totstim = X2(mask);
-        if partidx ==1
-            bin_edges = 1:round(length(Ytotstim)/nparts);
-        elseif partidx ==nparts
-            bin_edges = (partidx-1)*round(length(Ytotstim)/nparts)+1:length(Ytotstim);
+        len = length(Ytotstim);
+        step = round(len / nparts);
+        if partidx == 1
+            bin_edges = 1:step;
+        elseif partidx == nparts
+            bin_edges = (partidx-1)*step+1:len;
         else
-            bin_edges = (partidx-1)*round(length(Ytotstim)/nparts)+1:partidx*round(length(Ytotstim)/nparts);
+            bin_edges = (partidx-1)*step+1:partidx*step;
         end
+        % if partidx ==1
+        %     bin_edges = 1:round(length(Ytotstim)/nparts);
+        % elseif partidx ==nparts
+        %     bin_edges = (partidx-1)*round(length(Ytotstim)/nparts)+1:length(Ytotstim);
+        % else
+        %     bin_edges = (partidx-1)*round(length(Ytotstim)/nparts)+1:partidx*round(length(Ytotstim)/nparts);
+        % end
         if length(shape_data)==2
             part = [part [X1totstim(1,bin_edges); X2totstim(1,bin_edges); Ytotstim(1,bin_edges)]];
         elseif length(shape_data)==3

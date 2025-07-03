@@ -262,14 +262,21 @@ prob_dists = prob_estimator(inputs_1d, required_distributions, opts);
 entropies = cell(1, length(reqOutputs));
 entropies_plugin = cell(1, length(reqOutputs));
 
+symtoolbox = any(strcmp('Symbolic Math Toolbox', {ver().Name}));
+
 for t = 1:nTimepoints
     for i = 1:length(indices)
         idx = indices(i);
         switch possibleOutputs{idx}
             case 'H(A)'
                 P_A = prob_dists{t, strcmp(required_distributions, 'P(A)')};
-                P_A = vpa(P_A, 50); % 50-digit precision
-                P_lin_log = P_A .* log(P_A)/ log(vpa(2));
+                if symtoolbox
+                    P_A = vpa(P_A, 50); % 50-digit precision
+                    P_lin_log = P_A .* log(P_A)/ log(vpa(2));
+                else
+                    P_lin_log = P_A .* log(P_A)/ log(2);
+                end
+
                 P_lin_log(isnan(P_lin_log)) = 0;
                 entropies_plugin{i}(1,t) = -sum(P_lin_log(:));
                 if strcmp(opts.bias, 'bub')
@@ -282,8 +289,12 @@ for t = 1:nTimepoints
                 entropies{i}(1,t) = entropies_plugin{i}(1,t) - bias;   
             case 'H(B)'
                 P_B = prob_dists{t, strcmp(required_distributions, 'P(B)')};
-                P_B = vpa(P_B, 50); % 50-digit precision
-                P_lin_log = P_B .* log(P_B)/ log(vpa(2));
+               if symtoolbox
+                    P_B = vpa(P_B, 50); % 50-digit precision
+                    P_lin_log = P_B .* log(P_B)/ log(vpa(2));
+                else
+                    P_lin_log = P_B .* log(P_B)/ log(2);
+                end
                 P_lin_log(isnan(P_lin_log)) = 0;
                 entropies_plugin{i}(1,t) = -sum(P_lin_log(:));
                 if strcmp(opts.bias, 'bub')
@@ -297,10 +308,16 @@ for t = 1:nTimepoints
             case 'H(A|B)'
                 P_AB = prob_dists{t, strcmp(required_distributions, 'P(A|B)')};
                 P_B  = prob_dists{t, strcmp(required_distributions, 'P(B)')};
-                P_AB = vpa(P_AB, 50); % 50-digit precision
-                P_B  = vpa(P_B, 50); % 50-digit precision
-                P_Bext = repmat(P_B, 1, size(P_AB, 1));
-                P_lin_log = P_Bext' .* P_AB .* log(P_AB)/ log(vpa(2));
+               if symtoolbox
+                    P_AB = vpa(P_AB, 50); % 50-digit precision  
+                    P_B  = vpa(P_B, 50); % 50-digit precision
+                    P_Bext = repmat(P_B, 1, size(P_AB, 1));
+                    P_lin_log = P_Bext' .* P_AB .* log(P_AB)/ log(vpa(2));
+                else
+                    P_Bext = repmat(P_B, 1, size(P_AB, 1));
+                    P_lin_log = P_Bext' .* P_AB .* log(P_AB)/ log(2);
+                end
+                
                 P_lin_log(isnan(P_lin_log)) = 0;
                 entropies_plugin{i}(1,t) = -sum(P_lin_log(:));
                 if strcmp(opts.bias, 'bub')
@@ -323,8 +340,12 @@ for t = 1:nTimepoints
                 entropies{i}(1,t) = entropies_plugin{i}(1,t) - bias;
             case 'Hlin(A)'
                 P_lin = prob_dists{t, strcmp(required_distributions, 'Plin(A)')};
-                P_lin = vpa(P_lin, 50); % 50-digit precision
-                P_lin_log = P_lin .* log(P_lin) / log(vpa(2));
+               if symtoolbox
+                    P_lin = vpa(P_lin, 50); % 50-digit precision
+                    P_lin_log = P_lin .* log(P_lin) / log(vpa(2));
+                else
+                    P_lin_log = P_lin .* log(P_lin) / log(2);
+                end
                 P_lin_log(isnan(P_lin_log)) = 0;
                 entropies_plugin{i}(1,t) = -sum(P_lin_log(:));
                 if strcmp(opts.bias, 'bub')
@@ -346,8 +367,12 @@ for t = 1:nTimepoints
                 entropies{i}(1,t) = entropies_plugin{i}(1,t) - bias;
             case 'Hind(A)'
                 P_indA = prob_dists{t, strcmp(required_distributions, 'Pind(A)')};
-                P_indA = vpa(P_indA, 50); % 50-digit precision
-                P_lin_log = P_indA .* log(P_indA) / log(vpa(2));
+               if symtoolbox
+                    P_indA = vpa(P_indA, 50); % 50-digit precision
+                    P_lin_log = P_indA .* log(P_indA) / log(vpa(2));
+                else
+                    P_lin_log = P_indA .* log(P_indA) / log(2);
+                end
                 
                 % P_indAB = prob_dists{t, strcmp(required_distributions, 'Pind(A|B)')};
                 % P_B = prob_dists{t, strcmp(required_distributions, 'P(B)')};
@@ -370,9 +395,13 @@ for t = 1:nTimepoints
             case 'Hind(A|B)'
                 P_indAB = prob_dists{t, strcmp(required_distributions, 'Pind(A|B)')};
                 P_B = prob_dists{t, strcmp(required_distributions, 'P(B)')};
-                P_indAB = vpa(P_indAB, 50); % 50-digit precision
-                P_B     = vpa(P_B, 50); % 50-digit precision
-                P_lin_log = P_B' .* P_indAB .* log(P_indAB) / log(vpa(2));
+               if symtoolbox
+                    P_indAB = vpa(P_indAB, 50); % 50-digit precision
+                    P_B     = vpa(P_B, 50); % 50-digit precision
+                    P_lin_log = P_B' .* P_indAB .* log(P_indAB) / log(vpa(2));
+                else
+                    P_lin_log = P_B' .* P_indAB .* log(P_indAB) / log(2);
+                end
                 P_lin_log(isnan(P_lin_log)) = 0;
                 entropies_plugin{i}(1,t) = -sum(P_lin_log(:));
                 bias = 0;
@@ -380,14 +409,22 @@ for t = 1:nTimepoints
             case 'Chi(A)'
                 P_A    = prob_dists{t, strcmp(required_distributions, 'P(A)')};
                 P_indA = prob_dists{t, strcmp(required_distributions, 'Pind(A)')};
-                P_A    = vpa(P_A, 50); % 50-digit precision
-                P_indA = vpa(P_indA, 50); % 50-digit precision
+               if symtoolbox
+                    P_A    = vpa(P_A, 50); % 50-digit precision
+                    P_indA = vpa(P_indA, 50); % 50-digit precision
+                end
+
                 if size(P_A, 1) < size(P_indA, 1)
                    P_A = [P_A; zeros(size(P_indA, 1) - size(P_A, 1), 1)];
                 elseif size(P_A, 1) > size(P_indA, 1)
                     P_indA = [P_indA; zeros(size(P_A, 1) - size(P_indA, 1), 1)];
                 end
-                P_lin_log = P_A .* log(P_indA) / log(vpa(2));
+                
+               if symtoolbox
+                    P_lin_log = P_A .* log(P_indA) / log(vpa(2));
+                else
+                    P_lin_log = P_A .* log(P_indA) / log(2);
+                end
                 P_lin_log(isnan(P_lin_log)) = 0;
                 P_lin_log(isinf(P_lin_log)) = 0;
                 entropies_plugin{i}(1,t) = -sum(P_lin_log(:));
@@ -395,8 +432,12 @@ for t = 1:nTimepoints
                 entropies{i}(1,t) = entropies_plugin{i}(1,t) - bias;
             case 'Hsh(A)'
                 P_shA = prob_dists{t, strcmp(required_distributions, 'Psh(A)')};
-                P_shA = vpa(P_shA, 50); % 50-digit precision
-                P_lin_log = P_shA .* log(P_shA) / log(vpa(2));
+               if symtoolbox
+                    P_shA = vpa(P_shA, 50); % 50-digit precision
+                    P_lin_log = P_shA .* log(P_shA) / log(vpa(2));
+                else
+                    P_lin_log = P_shA .* log(P_shA) / log(2);
+                end
                 P_lin_log(isnan(P_lin_log)) = 0;
                 entropies_plugin{i}(1,t) = -sum(P_lin_log(:));
                 if strcmp(opts.bias, 'bub')
@@ -412,9 +453,13 @@ for t = 1:nTimepoints
             case 'Hsh(A|B)'
                 P_shAB = prob_dists{t, strcmp(required_distributions, 'Psh(A|B)')};
                 P_B = prob_dists{t, strcmp(required_distributions, 'P(B)')};
-                P_shAB = vpa(P_shAB, 50); % 50-digit precision
-                P_B    = vpa(P_B, 50); % 50-digit precision
-                P_lin_log = P_B' .* P_shAB .* log(P_shAB) / log(vpa(2));
+               if symtoolbox
+                    P_shAB = vpa(P_shAB, 50); % 50-digit precision
+                    P_B    = vpa(P_B, 50); % 50-digit precision
+                    P_lin_log = P_B' .* P_shAB .* log(P_shAB) / log(vpa(2));
+                else
+                    P_lin_log = P_B' .* P_shAB .* log(P_shAB) / log(2);
+                end
                 P_lin_log(isnan(P_lin_log)) = 0;
                 entropies_plugin{i}(1,t) = -sum(P_lin_log(:));
                 if strcmp(opts.bias, 'bub')

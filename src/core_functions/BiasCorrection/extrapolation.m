@@ -80,7 +80,7 @@ if strcmp(func2str(corefunc), 'PID')
             end
             for np=2:length(npartition)
                 for pidx = 1:npartition(np)
-                    inputs_p = partition(inputs_s, npartition(np), pidx,0);
+                    inputs_p = partition(inputs_s, npartition(np), pidx,1);
                     PID_p = feval(corefunc, inputs_p, outputs, plugin_opts);
                     for outIdx = 1:noutputs
                         if npartition(np)==2
@@ -178,7 +178,7 @@ if strcmp(func2str(corefunc), 'PID')
             end
             for np=2:length(npartition)
                 for pidx = 1:npartition(np)
-                    inputs_p = partition(inputs_s, npartition(np), pidx,0);
+                    inputs_p = partition(inputs_s, npartition(np), pidx,1);
                     PID_p = feval(corefunc, inputs_p, outputs, plugin_opts);
                     for outIdx = 1:length(outputs)
                         if npartition(np)==2
@@ -357,7 +357,7 @@ elseif strcmp(func2str(corefunc), 'FIT') || strcmp(func2str(corefunc), 'cFIT')
         end
         for np=2:length(npartition)
             for pidx = 1:npartition(np)
-                inputs_p = partition(inputs_s, npartition(np), pidx,0);
+                inputs_p = partition(inputs_s, npartition(np), pidx,1);
                 [~,~,~,atom1_tmp, atom2_tmp] = feval(corefunc, inputs_p,outputs, plugin_opts);
                 for idx = 1:numAtoms
                     for outIdx = 1:length(outputs)
@@ -443,7 +443,7 @@ elseif strcmp(func2str(corefunc), 'II')
             end
             for np=2:length(npartition)
                 for pidx = 1:npartition(np)
-                    inputs_p = partition(inputs_s, npartition(np), pidx,0);
+                    inputs_p = partition(inputs_s, npartition(np), pidx,1);
                     PID_pC = feval(corefunc, inputs_p, {'PID_atoms'}, plugin_opts);
                     PID_pS = feval(corefunc, {inputs_p{3}, inputs_p{2}, inputs_p{1}}, {'PID_atoms'}, plugin_opts);
                     for outIdx = 1:length(outputs_pid)
@@ -547,7 +547,7 @@ elseif strcmp(func2str(corefunc), 'II')
             end
             for np=2:length(npartition)
                 for pidx = 1:npartition(np)
-                    inputs_p = partition(inputs_s, npartition(np), pidx,0);
+                    inputs_p = partition(inputs_s, npartition(np), pidx,1);
                     [~,~,~,atom1_tmp, atom2_tmp] = feval(corefunc, inputs_p,outputs, plugin_opts);
                     for outIdx = 1:length(outputs)
                         if npartition(np)==2

@@ -233,7 +233,7 @@ for i = 1:length(required_distributions)
         case 'P(A,B,C)'
             prob_dists{i} =  prob_estimator({inputs_1d{1},inputs_1d{2},inputs_1d{3}}, {'P(A,B,C)'}, opts);
         case 'P(B,C,A)'
-            prob_dists{i} =  prob_estimator({inputs_1d{2},inputs_1d{3},inputs_1d{A}}, {'P(A,B,C)'}, opts);
+            prob_dists{i} =  prob_estimator({inputs_1d{2},inputs_1d{3},inputs_1d{1}}, {'P(A,B,C)'}, opts);
         case 'P(A,C,B)'
             prob_dists{i} =  prob_estimator({inputs_1d{1},inputs_1d{3},inputs_1d{2}}, {'P(A,B,C)'}, opts);
     end
