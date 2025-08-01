@@ -86,6 +86,53 @@ uiy = bits * condZmutinf;
 uiz = bits * condYmutinf;
 ci  = bits * (condent - condent__orig);
 
+joint   = mutualInformationXYZ(prob_xyz);
+qjoint  = mutualInformationXYZ(conic_solver.triplet_nonzeroqpos);
+single1 = mutualInformation(marg_xy);
+single2 = mutualInformation(marg_xz);
+si  = single1 + single2 - qjoint;%bits * (entropy_X  - condent - condZmutinf - condYmutinf) ;
+uiy = single1 - si;%bits * condZmutinf;
+uiz = single2 - si;%bits * condYmutinf;
+ci  = joint - qjoint;%bits * (condent - condent__orig);
+
 pid_v = [si uiy uiz ci];
 table_prob = conic_solver.triplet_nonzeroqpos;
+end
+
+function MI = mutualInformation(pxy)
+    % Calculate marginal probabilities
+    px = sum(pxy, 2); % Marginal probability density of X
+    py = sum(pxy, 1); % Marginal probability density of Y
+
+    % Initialize mutual information
+    MI = 0;
+
+    % Loop through each value of x and y
+    for i = 1:size(pxy, 1)
+        for j = 1:size(pxy, 2)
+            if pxy(i,j) ~= 0 && px(i) ~= 0 && py(j) ~= 0
+                MI = MI + pxy(i,j) * log2(pxy(i,j) / (px(i) * py(j)));
+            end
+        end
+    end
+end
+
+function MIX = mutualInformationXYZ(pxyz)
+    % Calculate marginal probabilities
+    px  = sum(sum(pxyz, 2), 3); % Marginal probability density of X
+    pyz = squeeze(sum(pxyz, 1)); % Joint probability density of Y and Z
+
+    % Initialize mutual information
+    MIX = 0;
+
+    % Loop through each value of x, y, and z
+    for i = 1:size(pxyz, 1)
+        for j = 1:size(pxyz, 2)
+            for k = 1:size(pxyz, 3)
+                if pxyz(i,j,k) ~= 0 && px(i) ~= 0 && pyz(j,k) ~= 0
+                    MIX = MIX + pxyz(i,j,k) * log2(pxyz(i,j,k) / (px(i) * pyz(j,k)));
+                end
+            end
+        end
+    end
 end

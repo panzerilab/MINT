@@ -262,7 +262,8 @@ prob_dists = prob_estimator(inputs_1d, required_distributions, opts);
 entropies = cell(1, length(reqOutputs));
 entropies_plugin = cell(1, length(reqOutputs));
 
-symtoolbox = any(strcmp('Symbolic Math Toolbox', {ver().Name}));
+symtoolbox = false; %any(strcmp('Symbolic Math Toolbox', {ver().Name}));
+%digits(50);          % Set global precision
 
 for t = 1:nTimepoints
     for i = 1:length(indices)
@@ -271,18 +272,22 @@ for t = 1:nTimepoints
             case 'H(A)'
                 P_A = prob_dists{t, strcmp(required_distributions, 'P(A)')};
                 if symtoolbox
-                    P_A = vpa(P_A, 50); % 50-digit precision
+                    P_A = vpa(P_A);
                     P_lin_log = P_A .* log(P_A)/ log(vpa(2));
                 else
                     P_lin_log = P_A .* log(P_A)/ log(2);
                 end
 
                 P_lin_log(isnan(P_lin_log)) = 0;
-                entropies_plugin{i}(1,t) = -sum(P_lin_log(:));
+                entropies_plugin{i}(1,t) = double(-sum(P_lin_log(:)));
                 if strcmp(opts.bias, 'bub')
                     bias = bub(nTrials * P_A);                           
                 elseif strcmp(opts.bias, 'pt')
-                    bias = pt(inputs_1d{1}, length(unique(inputs_1d{1})), nTrials);
+                    if nTimepoints==1
+                        bias = pt(inputs_1d{1}, length(unique(inputs_1d{1})), nTrials);
+                    else
+                        bias = pt(inputs_1d{1}(1,t,:), length(unique(inputs_1d{1}(1,t,:))), nTrials);
+                    end
                 else 
                     bias = 0;
                 end
@@ -290,17 +295,22 @@ for t = 1:nTimepoints
             case 'H(B)'
                 P_B = prob_dists{t, strcmp(required_distributions, 'P(B)')};
                if symtoolbox
-                    P_B = vpa(P_B, 50); % 50-digit precision
+                    P_B = vpa(P_B);
                     P_lin_log = P_B .* log(P_B)/ log(vpa(2));
                 else
                     P_lin_log = P_B .* log(P_B)/ log(2);
                 end
                 P_lin_log(isnan(P_lin_log)) = 0;
-                entropies_plugin{i}(1,t) = -sum(P_lin_log(:));
+                entropies_plugin{i}(1,t) = double(-sum(P_lin_log(:)));
                 if strcmp(opts.bias, 'bub')
                     bias = bub(nTrials * P_B);
                 elseif strcmp(opts.bias, 'pt')
-                    bias = pt(inputs_1d{2}, length(unique(inputs_1d{2})), nTrials);
+                    if nTimepoints==1
+                        bias = pt(inputs_1d{2}, length(unique(inputs_1d{2})), nTrials);
+                    else
+                        bias = pt(inputs_1d{2}(1,t,:), length(unique(inputs_1d{2}(1,t,:))), nTrials);
+                    end
+                    
                 else 
                     bias = 0;
                 end
@@ -309,8 +319,8 @@ for t = 1:nTimepoints
                 P_AB = prob_dists{t, strcmp(required_distributions, 'P(A|B)')};
                 P_B  = prob_dists{t, strcmp(required_distributions, 'P(B)')};
                if symtoolbox
-                    P_AB = vpa(P_AB, 50); % 50-digit precision  
-                    P_B  = vpa(P_B, 50); % 50-digit precision
+                    P_AB = vpa(P_AB);  
+                    P_B  = vpa(P_B);
                     P_Bext = repmat(P_B, 1, size(P_AB, 1));
                     P_lin_log = P_Bext' .* P_AB .* log(P_AB)/ log(vpa(2));
                 else
@@ -319,7 +329,7 @@ for t = 1:nTimepoints
                 end
                 
                 P_lin_log(isnan(P_lin_log)) = 0;
-                entropies_plugin{i}(1,t) = -sum(P_lin_log(:));
+                entropies_plugin{i}(1,t) = double(-sum(P_lin_log(:)));
                 if strcmp(opts.bias, 'bub')
                     P_A = prob_dists{t, strcmp(required_distributions, 'P(A)')};
                     pAB = P_AB .* P_B';
@@ -328,11 +338,21 @@ for t = 1:nTimepoints
                     bias = biasAB - biasA;
                 elseif strcmp(opts.bias, 'pt')
                     bias = 0;
-                    uniqueB = unique(inputs_1d{2});
-                    nb = length(uniqueB);
-                    for b_i=1:nb
-                        A_tmp = inputs_1d{1}(inputs_1d{2} == uniqueB(b_i));
-                        bias = bias + pt(A_tmp, length(unique(A_tmp)), nTrials);
+                    if nTimepoints==1
+                        uniqueB = unique(inputs_1d{2});
+                        nb = length(uniqueB);
+                        for b_i=1:nb
+                            A_tmp = inputs_1d{1}(inputs_1d{2} == uniqueB(b_i));
+                            bias = bias + pt(A_tmp, length(unique(A_tmp)), nTrials);
+                        end
+                    else
+                        uniqueB = unique(inputs_1d{2}(1,t,:));
+                        nb = length(uniqueB);
+                        for b_i=1:nb
+                            mask = (inputs_1d{2}(1,t,:) == uniqueB(b_i));
+                            A_tmp = inputs_1d{1}(1,t,mask);
+                            bias = bias + pt(A_tmp, length(unique(A_tmp)), nTrials);
+                        end
                     end
                 else
                     bias = 0;
@@ -341,13 +361,13 @@ for t = 1:nTimepoints
             case 'Hlin(A)'
                 P_lin = prob_dists{t, strcmp(required_distributions, 'Plin(A)')};
                if symtoolbox
-                    P_lin = vpa(P_lin, 50); % 50-digit precision
+                    P_lin = vpa(P_lin);
                     P_lin_log = P_lin .* log(P_lin) / log(vpa(2));
                 else
                     P_lin_log = P_lin .* log(P_lin) / log(2);
                 end
                 P_lin_log(isnan(P_lin_log)) = 0;
-                entropies_plugin{i}(1,t) = -sum(P_lin_log(:));
+                entropies_plugin{i}(1,t) = double(-sum(P_lin_log(:)));
                 if strcmp(opts.bias, 'bub')
                     bias = 0;
                     for row=1:size(plin,1)
@@ -356,10 +376,18 @@ for t = 1:nTimepoints
                     end
                 elseif strcmp(opts.bias, 'pt')
                     bias = 0;
-                    for row=1:size(inputs{1},1)
-                        Arow = inputs{1}(row,:);
-                        nArow = length(unique(Arow));
-                        bias =  bias + pt(Arow, nArow, nTrials);
+                    if nTimepoints==1
+                        for row=1:size(inputs{1},1)
+                            Arow = inputs{1}(row,:);
+                            nArow = length(unique(Arow));
+                            bias =  bias + pt(Arow, nArow, nTrials);
+                        end
+                    else
+                        for row=1:size(inputs{1},1)
+                            Arow = inputs{1}(row,t,:);
+                            nArow = length(unique(Arow));
+                            bias =  bias + pt(Arow, nArow, nTrials);
+                        end
                     end
                 else
                     bias = 0;
@@ -368,7 +396,7 @@ for t = 1:nTimepoints
             case 'Hind(A)'
                 P_indA = prob_dists{t, strcmp(required_distributions, 'Pind(A)')};
                if symtoolbox
-                    P_indA = vpa(P_indA, 50); % 50-digit precision
+                    P_indA = vpa(P_indA);
                     P_lin_log = P_indA .* log(P_indA) / log(vpa(2));
                 else
                     P_lin_log = P_indA .* log(P_indA) / log(2);
@@ -378,15 +406,25 @@ for t = 1:nTimepoints
                 % P_B = prob_dists{t, strcmp(required_distributions, 'P(B)')};
                 % P_lin_log = P_B' .* P_indAB .* log2(P_B' .* P_indAB);
                 P_lin_log(isnan(P_lin_log)) = 0;
-                entropies_plugin{i}(1,t) = -sum(P_lin_log(:));
+                entropies_plugin{i}(1,t) = double(-sum(P_lin_log(:)));
                 % bias = 0;
                 if strcmp(opts.bias, 'pt')
                     bias = 0;
-                    uniqueB = unique(inputs_1d{2});
-                    nb = length(uniqueB);
-                    for b_i=1:nb
-                        A_tmp = inputs_1d{1}(inputs_1d{2} == uniqueB(b_i));
-                        bias = bias + pt(A_tmp, length(unique(A_tmp)), nTrials);
+                    if nTimepoints==1
+                        uniqueB = unique(inputs_1d{2});
+                        nb = length(uniqueB);
+                        for b_i=1:nb
+                            A_tmp = inputs_1d{1}(inputs_1d{2} == uniqueB(b_i));
+                            bias = bias + pt(A_tmp, length(unique(A_tmp)), nTrials);
+                        end
+                    else
+                        uniqueB = unique(inputs_1d{2}(1,t,:));
+                        nb = length(uniqueB);
+                        for b_i=1:nb
+                            mask=(inputs_1d{2}(1,t,:) == uniqueB(b_i));
+                            A_tmp = inputs_1d{1}(1,t,mask);
+                            bias = bias + pt(A_tmp, length(unique(A_tmp)), nTrials);
+                        end
                     end
                 else
                     bias = 0;
@@ -396,22 +434,22 @@ for t = 1:nTimepoints
                 P_indAB = prob_dists{t, strcmp(required_distributions, 'Pind(A|B)')};
                 P_B = prob_dists{t, strcmp(required_distributions, 'P(B)')};
                if symtoolbox
-                    P_indAB = vpa(P_indAB, 50); % 50-digit precision
-                    P_B     = vpa(P_B, 50); % 50-digit precision
+                    P_indAB = vpa(P_indAB);
+                    P_B     = vpa(P_B);
                     P_lin_log = P_B' .* P_indAB .* log(P_indAB) / log(vpa(2));
                 else
                     P_lin_log = P_B' .* P_indAB .* log(P_indAB) / log(2);
                 end
                 P_lin_log(isnan(P_lin_log)) = 0;
-                entropies_plugin{i}(1,t) = -sum(P_lin_log(:));
+                entropies_plugin{i}(1,t) = double(-sum(P_lin_log(:)));
                 bias = 0;
                 entropies{i}(1,t) = entropies_plugin{i}(1,t) - bias;
             case 'Chi(A)'
                 P_A    = prob_dists{t, strcmp(required_distributions, 'P(A)')};
                 P_indA = prob_dists{t, strcmp(required_distributions, 'Pind(A)')};
                if symtoolbox
-                    P_A    = vpa(P_A, 50); % 50-digit precision
-                    P_indA = vpa(P_indA, 50); % 50-digit precision
+                    P_A    = vpa(P_A);
+                    P_indA = vpa(P_indA);
                 end
 
                 if size(P_A, 1) < size(P_indA, 1)
@@ -427,25 +465,29 @@ for t = 1:nTimepoints
                 end
                 P_lin_log(isnan(P_lin_log)) = 0;
                 P_lin_log(isinf(P_lin_log)) = 0;
-                entropies_plugin{i}(1,t) = -sum(P_lin_log(:));
+                entropies_plugin{i}(1,t) = double(-sum(P_lin_log(:)));
                 bias = 0;
                 entropies{i}(1,t) = entropies_plugin{i}(1,t) - bias;
             case 'Hsh(A)'
                 P_shA = prob_dists{t, strcmp(required_distributions, 'Psh(A)')};
                if symtoolbox
-                    P_shA = vpa(P_shA, 50); % 50-digit precision
+                    P_shA = vpa(P_shA);
                     P_lin_log = P_shA .* log(P_shA) / log(vpa(2));
                 else
                     P_lin_log = P_shA .* log(P_shA) / log(2);
                 end
                 P_lin_log(isnan(P_lin_log)) = 0;
-                entropies_plugin{i}(1,t) = -sum(P_lin_log(:));
+                entropies_plugin{i}(1,t) = double(-sum(P_lin_log(:)));
                 if strcmp(opts.bias, 'bub')
                     bias = bub(nTrials*P_shA);
                     entropies_plugin{i}(1,t) = entropies{i}(1,t);
                     entropies{i}(1,t) = entropies_plugin{i}(1,t) - bias;
                 elseif strcmp(opts.bias, 'pt')
-                    bias = pt(inputs_1d{1}, length(unique(inputs_1d{1})), nTrials);
+                    if nTimepoints==1
+                        bias = pt(inputs_1d{1}, length(unique(inputs_1d{1})), nTrials);
+                    else
+                        bias = pt(inputs_1d{1}(1,t,:), length(unique(inputs_1d{1}(1,t,:))), nTrials);
+                    end
                 else
                     bias = 0;
                 end
@@ -454,14 +496,14 @@ for t = 1:nTimepoints
                 P_shAB = prob_dists{t, strcmp(required_distributions, 'Psh(A|B)')};
                 P_B = prob_dists{t, strcmp(required_distributions, 'P(B)')};
                if symtoolbox
-                    P_shAB = vpa(P_shAB, 50); % 50-digit precision
-                    P_B    = vpa(P_B, 50); % 50-digit precision
+                    P_shAB = vpa(P_shAB);
+                    P_B    = vpa(P_B);
                     P_lin_log = P_B' .* P_shAB .* log(P_shAB) / log(vpa(2));
                 else
                     P_lin_log = P_B' .* P_shAB .* log(P_shAB) / log(2);
                 end
                 P_lin_log(isnan(P_lin_log)) = 0;
-                entropies_plugin{i}(1,t) = -sum(P_lin_log(:));
+                entropies_plugin{i}(1,t) = double(-sum(P_lin_log(:)));
                 if strcmp(opts.bias, 'bub')
                     P_shA = prob_dists{t, strcmp(required_distributions, 'Psh(A)')};
                     PshAB = P_shAB .* P_B;
@@ -472,11 +514,21 @@ for t = 1:nTimepoints
                     entropies{i}(1,t) = entropies_plugin{i}(1,t) - bias;
                 elseif strcmp(opts.bias, 'pt')
                     bias = 0;
-                    uniqueB = unique(inputs_1d{2});
-                    nb = length(uniqueB);
-                    for b_i=1:nb
-                        A_tmp = inputs_1d{1}(inputs_1d{2} == uniqueB(b_i));
-                        bias = bias + pt(A_tmp, length(unique(A_tmp)), nTrials);
+                    if nTimepoints==1
+                        uniqueB = unique(inputs_1d{2});
+                        nb = length(uniqueB);
+                        for b_i=1:nb
+                            A_tmp = inputs_1d{1}(inputs_1d{2} == uniqueB(b_i));
+                            bias = bias + pt(A_tmp, length(unique(A_tmp)), nTrials);
+                        end
+                    else
+                        uniqueB = unique(inputs_1d{2}(1,t,:));
+                        nb = length(uniqueB);
+                        for b_i=1:nb
+                            mask = (inputs_1d{2} == uniqueB(b_i));
+                            A_tmp = inputs_1d{1}(1,t,mask);
+                            bias = bias + pt(A_tmp, length(unique(A_tmp)), nTrials);
+                        end
                     end
                 else
                     bias = 0;

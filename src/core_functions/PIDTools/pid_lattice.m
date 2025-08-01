@@ -330,15 +330,65 @@ classdef pid_lattice < handle
 
 
         function atom = calculate_atom_mmi(obj, p_distr, target, sources)
-            px1y = squeeze(sum(p_distr,2));
-            px2y = squeeze(sum(p_distr,1));
-            immi = min([mutualInformation(px1y) mutualInformation(px2y)]);
+            infs = [];
+            for s =1:length(sources)
+                marg = obj.marginalize(p_distr, [sources, target]);
+                infs = [infs obj.mutualInformationLast(marg)];
+            end
+            
+            immi = min(infs);
             down_nodes = obj.get_strict_down(sources);
             atom = immi;
             for inodes=1:numel(down_nodes)
                 atom = atom - obj.calculate_atom(p_distr, target, down_nodes{inodes});
             end
         end
+        
+        function marginal = marginalize(obj, p, keep_dims)
+            % p:          N-dimensional probability distribution (array)
+            % keep_dims:  vector of dimensions you want to keep (e.g., [1 3])
+            
+                all_dims = 1:ndims(p);
+                sum_dims = setdiff(all_dims, keep_dims);
+            
+                marginal = p;
+                for d = sum_dims
+                    marginal = sum(marginal, d);
+                end
+            
+                % Optional: permute to bring kept dims to front
+                marginal = permute(marginal, sort(keep_dims));
+        end
+
+        function MI = mutualInformationLast(obj, p)
+            % Computes I(X;Z) where:
+            % - Z is the last dimension of `p`
+            % - X is the joint of all other dimensions
+            
+                % Ensure p is normalized
+                p = p / sum(p(:)); 
+            
+                dims = ndims(p);
+                z_dim = dims;
+                x_dims = 1:(dims-1);
+            
+                % Compute marginal p(z)
+                pz = sum(p, x_dims);
+            
+                % Compute marginal p(x) by summing over the last dim
+                px = sum(p, z_dim);
+            
+                % Reshape for broadcasting compatibility
+                px_exp = repmat(px, [ones(1, dims-1), size(p, dims)]);
+                pz_exp = repmat(reshape(pz, [ones(1, dims-1), numel(pz)]), size(px));
+            
+                % Avoid division by zero
+                valid = p > 0 & px_exp > 0 & pz_exp > 0;
+            
+                % Compute mutual information
+                MI = sum(p(valid) .* log2(p(valid) ./ (px_exp(valid) .* pz_exp(valid))));
+            end
+
 
 
     end

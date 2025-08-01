@@ -123,6 +123,7 @@ classdef Solve_w_ECOSarrays < handle
             [obj.nzXy, obj.nzY, obj.pxy] = find(obj.b_xy);
             [obj.nzXz, obj.nzZ, obj.pxz] = find(obj.b_xz);
 
+            % digits(50)
             % [nonzeros_per_rowY, ~] =  histcounts(obj.nzXy,'BinMethod','integers'); %hist(obj.nzXy,unique(obj.nzXy));
             % [nonzeros_per_rowZ, ~] =  histcounts(obj.nzXz,'BinMethod','integers'); %hist(obj.nzXz,unique(obj.nzXz));
 
