@@ -336,11 +336,9 @@ end
 end
 
 function rankElements = replace_with_rank(M)
-
-% Sort the elements
-sorted = sort(M(:));
-% Find the index from M to the sorted elements
-[~,index] = ismember(M(:),sorted);
-% Reshape to the original size
-rankElements = reshape(index,size(M));
+% Helper function to replace elements with their ranks.
+all_elements = M(:);
+unique_sorted = unique(all_elements);
+[~, index] = ismember(all_elements, unique_sorted);
+rankElements = reshape(index, size(M));
 end
