@@ -138,6 +138,8 @@ end
 
 DimsA = size(inputs{1});
 DimsB = size(inputs{2});
+
+
 nTrials = DimsA(end);
 if DimsA(end) ~= DimsB(end)
     msg = sprintf('The number of trials for A (%d) and B (%d) are not consistent. Ensure both variables have the same number of trials.',DimsA(end),DimsB(end));
@@ -183,6 +185,16 @@ if DimsA(2:end) ~= DimsB(2:end)
     error('H:inconsistentSizes', msg);
 end
 
+if ~strcmp(opts.bin_method{1},'none')
+    nbinsA = DimsA(1) * opts.n_bins{1};
+else
+    nbinsA = length(unique(inputs_1d{1}));
+end
+if ~strcmp(opts.bin_method{2},'none')
+    nbinsB = DimsB(1) * opts.n_bins{2};
+else
+    nbinsB = length(unique(inputs_1d{2}));
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                    Step 3.A: Bias correction if requested                     %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -284,9 +296,9 @@ for t = 1:nTimepoints
                     bias = bub(nTrials * P_A);                           
                 elseif strcmp(opts.bias, 'pt')
                     if nTimepoints==1
-                        bias = pt(inputs_1d{1}, length(unique(inputs_1d{1})), nTrials);
+                        bias = pt(inputs_1d{1}, nbinsA, nTrials);
                     else
-                        bias = pt(inputs_1d{1}(1,t,:), length(unique(inputs_1d{1}(1,t,:))), nTrials);
+                        bias = pt(inputs_1d{1}(1,t,:), nbinsA, nTrials);
                     end
                 else 
                     bias = 0;
@@ -306,9 +318,9 @@ for t = 1:nTimepoints
                     bias = bub(nTrials * P_B);
                 elseif strcmp(opts.bias, 'pt')
                     if nTimepoints==1
-                        bias = pt(inputs_1d{2}, length(unique(inputs_1d{2})), nTrials);
+                        bias = pt(inputs_1d{2}, nbinsB, nTrials);
                     else
-                        bias = pt(inputs_1d{2}(1,t,:), length(unique(inputs_1d{2}(1,t,:))), nTrials);
+                        bias = pt(inputs_1d{2}(1,t,:), nbinsB, nTrials);
                     end
                     
                 else 
@@ -379,13 +391,13 @@ for t = 1:nTimepoints
                     if nTimepoints==1
                         for row=1:size(inputs{1},1)
                             Arow = inputs{1}(row,:);
-                            nArow = length(unique(Arow));
+                            nArow = nbinsA/DimsA; %length(unique(Arow));
                             bias =  bias + pt(Arow, nArow, nTrials);
                         end
                     else
                         for row=1:size(inputs{1},1)
                             Arow = inputs{1}(row,t,:);
-                            nArow = length(unique(Arow));
+                            nArow = nbinsA/DimsA; %length(unique(Arow));
                             bias =  bias + pt(Arow, nArow, nTrials);
                         end
                     end
@@ -415,7 +427,7 @@ for t = 1:nTimepoints
                         nb = length(uniqueB);
                         for b_i=1:nb
                             A_tmp = inputs_1d{1}(inputs_1d{2} == uniqueB(b_i));
-                            bias = bias + pt(A_tmp, length(unique(A_tmp)), nTrials);
+                            bias = bias + pt(A_tmp, nbinsA, nTrials);
                         end
                     else
                         uniqueB = unique(inputs_1d{2}(1,t,:));
@@ -423,7 +435,7 @@ for t = 1:nTimepoints
                         for b_i=1:nb
                             mask=(inputs_1d{2}(1,t,:) == uniqueB(b_i));
                             A_tmp = inputs_1d{1}(1,t,mask);
-                            bias = bias + pt(A_tmp, length(unique(A_tmp)), nTrials);
+                            bias = bias + pt(A_tmp, nbinsA, nTrials);
                         end
                     end
                 else
@@ -484,9 +496,9 @@ for t = 1:nTimepoints
                     entropies{i}(1,t) = entropies_plugin{i}(1,t) - bias;
                 elseif strcmp(opts.bias, 'pt')
                     if nTimepoints==1
-                        bias = pt(inputs_1d{1}, length(unique(inputs_1d{1})), nTrials);
+                        bias = pt(inputs_1d{1}, nbinsA, nTrials);
                     else
-                        bias = pt(inputs_1d{1}(1,t,:), length(unique(inputs_1d{1}(1,t,:))), nTrials);
+                        bias = pt(inputs_1d{1}(1,t,:), nbinsA, nTrials);
                     end
                 else
                     bias = 0;
@@ -519,7 +531,7 @@ for t = 1:nTimepoints
                         nb = length(uniqueB);
                         for b_i=1:nb
                             A_tmp = inputs_1d{1}(inputs_1d{2} == uniqueB(b_i));
-                            bias = bias + pt(A_tmp, length(unique(A_tmp)), nTrials);
+                            bias = bias + pt(A_tmp, nbinsA, nTrials);
                         end
                     else
                         uniqueB = unique(inputs_1d{2}(1,t,:));
@@ -527,7 +539,7 @@ for t = 1:nTimepoints
                         for b_i=1:nb
                             mask = (inputs_1d{2} == uniqueB(b_i));
                             A_tmp = inputs_1d{1}(1,t,mask);
-                            bias = bias + pt(A_tmp, length(unique(A_tmp)), nTrials);
+                            bias = bias + pt(A_tmp, nbinsA, nTrials);
                         end
                     end
                 else
@@ -557,7 +569,7 @@ for t = 1:nTimepoints
                 
                 [Sb_nsb, ~, ~, ~, ~, S_ml,~]=find_nsb_entropy (kxb, nxb, K, precision,qfun);
                 entropies_plugin{i}(1,t) = S_ml;
-                entropies{i}(1,t) = Sb_nsb;
+                entropies{i}(1,t) = Sb_nsb;te
             case 'Hnsb(A,B)'
                 qfun = 1;
                 precision = .1;

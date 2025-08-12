@@ -1,135 +1,211 @@
-classdef pid_lattice < handle 
-% Description:
-% This class implements a redundancy lattice, a mathematical structure used to model redundancy relationships between sets of variables. It is particularly designed for use in the context of probabilistic information theory.
-% 
-% Properties:
-% - lat: A cell array representing the lattice nodes.
-% - red: Redundancy values associated with lattice nodes.
-% - pi: Probability distribution array.
-% - pdf: Probability density function associated with the lattice nodes.
-% 
-% Methods:
-% Constructor: pid_lattice(nsources)
-%    - Initializes the pid_lattice object with an empty lattice and generates lattice nodes based on the given number of variables (nsources).
-% 
-% power_set(obj, var_list)
-%    - Computes the power set of a given set of variables using bitwise operations in MATLAB.
-% 
-% is_node_red(obj, x)
-%    - Checks if a given collection of nodes x represents a valid node in the redundancy lattice.
-% 
-% node_issubsetany(obj, x, i, j)
-%    - Checks if node x[i] is a subset of any other node x[j] within a given collection.
-% 
-% node_issubset(obj, x, y)
-%    - Determines if a node x precedes another node y in the redundancy lattice.
-% 
-% node_issame(obj, x, y)
-%    - Checks if two nodes x and y are identical in terms of their elements.
-% 
-% get_down(obj, node)
-%    - Returns the set of lattice nodes that are below the given node in the lattice.
-% 
-% get_strict_down(obj, node)
-%    - Returns the set of lattice nodes that are strictly below the given node in the lattice.
-% 
-% get_red(obj, node)
-%    - Computes the redundancy value associated with the given node.
-% 
-% Imin(obj, p_distr, target, sources)
-%     - Computes the minimum specific information between a target variable and multiple source variables, given a probability distribution.
-% 
-% specific_information(obj, p_distr, specific_val_dim, specific_val_index)
-%     - Calculates specific information between two variables based on a probability distribution.
-% 
-% Note: The class employs various methods to handle lattice nodes, check redundancy relationships, and calculate information-theoretic measures.
+classdef pid_lattice < handle
+    % PID_LATTICE Constructs and operates on a redundancy lattice for probabilistic variables.
+    %
+    % This class builds and evaluates a redundancy lattice using Imin or IMMI/MMI
+    % as the redundancy measure. If a precomputed lattice file is not found,
+    % the lattice is generated dynamically.
+    %
+    % It supports:
+    %   • Discrete (non-Gaussian) case: work with a full joint probability mass
+    %     function (pdf) over [sources, target].
+    %   • Gaussian case: work with a covariance matrix and compute mutual
+    %     information using Gaussian closed forms.
+    %
+    % -------------------------------------------------------------------------
+    % Properties
+    % -------------------------------------------------------------------------
+    %   lat                - 2×N cell array storing lattice nodes and (optionally) values.
+    %                        lat(1, :) are nodes; each node is a cell array of source-index arrays.
+    %   pi                 - 1×N vector of PID atom values (partial informations) per node.
+    %   pdf                - Discrete: joint probability tensor over sources and target.
+    %                        Gaussian: covariance matrix over [all sources, target].
+    %   nsources           - Number of source variables.
+    %   is_gaussian        - If true, use Gaussian mutual information (for IMMI/MMI path).
+    %   redundancy_measure - 'Imin' or 'IMMI' (default: 'Imin').
+    %   source_dims        - (Gaussian) 1×nsources cell, each entry contains indices for a source.
+    %   target_dims        - (Gaussian) Index/indices for the target variable.
+    %
+    % -------------------------------------------------------------------------
+    % Constructor
+    % -------------------------------------------------------------------------
+    %   pid_lattice(nsources, redundancy_measure, is_gaussian)
+    %     Initializes the object and attempts to load a cached lattice file
+    %     ('lat%dSources.mat'); if not found, generates all valid redundancy
+    %     lattice nodes.
+    %
+    % -------------------------------------------------------------------------
+    % Lattice utilities
+    % -------------------------------------------------------------------------
+    %   power_set(var_list)
+    %     Return the (non-empty) power set of var_list as a cell array of index arrays.
+    %
+    %   is_node_red(x)
+    %     Return true if the candidate node x (a cell of source-index arrays)
+    %     is valid for the redundancy lattice (i.e., no element is a subset of another).
+    %
+    %   node_issubsetany(x, i, j)
+    %     Return true if x{i} is not a subset/superset of x{j} (or i==j).
+    %
+    %   node_issubset(x, y)
+    %     Return true if every element in node x is a subset of at least one
+    %     element in node y (partial order on redundancy lattice).
+    %
+    %   node_issame(x, y)
+    %     Return true if nodes x and y contain the same elements (order-insensitive).
+    %
+    %   get_down(node)
+    %     Return all nodes in the lattice that are ≤ node in the partial order
+    %     (including the node itself).
+    %
+    %   get_strict_down(node)
+    %     Return all nodes strictly below the given node in the partial order.
+    %
+    % -------------------------------------------------------------------------
+    % PID / redundancy evaluation
+    % -------------------------------------------------------------------------
+    %   calculate_latvals(p_distr)
+    %     Compute PID atom values (obj.pi) for all lattice nodes using either
+    %     Imin (discrete) or IMMI/MMI (Gaussian or if redundancy_measure == 'IMMI').
+    %     Returns obj.pi.
+    %
+    %   calculate_atom(p_distr, target, sources)
+    %     Recursive Möbius inversion on the lattice for the discrete case.
+    %     Base redundancy term uses Imin (if redundancy_measure == 'Imin') or
+    %     MMI (if redundancy_measure == 'IMMI'); subtract strict-down atoms.
+    %
+    % -------------------------------------------------------------------------
+    % Redundancy measures
+    % -------------------------------------------------------------------------
+    %   Imin(p_distr, target, sources)
+    %     Minimum specific information between target and the set of sources,
+    %     computed from the discrete joint pdf. Requires helper function
+    %     create_prob_ts to build pairwise joints.
+    %
+    %   MMI(p_distr, target, sources)
+    %     Minimum of mutual informations I(S_i; T) over all source collections
+    %     in 'sources'. Uses:
+    %       • Discrete: marginalize() + mutualInformationLast().
+    %       • Gaussian: gaussianMI() with source/target index sets.
+    %
+    %   specific_information(p_distr, specific_val_dim, specific_val_index)
+    %     Specific information I(X=x; Y) for a fixed value index along dimension
+    %     specific_val_dim of the joint pdf p_distr (log base 2).
+    %
+    % -------------------------------------------------------------------------
+    % Information-theoretic helpers
+    % -------------------------------------------------------------------------
+    %   mutualInformationLast(p)
+    %     Compute I(X; Z) where the last dimension of tensor p is Z and all
+    %     preceding dimensions comprise X. Returns MI in bits.
+    %
+    %   marginalize(p, keep_dims)
+    %     Sum out all dimensions of p not listed in keep_dims. Returns the
+    %     squeezed marginal tensor.
+    %
+    %   gaussianMI(cov_mat, source_idx, target_idx)
+    %     Compute Gaussian mutual information I(X; Y) = 0.5*log2(|Σ_X||Σ_Y|/|Σ_{XY}|),
+    %     where indices select blocks from cov_mat. Small diagonal jitter is added
+    %     for numerical stability.
+    %
+    % Notes:
+    %   • Discrete vs Gaussian:
+    %       - Discrete workflows assume p_distr is a normalized joint pdf tensor.
+    %       - Gaussian workflows assume p_distr is a covariance matrix with
+    %         variable ordering [sources, target].
+    %   • Lattice nodes are expressed as cells of source-index arrays; e.g.,
+    %     {{1}, {2,3}} represents the node with two “inputs”: source 1 and the
+    %     joint source {2,3}.
+    %
 
-% Copyright (C) 2024 Gabriel Matias Lorenz, Nicola Marie Engel
-% This file is part of MINT.
-% This program is free software: you can redistribute it and/or modify
-% it under the terms of the GNU General Public License as published by
-% the Free Software Foundation, either version 3 of the License, or
-% (at your option) any later version.
-%
-% This program is distributed in the hope that it will be useful,
-% but WITHOUT ANY WARRANTY; without even the implied warranty of
-% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-% GNU General Public License for more details.
-%
-% You should have received a copy of the GNU General Public License
-% along with this program.  If not, see <http://www.gnu.org/licenses
+    % Copyright (C) 2024 Gabriel Matias Lorenz, Nicola Marie Engel
+    % This file is part of MINT.
+    % This program is free software: you can redistribute it and/or modify
+    % it under the terms of the GNU General Public License as published by
+    % the Free Software Foundation, either version 3 of the License, or
+    % (at your option) any later version.
+    %
+    % This program is distributed in the hope that it will be useful,
+    % but WITHOUT ANY WARRANTY; without even the implied warranty of
+    % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    % GNU General Public License for more details.
+    %
+    % You should have received a copy of the GNU General Public License
+    % along with this program.  If not, see <http://www.gnu.org/licenses
 
     properties
         lat
-        red
         pi
         pdf
         nsources
+        is_gaussian = false
+        redundancy_measure = 'Imin' % 'Imin' or 'IMMI'
+        source_dims     % Cell array of source variable indices (for Gaussian)
+        target_dims
     end
 
     methods
-        function obj = pid_lattice(nsources)
+        function obj = pid_lattice(nsources, redundancy_measure, is_gaussian)
             obj.nsources = nsources;
-            filename= sprintf('lat%dsources',nsources);
-            lat = load(join([filename '.mat']));
-            obj.lat = lat.(filename);
-            
-            % obj.lat = {};
-            % p_set = obj.power_set(1:nsources);
-            % % p_set = p_set(2:end);
-            % pp_set = obj.power_set(p_set);
-            % % pp_set = pp_set(2:end);
-            % lat_nodes = arrayfun(@(k) is_node_red(pp_set{k}), 1:numel(pp_set), 'UniformOutput', true);
-            % obj.lat = pp_set(lat_nodes);
-            % for i=1:size(obj.lat,2)
-            %     obj.lat{2,i} = i;
-            % end
-            % 
+            if nargin >= 2
+                obj.redundancy_measure = redundancy_measure;
+            end
+            if nargin >= 3
+                obj.is_gaussian = is_gaussian;
+            end
+
+            if obj.is_gaussian
+                obj.source_dims = arrayfun(@(s) {s}, 1:obj.nsources);  % Each source is 1D by default
+                obj.target_dims = obj.nsources + 1;                    % Target index
+            end
+
+
+            filename = sprintf('lat%dsources', nsources);
+            try
+                lat = load(join([filename '.mat']));
+                obj.lat = lat.(filename);
+            catch
+                fprintf('[INFO] Lattice file not found. Generating lattice...\n');
+                p_set = obj.power_set(1:nsources);
+                pp_set = obj.power_set(p_set);
+                valid_nodes = {};
+                for k = 1:numel(pp_set)
+                    node = pp_set{k};
+                    if obj.is_node_red(node)
+                        valid_nodes{end+1} = node;
+                    end
+                end
+                obj.lat = cell(2, numel(valid_nodes));
+                for i = 1:numel(valid_nodes)
+                    obj.lat{1, i} = valid_nodes{i};
+                end
+                fprintf('[INFO] Lattice generated with %d nodes.\n', numel(valid_nodes));
+            end
         end
 
-        function result = power_set(obj, var_list)
-            % Power set using bitwise operations in MATLAB
+        function result = power_set(~, var_list)
             n = length(var_list);
-            num_subsets = 2^n;
-
-            % Preallocate result cell array
-            result = cell(1, num_subsets - 1);
-
-            % Loop through all possible binary representations
-            for i = 1:(num_subsets - 1)
-                result{i} = var_list(bitget(i, 1:n)==1);  % Extract subset
+            result = cell(1, 2^n - 1);
+            for i = 1:(2^n - 1)
+                result{i} = var_list(bitget(i, 1:n) == 1);
             end
         end
 
         function validity = is_node_red(obj, x)
-            % The function is_node_red checks if a given collection of nodes x represents
-            % a valid node in the redundancy lattice. A node is considered valid if none of
-            % its elements are subsets of any other elements within the collection.
-            %
-            % Input:
-            %     x: A cell array representing a collection of nodes in the redundancy lattice.
-            %
-            % Output:
-            %     validity: A logical value indicating whether the input collection x represents a
-            %               valid node in the redundancy lattice (true for valid, false otherwise).
-           
             validity = true;
-           
-            x_tmp = [x{:}];
-            if any(x_tmp > obj.nsources)
-                validity = false;
-                return
-            end 
-            
-            i = 1;
-            while validity && i <= numel(x)
-                source_exclusion = arrayfun(@(j) obj.node_issubsetany(x, i, j), 1:numel(x), 'UniformOutput', true);
-                validity = all(source_exclusion);
-                i = i + 1;
+            flat = [x{:}];
+            if any(flat > obj.nsources)
+                validity = false; return;
+            end
+            for i = 1:numel(x)
+                for j = 1:numel(x)
+                    if i ~= j && (all(ismember(x{i}, x{j})) || all(ismember(x{j}, x{i})))
+                        validity = false;
+                        return;
+                    end
+                end
             end
         end
 
-     
         function issubsetany = node_issubsetany(obj, x, i, j)
             if i~=j
                 issubsetany = ~(all(ismember(x{i}, x{j})) | all(ismember(x{j}, x{i})));
@@ -174,223 +250,124 @@ classdef pid_lattice < handle
             strict_down_list = down_list(strict_down_mask);
         end
 
-        function equality = node_issame(obj, x, y)
-            if numel(x) ==numel(y)
-                equality = all(arrayfun(@(xi) all(ismember(x{xi}, y{xi})) && all(ismember(y{xi}, x{xi})),1:numel(x)));
-            else
+        function equality = node_issame(~, x, y)
+            if numel(x) ~= numel(y)
                 equality = false;
+            else
+                equality = all(arrayfun(@(i) isequal(sort(x{i}), sort(y{i})), 1:numel(x)));
             end
         end
 
-        function get_red(obj)
-            if isempty(obj.pdf)
-                warning('You need to define a probability distribution function for your object.')
-                return
-            end 
-
-            for i=1:size(obj.lat,2)
-                obj.lat{2,i} = obj.Imin(obj.pdf, 1, obj.lat(1,i));
-            end
-        end
-
-        function get_pi(obj, pdf)
-            obj.pdf = pdf;
-            obj.get_red();
-            for i=1:size(obj.lat,2)
-                strict_down = obj.get_strict_down(obj.lat(1,i));
-                obj.lat{3,i} = obj.lat{2,i};
-                for j=1:size(obj.lat,2)
-                    if i==j
-                        continue
-                    end
-                    if ismember(obj.lat{1,j}, strict_down)
-                        obj.lat{3,i} = obj.lat{3,i} - obj.lat{2,j};
-                    end
+        function latvals = calculate_latvals(obj, p_distr)
+            obj.pdf = p_distr;
+            obj.pi = zeros(1, size(obj.lat,2));
+            for node = 1:size(obj.lat,2)
+                sources = obj.lat{1,node};
+                target = obj.nsources + 1;
+                if obj.is_gaussian
+                    obj.pi(node) = obj.calculate_atom_mmi(p_distr, target, sources);
+                else
+                    obj.pi(node) = obj.calculate_atom(p_distr, target, sources);
                 end
             end
+            latvals = obj.pi;
         end
 
+        function atom = calculate_atom(obj, p_distr, target, sources)
+            if obj.is_gaussian | strcmp(obj.redundancy_measure, 'IMMI')
+                atom = obj.Imin(p_distr, target, sources);
+            else
+                atom = obj.MMI(p_distr, target, sources);
+            end
+            down_nodes = obj.get_strict_down(sources);
+            % atom = imin;
+            for i = 1:numel(down_nodes)
+                atom = atom - obj.calculate_atom(p_distr, target, down_nodes{i});
+            end
+        end
 
-        function imin_v = Imin(obj, p_distr, target, sources)
-            % The function Imin computes the minimum specific information between a target variable
-            % and multiple source variables given a probability distribution. Specific information
-            % measures the information content of one variable with respect to another. The function
-            % uses the specific_information and create_prob_ts functions to calculate specific information
-            % for different source-target pairs.
-            %
-            % Inputs:
-            %     p_distr: A probability distribution represented as a multi-dimensional array.
-            %     target: The index representing the target variable within the probability distribution.
-            %     sources: A cell array containing indices or names of source variables.
-            %
-            % Output:
-            %     imin_v: The minimum specific information between the target variable and the sources.
-
-            spec_inf_array = zeros(size(p_distr,target),numel(sources));
+        function val = Imin(obj, p_distr, target, sources)
+            if exist('create_prob_ts', 'file') ~= 2
+                error('Missing function: create_prob_ts must be defined or on path.');
+            end
+            spec_info = zeros(size(p_distr, target), numel(sources));
             for s_i = 1:numel(sources)
-                % p_ts = create_prob_ts(p_distr, target, sources{s_i}{1});
-                % p_ts = create_prob_ts(p_distr, target, sources{s_i});
-                p_ts = create_prob_ts(p_distr, sources{s_i});
-                for t_i = 1:size(p_ts,1)
-                    spec_inf_array(t_i, s_i) = obj.specific_information(p_ts, 1, t_i);
+                p_joint = create_prob_ts(p_distr, [target, sources{s_i}]);
+                for t_i = 1:size(p_joint,1)
+                    spec_info(t_i, s_i) = obj.specific_information(p_joint, 1, t_i);
                 end
             end
-            % vt = 1:ndims(p_distr);
-            % vt([1, target]) = vt([target, 1]);
-            % permuted_prob = permute(p_distr, vt);
-            p_target = squeeze(sum(p_distr,setdiff(1:ndims(p_distr), target))); %sum(permuted_prob, 2:ndims(p_distr));
-            imin_v = p_target' * squeeze(min(spec_inf_array, [], 2));%dot(p_target, squeeze(min(spec_inf_array))');
+            p_target = squeeze(sum(p_distr, setdiff(1:ndims(p_distr), target)));
+            val = p_target' * min(spec_info, [], 2);
         end
 
-        function specinf = specific_information(obj, p_distr, specific_val_dim, specific_val_index)
-            % Function to calculate specific information using an probaility distribution
-            % This version will be written taking in mind only two variables
-            % (p_distr has two dimensions) and later it will expanded to a generic
-            % number of dimensions
-            % Inputs:
-            %   - p_distr: Probability distribution with two dimensions.
-            %   - specific_val_dim: Dimension for which specific information is calculated.
-            %   - specific_val_index: Index of the specific value in the specified dimension.
-            %
-            % Output:
-            %   - specinf: Specific information in bits.
-
-            d = specific_val_dim;
-            v = 1:ndims(p_distr);
-            v([1,d]) = v([d,1]);
-            bits=1/log(2);
-            permuted_prob = permute(p_distr,v); % reshape(permute(p_distr,v),size(p_distr,d),[]);
-            marg_prob_specific_dim = sum(permuted_prob, 2:ndims(p_distr));
-            marg_prob_specific_val = marg_prob_specific_dim(specific_val_index);
-            marg_prob_other_dims = squeeze(sum(permuted_prob, 1));
+        function mmi_val = MMI(obj, p_distr, target, sources)
+            mmi_vals = zeros(1, numel(sources));
+            for i = 1:numel(sources)
+                if obj.is_gaussian
+                    source_idx = cell2mat(obj.source_dims(sources{i}));
+                    target_idx = obj.target_dims;
+                    mmi_vals(i) = obj.gaussianMI(p_distr, source_idx, target_idx);
+                else
+                    marg = obj.marginalize(p_distr, [sources{i}, target]);
+                    mmi_vals(i) = obj.mutualInformationLast(marg);
+                end
+            end
+            mmi_val = min(mmi_vals);
+        end
+        
+        function specinf = specific_information(~, p_distr, dim, val_index)
+            bits = 1/log(2);
+            permuted = permute(p_distr, [dim setdiff(1:ndims(p_distr), dim)]);
+            marg_dim = sum(permuted, 2:ndims(p_distr));
+            p_val = marg_dim(val_index);
+            marg_other = squeeze(sum(permuted, 1));
+            permuted = reshape(permuted, size(p_distr, dim), []);
             specinf = 0;
-            for i=1:size(permuted_prob,2)
-                if permuted_prob(specific_val_index,i)>0
-                    quot = permuted_prob(specific_val_index,i)/marg_prob_specific_val;
-                    specinf = specinf +  quot * log(quot/marg_prob_other_dims(i));
+            for i = 1:size(permuted, 2)
+                if permuted(val_index, i) > 0
+                    quot = permuted(val_index, i) / p_val;
+                    specinf = specinf + quot * log(quot / marg_other(i));
                 end
             end
             specinf = specinf * bits;
         end
 
-        function atom = calculate_atom(obj, p_distr, target, sources)
-            imin = obj.Imin(p_distr, target, sources);
-            down_nodes = obj.get_strict_down(sources);
-            atom = imin;
-            for inodes=1:numel(down_nodes)
-                atom = atom - obj.calculate_atom(p_distr, target, down_nodes{inodes});
-            end
+        function MI = mutualInformationLast(~, p)
+            p = p / sum(p(:));
+            z_dim = ndims(p);
+            x_dims = 1:(z_dim - 1);
+            pz = sum(p, x_dims);
+            px = sum(p, z_dim);
+            px_exp = repmat(px, [ones(1, z_dim - 1), size(p, z_dim)]);
+            pz_exp = repmat(reshape(pz, [ones(1, z_dim - 1), numel(pz)]), size(px));
+            valid = p > 0 & px_exp > 0 & pz_exp > 0;
+            MI = sum(p(valid) .* log2(p(valid) ./ (px_exp(valid) .* pz_exp(valid))));
         end
 
-        function latvals = calculate_latvals(obj, p_distr)
-            for node =1:length(obj.lat)
-                sources = obj.lat{1,node};
-                target = obj.nsources+1;
-                obj.pi(node) = obj.calculate_atom(p_distr, target, sources);
+        function marginal = marginalize(~, p, keep_dims)
+            all_dims = 1:ndims(p);
+            sum_dims = setdiff(all_dims, keep_dims);
+            for d = sum_dims
+                p = sum(p, d);
             end
+            marginal = squeeze(p); %permute(p, sort(keep_dims));
         end
+
+
+        function MI = gaussianMI(~, cov_mat, source_idx, target_idx)
+            all_idx = [source_idx, target_idx];
+            cov_xy = cov_mat(all_idx, all_idx);
+            cov_x = cov_mat(source_idx, source_idx);
+            cov_y = cov_mat(target_idx, target_idx);
         
-        function MI = mutualInformation(obj,pxy)
-            % Calculate marginal probabilities
-            px = sum(pxy, 2); % Marginal probability density of X
-            py = sum(pxy, 1); % Marginal probability density of Y
-
-            % Initialize mutual information
-            MI = 0;
-
-            % Loop through each value of x and y
-            for i = 1:size(pxy, 1)
-                for j = 1:size(pxy, 2)
-                    if pxy(i,j) ~= 0 && px(i) ~= 0 && py(j) ~= 0
-                        MI = MI + pxy(i,j) * log2(pxy(i,j) / (px(i) * py(j)));
-                    end
-                end
-            end
-        end
+            cov_x = cov_x + 1e-10 * eye(size(cov_x));
+            cov_y = cov_y + 1e-10 * eye(size(cov_y));
+            cov_xy = cov_xy + 1e-10 * eye(size(cov_xy));
         
-        function MIZ = mutualInformationXYZ(obj, pxyz)
-            % Calculate marginal probabilities
-            pz = sum(sum(pxyz, 1), 2); % Marginal probability density of Z
-            pxy = sum(pxyz, 3); % Joint probability density of X and Y
-
-            % Initialize mutual information
-            MIZ = 0;
-
-            % Loop through each value of x, y, and z
-            for i = 1:size(pxyz, 1)
-                for j = 1:size(pxyz, 2)
-                    for k = 1:size(pxyz, 3)
-                        if pxyz(i,j,k) ~= 0 && pz(k) ~= 0 && pxy(i,j) ~= 0
-                            MIZ = MIZ + pxyz(i,j,k) * log2(pxyz(i,j,k) / (pz(k) * pxy(i,j)));
-                        end
-                    end
-                end
-            end
+            MI = 0.5 * log2(det(cov_x) * det(cov_y) / det(cov_xy));
         end
-
-
-        function atom = calculate_atom_mmi(obj, p_distr, target, sources)
-            infs = [];
-            for s =1:length(sources)
-                marg = obj.marginalize(p_distr, [sources, target]);
-                infs = [infs obj.mutualInformationLast(marg)];
-            end
-            
-            immi = min(infs);
-            down_nodes = obj.get_strict_down(sources);
-            atom = immi;
-            for inodes=1:numel(down_nodes)
-                atom = atom - obj.calculate_atom(p_distr, target, down_nodes{inodes});
-            end
-        end
-        
-        function marginal = marginalize(obj, p, keep_dims)
-            % p:          N-dimensional probability distribution (array)
-            % keep_dims:  vector of dimensions you want to keep (e.g., [1 3])
-            
-                all_dims = 1:ndims(p);
-                sum_dims = setdiff(all_dims, keep_dims);
-            
-                marginal = p;
-                for d = sum_dims
-                    marginal = sum(marginal, d);
-                end
-            
-                % Optional: permute to bring kept dims to front
-                marginal = permute(marginal, sort(keep_dims));
-        end
-
-        function MI = mutualInformationLast(obj, p)
-            % Computes I(X;Z) where:
-            % - Z is the last dimension of `p`
-            % - X is the joint of all other dimensions
-            
-                % Ensure p is normalized
-                p = p / sum(p(:)); 
-            
-                dims = ndims(p);
-                z_dim = dims;
-                x_dims = 1:(dims-1);
-            
-                % Compute marginal p(z)
-                pz = sum(p, x_dims);
-            
-                % Compute marginal p(x) by summing over the last dim
-                px = sum(p, z_dim);
-            
-                % Reshape for broadcasting compatibility
-                px_exp = repmat(px, [ones(1, dims-1), size(p, dims)]);
-                pz_exp = repmat(reshape(pz, [ones(1, dims-1), numel(pz)]), size(px));
-            
-                % Avoid division by zero
-                valid = p > 0 & px_exp > 0 & pz_exp > 0;
-            
-                % Compute mutual information
-                MI = sum(p(valid) .* log2(p(valid) ./ (px_exp(valid) .* pz_exp(valid))));
-            end
-
 
 
     end
 end
-

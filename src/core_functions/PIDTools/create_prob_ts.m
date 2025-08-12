@@ -1,65 +1,29 @@
-function p_ts = create_prob_ts(p_distr, sources)
-% function p_ts = create_prob_ts(p_distr, sources)
-%
-% ### Description
-% Function to create a bivariate prob distribution between target and sources. If sources is just one variable, it's the same as marginalizing
-% the other variables. If, for example, the target is X with size 2 and the sources are two variables Y and Z with number of values 3 and 4, the
-% resulting matrix is (|X|, |Y|*|Z|)
-%
-% ### Inputs:
-% - p_distr: A multidimensional array representing the original probability distribution.
-% - sources: A vector indicating the indices of the dimensions in p_distr that should be treated as sources.
-%
-% ### Outputs:
-% - p_ts: A two-dimensional matrix representing the joint probability distribution between
-%         the target and source variables.
-
-% Copyright (C) 2024 Gabriel Matias Lorenz, Nicola Marie Engel
-% This file is part of MINT.
-% This program is free software: you can redistribute it and/or modify
-% it under the terms of the GNU General Public License as published by
-% the Free Software Foundation, either version 3 of the License, or
-% (at your option) any later version.
-%
-% This program is distributed in the hope that it will be useful,
-% but WITHOUT ANY WARRANTY; without even the implied warranty of
-% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-% GNU General Public License for more details.
-%
-% You should have received a copy of the GNU General Public License
-% along with this program.  If not, see <http://www.gnu.org/licenses
-
-if nargin < 2
-    msg = 'not enough input arguments.';
-    error('createprobts:notEnoughInput', msg);
-end
-
-if  any(isnan(p_distr), 'all')
-    msg = 'p_distr contains NaNs. Aborting.';
-    error('createprobts:NaNInput', msg);
-end
-
-
-if length(sources)+1~=ndims(p_distr)
-    p_ts = squeeze(sum(p_distr,setdiff(1:ndims(p_distr), [sources ndims(p_distr)])));
-    new_dims = circshift(1:ndims(p_ts),1);
-    p_ts = permute(p_ts, new_dims);
-else
+function p_ts = create_prob_ts(p_distr, dims)
+    % dims = [target, source] where target must be scalar
+    % Output is 2D: (|target|) x (|sources_combined|)
+    
+    % Step 1: marginalize over all other dimensions
+    keep_dims = dims;
+    all_dims = 1:ndims(p_distr);
+    marginalize_dims = setdiff(all_dims, keep_dims);
     p_ts = p_distr;
-end
+    
+    for d = sort(marginalize_dims, 'descend')
+        p_ts = sum(p_ts, d);
+    end
 
-dim_ranges={};
-size_array = size(p_ts);
-for i=1:ndims(p_ts)
-    dim_ranges{i}=1:size_array(i);
-end
+    % Step 2: permute so target is first
+    [~, perm] = ismember(dims, all_dims);
+    
+    % Fix: ensure perm has correct length
+    if numel(perm) < ndims(p_ts)
+        perm = [perm, setdiff(1:ndims(p_ts), perm, 'stable')];
+    end
+    
+    p_ts = permute(p_ts, perm);
 
-if ndims(p_ts)==3
-    [source1,source2,target]=ndgrid(dim_ranges{1}, dim_ranges{2}, dim_ranges{3});
-    table_ts = array2table([target(:),source1(:),source2(:),p_ts(:)], 'VariableNames', {'target', 'source_1', 'source_2', 'prob'});
-    table_ts.sourcesingle = table_ts.source_1 + (table_ts.source_2 - 1)*size(unique(table_ts.source_1),1);
-    reshaped_p_ts = zeros(size(unique(table_ts.target),1), size(unique(table_ts.sourcesingle),1));
-    reshaped_p_ts(sub2ind(size(reshaped_p_ts), table_ts.target, table_ts.sourcesingle)) = table_ts.prob;
-    p_ts = reshaped_p_ts;
+    % Step 3: reshape into 2D: target x sources_combined
+    target_size = size(p_ts, 1);
+    source_size = numel(p_ts) / target_size;
+    p_ts = reshape(p_ts, target_size, source_size);
 end
-
