@@ -44,7 +44,7 @@ function [PID_values, PID_plugin, PID_nullDist] = PID(inputs, varargin)
 %              - bias:               Specifies the bias correction method to be used.
 %                                    'plugin'                      :(default) - No correction applied.
 %                                    'qe', 'le'                   :quadratic/linear extrapolation (need to specify xtrp as number of extrapolations).
-%                                    'ShuffSub'                   :Shuffle Substraction (need to specify shuff as number of shufflings).
+%                                    'shuffSub'                   :Shuffle Substraction (need to specify shuff as number of shufflings).
 %                                    'qe_ShuffSub', 'le_ShuffSub' :Combination of qe/le and Shuffsub (need to specify shuff and xtrp).
 %                                    'ksg'                        :correction using a k-neighbors entropy estimator (Holmes and Nemenman, 2019). Only available when redundancy_measure is I_MMI
 %                                    'nsb'                        :correction using the NSB algorithm (Nemenman, Bialek and van Steveninck, 2019). Only available when redundancy_measure is I_MMI
