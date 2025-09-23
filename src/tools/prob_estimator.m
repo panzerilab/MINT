@@ -356,12 +356,14 @@ for t = 1:max(1, nTimepoints)
     % 
     % end
 
+
 %% --- Independent Conditional (Pind(A|B)) and its B-marginal (Pind(A))
 if any(strcmp(reqOutputs,'Pind(A)')) || any(strcmp(reqOutputs,'Pind(A|B)'))
     % Canonical pattern table (values) used by p_A
     [~, A_patterns] = reduce_dim(FullA_t', 1);     % M x K (values, NOT indices)
     M = size(A_patterns,1);
     K = size(A_patterns,2);
+
 
     % Global unique value sets per A-dimension (same convention as reduce_dim)
     resps_all = cell(1,K);
@@ -505,4 +507,5 @@ function products = calculate_products(A)
     % Reshape the output to a proper size
     products = reshape(products, [], num_cols^num_rows);
 end
+
 end

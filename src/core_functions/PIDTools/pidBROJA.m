@@ -86,14 +86,14 @@ uiy = bits * condZmutinf;
 uiz = bits * condYmutinf;
 ci  = bits * (condent - condent__orig);
 
-joint   = mutualInformationXYZ(prob_xyz);
-qjoint  = mutualInformationXYZ(conic_solver.triplet_nonzeroqpos);
-single1 = mutualInformation(marg_xy);
-single2 = mutualInformation(marg_xz);
-si  = single1 + single2 - qjoint;%bits * (entropy_X  - condent - condZmutinf - condYmutinf) ;
-uiy = single1 - si;%bits * condZmutinf;
-uiz = single2 - si;%bits * condYmutinf;
-ci  = joint - qjoint;%bits * (condent - condent__orig);
+%joint   = mutualInformationXYZ(prob_xyz);
+%qjoint  = mutualInformationXYZ(conic_solver.triplet_nonzeroqpos);
+%single1 = mutualInformation(marg_xy);
+%single2 = mutualInformation(marg_xz);
+%si  = single1 + single2 - qjoint;%bits * (entropy_X  - condent - condZmutinf - condYmutinf) ;
+%uiy = single1 - si;%bits * condZmutinf;
+%uiz = single2 - si;%bits * condYmutinf;
+%ci  = joint - qjoint;%bits * (condent - condent__orig);
 
 pid_v = [si uiy uiz ci];
 table_prob = conic_solver.triplet_nonzeroqpos;
