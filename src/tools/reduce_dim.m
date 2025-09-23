@@ -1,4 +1,4 @@
-function R_1d = reduce_dim(R_Nd, dim_to_collapse)
+function [R_1d, resps_grid] = reduce_dim(R_Nd, dim_to_collapse)
 % *function R_1d = reduce_dim(R_Nd, dim_to_collapse)*
 %
 % The reduce_dim function takes a multi-dimensional array and collapses the specified 

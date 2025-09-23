@@ -121,12 +121,12 @@ for t = 1:max(1, nTimepoints)
         if nTimepointsCur > 1 || (nTimepointsCur == 1 && ndims(inputs{var}) > 2)
             currentData_t = squeeze(currentData_1d(:, t, :));          
             if needLin
-                FullA_t = squeeze(A_nd(:, t, :));
+                FullA_t = squeeze(int8(A_nd(:, t, :)));
             end
         else
             currentData_t = currentData_1d;  
             if needLin
-                FullA_t = squeeze(A_nd);
+                FullA_t = squeeze(int8(A_nd));
             end
         end
         if size(currentData_t, 1) ~= nTrials
@@ -275,80 +275,163 @@ for t = 1:max(1, nTimepoints)
         psh_A = sum(psh_AB,2);
     end
 
-    %% Independent Conditional Joint Probability Distribution of A given B (pind_A_B)
-    if any(strcmp(reqOutputs,'Pind(A|B)')) || any(strcmp(reqOutputs,'Pind(A)'))
-        % num_shuffles = 100;
-        % psh_AB_sum = 0;  % Initialisierung der Summe für psh_AB
-        % for k = 1:num_shuffles
-        %     shuffled_A = shuffle_core(B_t, FullA_t, 1, [1 0]);
-        %     if size(shuffled_A, 2) > 1
-        %         shuffled_A_1d = reduce_dim(shuffled_A', 1);
-        %         shuffled_A_1d = shuffled_A_1d';
-        %     else
-        %         shuffled_A_1d = shuffled_A;
-        %     end
-        %     psh_AB_tmp = prob_estimator_simple([shuffled_A_1d, B_t]);
-        %     if k > 1 && size(psh_AB_tmp,1)<size(psh_AB_sum,1)
-        %         psh_AB_tmp = [psh_AB_tmp; zeros(size(psh_AB_sum,1)-size(psh_AB_tmp,1),size(psh_AB_tmp,2))];
-        %     end
-        %     if k > 1 && size(psh_AB_tmp,1)>size(psh_AB_sum,1)
-        %         psh_AB_sum = [psh_AB_sum; zeros(size(psh_AB_tmp,1)-size(psh_AB_sum,1),size(psh_AB_tmp,2))];
-        %     end
-        %     psh_AB_sum = psh_AB_sum + psh_AB_tmp;
-        % end
-        % pind_ABtest = psh_AB_sum ./ num_shuffles;
-        % pind_A_B = (pind_ABtest' ./ p_B)';
-        % pind_A = sum(pind_ABtest, 2);
+    % %% Independent Conditional Joint Probability Distribution of A given B (pind_A_B)
+    % if any(strcmp(reqOutputs,'Pind(A|B)')) || any(strcmp(reqOutputs,'Pind(A)'))
+    %     % num_shuffles = 100;
+    %     % psh_AB_sum = 0;  % Initialisierung der Summe für psh_AB
+    %     % [a1d, patts] = reduce_dim(FullA_t', 1);
+    %     % for k = 1:num_shuffles
+    %     %     shuffled_A = shuffle_core(B_t, FullA_t, 1, [1 0]);
+    %     %     if size(shuffled_A, 2) > 1
+    %     %         [shuffled_A_1d, patts_shuff] = reduce_dim(shuffled_A', 1);
+    %     %         if ~all(patts' == patts_shuff')
+    %     %             disp('hola')
+    %     %         end
+    %     %         shuffled_A_1d = shuffled_A_1d';
+    %     %     else
+    %     %         shuffled_A_1d = shuffled_A;
+    %     %     end
+    %     %     psh_AB_tmp = prob_estimator_simple([shuffled_A_1d, B_t]);
+    %     %     if k > 1 && size(psh_AB_tmp,1)<size(psh_AB_sum,1)
+    %     %         psh_AB_tmp = [psh_AB_tmp; zeros(size(psh_AB_sum,1)-size(psh_AB_tmp,1),size(psh_AB_tmp,2))];
+    %     %     end
+    %     %     if k > 1 && size(psh_AB_tmp,1)>size(psh_AB_sum,1)
+    %     %         psh_AB_sum = [psh_AB_sum; zeros(size(psh_AB_tmp,1)-size(psh_AB_sum,1),size(psh_AB_tmp,2))];
+    %     %     end
+    %     %     psh_AB_sum = psh_AB_sum + psh_AB_tmp;
+    %     % end
+    %     % pind_ABtest = psh_AB_sum ./ num_shuffles;
+    %     % pind_A_B = (pind_ABtest' ./ p_B)';
+    %     % pind_A = sum(pind_ABtest, 2);
+    % 
+    %     % UniqueA = unique(A_t);
+    %     % UniqueB = unique(B_t);
+    %     % plin_A_B = [];
+    %     % [~,edgesall] = histcounts(FullA_t, 'BinMethod','integers');
+    %     % [a1d, patts] = reduce_dim(FullA_t', 1);
+    %     % nbinsA = {};
+    %     % for k=1:size(FullA_t,2)
+    %     %     nbinsA{k} =  1:length(unique(FullA_t(:,k)));
+    %     % end
+    %     % dim_to_collapse = size(FullA_t,2);
+    %     % [resps_grid{1:dim_to_collapse}] = ndgrid(nbinsA{:});
+    %     % resps_grid = reshape(cat(dim_to_collapse+1, resps_grid{:}), [], dim_to_collapse);
+    %     % resps_gridc = mat2cell(resps_grid', ones(1,size(resps_grid',1)), size(resps_grid',2));
+    %     % pind_A_B= [];
+    %     % for k=1:length(UniqueB)
+    %     %     stimA_t = FullA_t(B_t==UniqueB(k),:);
+    %     %     Ac = mat2cell(stimA_t', ones(1,size(stimA_t',1)), size(stimA_t',2));                 % Split Matrix Into Cells By Row
+    %     %     [hcell,~] = cellfun(@(X) histcounts(X',edgesall, 'Normalization', 'probability'), Ac, 'Uni',0);   % Do ‘histcounts’ On Each Column
+    %     %     hcell2 =cellfun(@(X, Y) X(Y), hcell, resps_gridc, 'Uni', 0);
+    %     %     condprob = cell2mat(hcell2);
+    %     %     pind_Ared_b = prod(condprob,1);
+    %     %     pind_A_B = [pind_A_B pind_Ared_b'];
+    %     % end
+    %     % % pind_A_B = plin_A_B;
+    %     % pind_AB = pind_A_B;% * p_B(p_B>0);
+    %     % for rowi=1:size(pind_AB,1)
+    %     %     pind_AB(rowi,:) = pind_A_B(rowi,:) .* p_B';
+    %     % end
+    %     % zero_positions = find(p_B == 0);
+    %     % if length(p_B) > size(pind_A_B,2)
+    %     %     disp('hola')
+    %     %     for zp=1:length(zero_positions)
+    %     %         % Define the row of zeros
+    %     %         new_col = zeros(size(pind_AB, 1),1);  % A col of zeros with the same number of rows as A
+    %     %         % Specify the location where you want to insert the new col
+    %     %         col_to_insert = zero_positions(zp);
+    %     %         % Insert the new col
+    %     %         if col_to_insert ==1
+    %     %             pind_AB = [new_col, pind_AB];
+    %     %         elseif col_to_insert == length(p_B)
+    %     %             pind_AB = [pind_AB, new_col];
+    %     %         else
+    %     %             pind_AB = [pind_AB(:, 1:col_to_insert-1), new_col, pind_AB(:, col_to_insert:end)];
+    %     %         end
+    %     % 
+    %     %     end
+    %     % end
+    %     % pind_A = sum(pind_AB, 2);
+    % 
+    % 
+    % end
 
-        UniqueA = unique(A_t);
-        UniqueB = unique(B_t);
-        plin_A_B = [];
-        [~,edgesall] = histcounts(FullA_t, 'BinMethod','integers');
+%% --- Independent Conditional (Pind(A|B)) and its B-marginal (Pind(A))
+if any(strcmp(reqOutputs,'Pind(A)')) || any(strcmp(reqOutputs,'Pind(A|B)'))
+    % Canonical pattern table (values) used by p_A
+    [~, A_patterns] = reduce_dim(FullA_t', 1);     % M x K (values, NOT indices)
+    M = size(A_patterns,1);
+    K = size(A_patterns,2);
 
-        nbinsA = {};
-        for k=1:size(FullA_t,2)
-            nbinsA{k} =  1:length(unique(FullA_t(:,k)));
-        end
-        dim_to_collapse = size(FullA_t,2);
-        [resps_grid{1:dim_to_collapse}] = ndgrid(nbinsA{:});
-        resps_grid = reshape(cat(dim_to_collapse+1, resps_grid{:}), [], dim_to_collapse);
-        resps_gridc = mat2cell(resps_grid', ones(1,size(resps_grid',1)), size(resps_grid',2));
-        pind_A_B= [];
-        for k=1:length(UniqueB)
-            stimA_t = FullA_t(B_t==UniqueB(k),:);
-            Ac = mat2cell(stimA_t', ones(1,size(stimA_t',1)), size(stimA_t',2));                 % Split Matrix Into Cells By Row
-            [hcell,~] = cellfun(@(X) histcounts(X',edgesall, 'Normalization', 'probability'), Ac, 'Uni',0);   % Do ‘histcounts’ On Each Column
-            hcell2 =cellfun(@(X, Y) X(Y), hcell, resps_gridc, 'Uni', 0);
-            condprob = cell2mat(hcell2);
-            pind_Ared_b = prod(condprob,1);
-            pind_A_B = [pind_A_B pind_Ared_b'];
-        end
-        % pind_A_B = plin_A_B;
-        pind_AB = pind_A_B;% * p_B(p_B>0);
-        for rowi=1:size(pind_AB,1)
-            pind_AB(rowi,:) = pind_A_B(rowi,:) .* p_B';
-        end
-        zero_positions = find(p_B == 0);
-        if length(p_B) > size(pind_A_B,2)
-            for zp=length(zero_positions)
-                % Define the row of zeros
-                new_col = zeros(size(pind_AB, 1),1);  % A col of zeros with the same number of rows as A
-                % Specify the location where you want to insert the new col
-                col_to_insert = zero_positions(zp);
-                % Insert the new col
-                if col_to_insert ==1
-                    pind_AB = [new_col, pind_AB];
-                elseif col_to_insert == length(p_B)
-                    pind_AB = [pind_AB, new_col];
-                else
-                    pind_AB = [pind_AB(:, 1:col_to_insert-1), new_col, pind_AB(:, col_to_insert:end)];
-                end
-
-            end
-        end
-        pind_A = sum(pind_AB, 2);
-
+    % Global unique value sets per A-dimension (same convention as reduce_dim)
+    resps_all = cell(1,K);
+    for k = 1:K
+        resps_all{k} = unique(FullA_t(:,k));       % sorted values
     end
+
+    % Map pattern VALUES -> INDICES per dimension (so we can index marginals safely)
+    A_patterns_idx = zeros(M, K);
+    for k = 1:K
+        [tf,pos] = ismember(A_patterns(:,k), resps_all{k});
+        % if any pattern had a value not present in resps_all (shouldn't happen), mark 0
+        pos(~tf) = 0;
+        A_patterns_idx(:,k) = pos;
+    end
+
+    % Ensure B_t and p_B exist and are 1..nB ranked (as in your earlier code)
+    if ~exist('B_t','var') || ~exist('p_B','var')
+        B_t_raw = data_t.B;
+        uv = unique(B_t_raw);
+        ranks = 1:length(uv);
+        B_t = arrayfun(@(x) ranks(uv == x), B_t_raw);
+        p_B = prob_estimator_simple(B_t);          % column vector length nB
+    end
+    nB = numel(p_B);
+
+    % -------- Conditional independent Pind(A|B) --------
+    pind_A_B = zeros(M, nB);                       % default zeros
+    for bi = 1:nB
+        sel = (B_t == bi);
+        if ~any(sel), continue; end
+
+        % Per-dimension conditionals aligned to resps_all{k}
+        marg_b = cell(1,K);
+        total_b = sum(sel);
+        for k = 1:K
+            vals = FullA_t(sel, k);                        % values when B=bi
+            [tf,pos] = ismember(vals, resps_all{k});       % -> indices 1..|resps_all{k}|
+            cntk = accumarray(pos(tf), 1, [numel(resps_all{k}), 1]);
+            marg_b{k} = cntk / total_b;                    % P(A_k=i | B=bi)
+        end
+
+        % Product across dims on the SAME pattern rows (using indices)
+        col = ones(M,1);
+        for r = 1:M
+            pr = 1;
+            for k = 1:K
+                idxk = A_patterns_idx(r,k);                % index into resps_all{k}
+                if idxk < 1 || idxk > numel(marg_b{k}) || marg_b{k}(idxk) == 0
+                    pr = 0; break;                         % missing/unseen -> zero
+                end
+                pr = pr * marg_b{k}(idxk);
+            end
+            col(r) = pr;
+        end
+
+        % Normalize column if there is mass
+        s = sum(col);
+        if s > 0
+            col = col / s;
+        else
+            col = zeros(M,1);
+        end
+        pind_A_B(:, bi) = col;
+    end
+
+    % -------- Define Pind(A) as the B-marginal of Pind(A|B) --------
+    pind_A = pind_A_B * p_B;                               % M x 1
+end
+
 
 
 
