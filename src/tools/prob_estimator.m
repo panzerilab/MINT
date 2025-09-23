@@ -330,7 +330,7 @@ for t = 1:max(1, nTimepoints)
         end
         zero_positions = find(p_B == 0);
         if length(p_B) > size(pind_A_B,2)
-            for zp=length(zero_positions)
+            for zp=1:length(zero_positions)
                 % Define the row of zeros
                 new_col = zeros(size(pind_AB, 1),1);  % A col of zeros with the same number of rows as A
                 % Specify the location where you want to insert the new col
@@ -422,4 +422,5 @@ function products = calculate_products(A)
     % Reshape the output to a proper size
     products = reshape(products, [], num_cols^num_rows);
 end
+
 end
