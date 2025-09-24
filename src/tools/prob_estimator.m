@@ -357,81 +357,127 @@ for t = 1:max(1, nTimepoints)
     % end
 
 
-%% --- Independent Conditional (Pind(A|B)) and its B-marginal (Pind(A))
-if any(strcmp(reqOutputs,'Pind(A)')) || any(strcmp(reqOutputs,'Pind(A|B)'))
-    % Canonical pattern table (values) used by p_A
-    [~, A_patterns] = reduce_dim(FullA_t', 1);     % M x K (values, NOT indices)
-    M = size(A_patterns,1);
-    K = size(A_patterns,2);
+%% --- Independent models: abridged (Pinab, Pindab) and full-support (Pind, Pind|B)
+if any(ismember(reqOutputs, {'Pind(A)','Pind(A|B)','Pinab(A)','Pindab(A|B)'}))
+    % ===== Canonical (abridged) pattern table from reduce_dim: VALUES (not indices)
+    [~, A_patterns_val] = reduce_dim(FullA_t', 1);   % M x K
+    M = size(A_patterns_val,1);
+    K = size(A_patterns_val,2);
 
-
-    % Global unique value sets per A-dimension (same convention as reduce_dim)
+    % ===== Global unique VALUE sets per A-dimension (sorted; matches reduce_dim)
     resps_all = cell(1,K);
+    nbins     = zeros(1,K);
     for k = 1:K
-        resps_all{k} = unique(FullA_t(:,k));       % sorted values
+        resps_all{k} = unique(FullA_t(:,k));
+        nbins(k)     = numel(resps_all{k});
     end
 
-    % Map pattern VALUES -> INDICES per dimension (so we can index marginals safely)
+    % ===== Map abridged pattern VALUES -> per-dim INDICES (safe indexing)
     A_patterns_idx = zeros(M, K);
     for k = 1:K
-        [tf,pos] = ismember(A_patterns(:,k), resps_all{k});
-        % if any pattern had a value not present in resps_all (shouldn't happen), mark 0
-        pos(~tf) = 0;
+        [tf,pos] = ismember(A_patterns_val(:,k), resps_all{k});
+        pos(~tf) = 0;                       % should not happen; will zero-out later
         A_patterns_idx(:,k) = pos;
     end
 
-    % Ensure B_t and p_B exist and are 1..nB ranked (as in your earlier code)
+    % ===== Ensure B bins & p_B exist and are 1..nB ranked (as you already do)
     if ~exist('B_t','var') || ~exist('p_B','var')
         B_t_raw = data_t.B;
         uv = unique(B_t_raw);
         ranks = 1:length(uv);
         B_t = arrayfun(@(x) ranks(uv == x), B_t_raw);
-        p_B = prob_estimator_simple(B_t);          % column vector length nB
+        p_B = prob_estimator_simple(B_t);    % column vector (nB x 1)
     end
     nB = numel(p_B);
 
-    % -------- Conditional independent Pind(A|B) --------
-    pind_A_B = zeros(M, nB);                       % default zeros
-    for bi = 1:nB
-        sel = (B_t == bi);
-        if ~any(sel), continue; end
-
-        % Per-dimension conditionals aligned to resps_all{k}
-        marg_b = cell(1,K);
-        total_b = sum(sel);
-        for k = 1:K
-            vals = FullA_t(sel, k);                        % values when B=bi
-            [tf,pos] = ismember(vals, resps_all{k});       % -> indices 1..|resps_all{k}|
-            cntk = accumarray(pos(tf), 1, [numel(resps_all{k}), 1]);
-            marg_b{k} = cntk / total_b;                    % P(A_k=i | B=bi)
-        end
-
-        % Product across dims on the SAME pattern rows (using indices)
-        col = ones(M,1);
-        for r = 1:M
-            pr = 1;
-            for k = 1:K
-                idxk = A_patterns_idx(r,k);                % index into resps_all{k}
-                if idxk < 1 || idxk > numel(marg_b{k}) || marg_b{k}(idxk) == 0
-                    pr = 0; break;                         % missing/unseen -> zero
-                end
-                pr = pr * marg_b{k}(idxk);
-            end
-            col(r) = pr;
-        end
-
-        % Normalize column if there is mass
-        s = sum(col);
-        if s > 0
-            col = col / s;
-        else
-            col = zeros(M,1);
-        end
-        pind_A_B(:, bi) = col;
+    % ===== Unconditional marginals P(A_k) on full supports
+    marg_all = cell(1,K);
+    for k = 1:K
+        [tf,pos] = ismember(FullA_t(:,k), resps_all{k});
+        cntk = accumarray(pos(tf), 1, [nbins(k), 1]);
+        marg_all{k} = cntk / sum(cntk);
     end
 
-    % -------- Define Pind(A) as the B-marginal of Pind(A|B) --------
-    pind_A = pind_A_B * p_B;                               % M x 1
+    % ===== Conditional marginals P(A_k | B=b) on full supports
+    marg_b_all = cell(nB, K);   % each cell is a column vector (nbins(k) x 1)
+    for bi = 1:nB
+        sel = (B_t == bi);
+        total_b = sum(sel);
+        for k = 1:K
+            if total_b == 0
+                marg_b_all{bi,k} = zeros(nbins(k),1);
+            else
+                vals = FullA_t(sel, k);
+                [tf,pos] = ismember(vals, resps_all{k});
+                cntk = accumarray(pos(tf), 1, [nbins(k), 1]);
+                marg_b_all{bi,k} = cntk / total_b;
+            end
+        end
+    end
+
+    % ---------------------------------------------------------------------
+    % A) ABRIDGED versions (aligned to p_A patterns): Pinab(A|B), Pinab(A)
+    % ---------------------------------------------------------------------
+    if any(strcmp(reqOutputs,'Pindab(A|B)')) || any(strcmp(reqOutputs,'Pinab(A)'))
+        % Column-wise conditional products over abridged rows
+        pindab_A_B = zeros(M, nB);
+        for bi = 1:nB
+            col = ones(M,1);
+            for r = 1:M
+                pr = 1;
+                for k = 1:K
+                    idxk = A_patterns_idx(r,k);
+                    if idxk < 1 || idxk > nbins(k)
+                        pr = 0; break;
+                    end
+                    pk = marg_b_all{bi,k}(idxk);
+                    if pk == 0
+                        pr = 0; break;
+                    end
+                    pr = pr * pk;
+                end
+                col(r) = pr;
+            end
+            s = sum(col);
+            if s > 0, col = col / s; else, col = zeros(M,1); end
+            pindab_A_B(:,bi) = col;
+        end
+        Pinab_A_B = pindab_A_B;              % rename for clarity
+        Pinab_A   = Pinab_A_B * p_B;         % B-marginal of abridged conditional
+    end
+
+    % ---------------------------------------------------------------------
+    % B) FULL-SUPPORT versions (all Cartesian patterns): Pind(A|B), Pind(A)
+    % ---------------------------------------------------------------------
+    if any(strcmp(reqOutputs,'Pind(A|B)')) || any(strcmp(reqOutputs,'Pind(A)'))
+        % Build full Cartesian grid of per-dim INDICES
+        idx_lists = cell(1,K);
+        for k = 1:K, idx_lists{k} = 1:nbins(k); end
+        [grids{1:K}] = ndgrid(idx_lists{:});
+        grid_idx = reshape(cat(K+1, grids{:}), [], K);   % (P x K); P=prod(nbins)
+
+        % Conditional: each column bi is product_k marg_b_all{bi,k}(grid_idx(p,k))
+        P = size(grid_idx,1);
+        Pind_A_B = zeros(P, nB);
+        for bi = 1:nB
+            col = ones(P,1);
+            for k = 1:K
+                col = col .* marg_b_all{bi,k}( grid_idx(:,k) );
+            end
+            s = sum(col);
+            if s > 0, col = col / s; else, col = zeros(P,1); end
+            Pind_A_B(:,bi) = col;
+        end
+        % Unconditional (B-marginal)
+        Pind_A = Pind_A_B * p_B;             % (P x 1)
+    end
+
+    % Make the four outputs available under their requested names
+    % (We only assign variables that were actually computed.)
+    if exist('Pinab_A','var'),  PinabA_out   = Pinab_A;    end
+    if exist('Pinab_A_B','var'),PinabAB_out  = Pinab_A_B;  end
+    if exist('Pind_A','var'),   PindA_out    = Pind_A;     end
+    if exist('Pind_A_B','var'), PindAB_out   = Pind_A_B;   end
 end
 
 
@@ -440,18 +486,26 @@ end
     %% Collate all results
     for outidx = 1:length(reqOutputs)
         switch reqOutputs{outidx}
-            case 'P(A)', prob_dist_result = p_A;
-            case 'Plin(A)', prob_dist_result = plin_A;
-            case 'P(A,B)', prob_dist_result = p_AB;
-            case 'P(A|B)', prob_dist_result = p_A_B;
-            case 'P(B)', prob_dist_result = p_B;
-            case 'Pind(A)', prob_dist_result = pind_A;
-            case 'Pind(A|B)', prob_dist_result = pind_A_B;
-            case 'Psh(A|B)', prob_dist_result = psh_A_B;
-            case 'Psh(A)', prob_dist_result = psh_A;
-            case 'P(A,B,C)', prob_dist_result = p_ABC;
-            case 'P(all)', prob_dist_result = p_all;
+            case 'P(A)',           prob_dist_result = p_A;
+            case 'Plin(A)',        prob_dist_result = plin_A;
+            case 'P(A,B)',         prob_dist_result = p_AB;
+            case 'P(A|B)',         prob_dist_result = p_A_B;
+            case 'P(B)',           prob_dist_result = p_B;
+    
+            % NEW abridged (pattern-aligned) names:
+            case 'Pinab(A)',       prob_dist_result = PinabA_out;
+            case 'Pindab(A|B)',    prob_dist_result = PinabAB_out;
+    
+            % Existing (now full-support) names:
+            case 'Pind(A)',        prob_dist_result = PindA_out;
+            case 'Pind(A|B)',      prob_dist_result = PindAB_out;
+    
+            case 'Psh(A|B)',       prob_dist_result = psh_A_B;
+            case 'Psh(A)',         prob_dist_result = psh_A;
+            case 'P(A,B,C)',       prob_dist_result = p_ABC;
+            case 'P(all)',         prob_dist_result = p_all;
         end
+
 
 
         % If multiple timepoints, store result per timepoint
