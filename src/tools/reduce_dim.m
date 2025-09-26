@@ -1,111 +1,84 @@
 function [R_1d, resps_grid] = reduce_dim(R_Nd, dim_to_collapse)
-% *function R_1d = reduce_dim(R_Nd, dim_to_collapse)*
+% *function [R_1d, resps_grid] = reduce_dim(R_Nd, dim_to_collapse)*
 %
-% The reduce_dim function takes a multi-dimensional array and collapses the specified 
-% dimension into a single dimension, effectively reducing the overall dimensionality 
-% of the array. This is particularly useful for simplifying data representation 
-% while preserving unique values from the collapsed dimension.
+% Collapses the specified dimension into a single index dimension by
+% enumerating ALL possible patterns (Cartesian products) formed by the
+% unique values taken along the collapsed dimension. The index at each
+% remaining position points to the corresponding row in resps_grid.
 %
 % Inputs:
-%   - R_Nd: A multi-dimensional array with dimensions greater than or equal to 2.
-%            The array can represent various data structures, such as trials, 
-%            timepoints, or other features.
-%
-%   - dim_to_collapse: (Optional) An integer specifying which dimension to collapse.
-%                      If not provided, the first dimension is collapsed by default.
+%   - R_Nd : N-D array (N >= 2)
+%   - dim_to_collapse : dimension to collapse (default = 1)
 %
 % Outputs:
-%   - R_1d: A reduced-dimensional array where the specified dimension has been collapsed. 
-%            The resulting structure will have one less dimension than the original 
-%            input, maintaining the unique values from the collapsed dimension.
+%   - R_1d : array of size [1, size(R_Nd, setdiff(1:end, dim_to_collapse))]
+%            containing indices into resps_grid
+%   - resps_grid : M x C matrix listing ALL Cartesian patterns, where
+%                  C = size(R_Nd, dim_to_collapse) and
+%                  M = prod(cellfun(@numel, resps)) is the number of combos
 %
-% Note: 
-% The resulting array R_1d contains the indices of the unique values from the 
-% collapsed dimension. This allows for efficient representation of the data while 
-% enabling further analysis without losing critical information.
+% Note:
+%   Every observed pattern in R_Nd must appear in resps_grid because
+%   resps_grid is built from the per-component uniques (Cartesian product).
 %
-% EXAMPLE
-% Suppose we have a 3D array representing responses from multiple trials, 
-% with the dimensions representing trials, features, and observations:
-% 
-% R_Nd = randn(4, 5, 3);  
-% To reduce the dimensionality by collapsing the first dimension, the function can be called as:
-% R_1d = reduce_dim(R_Nd, 1);
-% R_1d will then be a 1 x 5 x 3 double.
+% EXAMPLE:
+%   R_Nd = randi(3,[4,5,3]);                % values 1..3
+%   [R_1d, resps_grid] = reduce_dim(R_Nd,1); % collapse dim 1 (size 4)
 %
-% Alternatively, to collapse the second dimension, you would call:
-% R_1d = reduce_dim(R_Nd, 2);
-% R_1d will then be a 4 x 1 x 3 double.
-
 % Copyright (C) 2024 Gabriel Matias Lorenz, Nicola Marie Engel
-% This file is part of MINT.
-% This program is free software: you can redistribute it and/or modify
-% it under the terms of the GNU General Public License as published by
-% the Free Software Foundation, either version 3 of the License, or
-% (at your option) any later version.
-%
-% This program is distributed in the hope that it will be useful,
-% but WITHOUT ANY WARRANTY; without even the implied warranty of
-% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-% GNU General Public License for more details.
-%
-% You should have received a copy of the GNU General Public License
-% along with this program.  If not, see <http://www.gnu.org/licenses
-if nargin < 1
-    msg = 'Please input your data.';
-    error('reduce_dim:notEnoughInput', msg);
-end
+% This file is part of MINT. Licensed under GPLv3 or later.
 
-if nargin < 2
-    warning('reduce_dim:notEnoughInput', 'Not enough input arguments. Collapsing the first dimension by default.');
-    dim_to_collapse = 1;
-end
-if any(any(isnan(R_Nd)))
-    msg = "R_Nd contains NaNs. Aborting.";
-    error('reduce_dim:NaNInput', msg);
-end
-if size(R_Nd, dim_to_collapse) > 1
+    if nargin < 1
+        error('reduce_dim:notEnoughInput','Please input your data.');
+    end
+    if nargin < 2
+        warning('reduce_dim:notEnoughInput', ...
+            'Not enough input arguments. Collapsing the first dimension by default.');
+        dim_to_collapse = 1;
+    end
+    if any(isnan(R_Nd(:)))
+        error('reduce_dim:NaNInput','R_Nd contains NaNs. Aborting.');
+    end
+
     dims = size(R_Nd);
-    Ndims = length(dims);
-    remaining_dims = setdiff(1:length(dims), dim_to_collapse);
-    R_Nd = permute(R_Nd, [dim_to_collapse, remaining_dims]);
-    dims = size(R_Nd);
-    collapsed_dim_size = size(R_Nd, 1);
-    resps = cell(1, collapsed_dim_size);
-    for d = 1:collapsed_dim_size
-        resps{d} = unique(R_Nd(d,:));
+    Ndims = numel(dims);
+
+    % Trivial case: nothing to collapse
+    if dims(dim_to_collapse) <= 1
+        R_1d = R_Nd;
+        resps_grid = R_Nd(:).'; % degenerate listing
+        return;
     end
-    [resps_grid{1:collapsed_dim_size}] = ndgrid(resps{:});
-    resps_grid = reshape(cat(collapsed_dim_size+1, resps_grid{:}), [], collapsed_dim_size);
-    R_1d = zeros([1,dims(2:end)]);
-    nRemainingDims = length(remaining_dims);
-    indices = cell(1, nRemainingDims);
-    for d = 1:nRemainingDims
-        indices{d} = 1:size(R_Nd, remaining_dims(d));
+
+    % Bring the collapsed dimension to the front for easy reshaping
+    remaining_dims = setdiff(1:Ndims, dim_to_collapse, 'stable');
+    R_perm = permute(R_Nd, [dim_to_collapse, remaining_dims]);
+
+    C = size(R_perm,1);                % length of collapsed dimension
+    rest_shape = size(R_perm);         % [C, d2, d3, ...]
+    rest_shape = rest_shape(2:end);    % [d2, d3, ...]
+    K = prod(rest_shape);              % number of positions in remaining dims
+
+    % Flatten so each column corresponds to one position in the remaining dims
+    % Patterns are rows of size C (one value per collapsed component)
+    R2 = reshape(R_perm, C, K);   % C x K
+    patterns = R2.';              % K x C
+
+    % Unique values per component (across all positions), then Cartesian product
+    resps = cell(1, C);
+    for c = 1:C
+        resps{c} = unique(R2(c, :));   % sorted uniques per component
     end
-    [indices_grid{1:nRemainingDims}] = ndgrid(indices{:});
-    indices_grid = reshape(cat(nRemainingDims+1, indices_grid{:}), [], nRemainingDims);
-    if Ndims == 2
-        [~, idx] = ismember(R_Nd', resps_grid, 'rows');
-        R_1d(idx > 0) = idx(idx > 0);
-    elseif Ndims == 3
-        for k = 1:dims(2)
-            slice = squeeze(R_Nd(:,k,:))';
-            [~, idx] = ismember(slice, resps_grid, 'rows');
-            R_1d(1,k,:) = idx;
-        end
-    else
-        for k = 1:size(indices_grid,1)
-            idx = num2cell(indices_grid(k,:));
-            R_Nd_slice = R_Nd(:, idx{:});
-            logical_idx = all(R_Nd_slice' == resps_grid, 2);
-            loc = find(logical_idx);
-            R_1d(:, idx{:}) = loc;
-        end
-    end
-else
-    R_1d = R_Nd;
-end
+
+    % Build Cartesian product grid: M x C
+    [grid_cells{1:C}] = ndgrid(resps{:});
+    resps_grid = reshape(cat(C+1, grid_cells{:}), [], C);  % M x C
+
+    % Map every observed pattern to its row in the Cartesian grid
+    % Since resps_grid was built from per-component uniques, every pattern must match.
+    [~, idx] = ismember(patterns, resps_grid, 'rows');     % K x 1
+
+    % Reshape to output size [1, rest_shape]
+    R_1d = reshape(idx, [1, rest_shape]);
 
 end
-
