@@ -125,7 +125,7 @@ for t = 1:max(1, nTimepoints)
     end
 
     % Precompute row -> pattern indices for speed
-    A_idx = map_rows_to_patterns(A_full, A_patterns);     % nTrials x 1 in 1..M_A
+    A_idx = map_rows_to_patterns(A_nd', A_patterns);     % nTrials x 1 in 1..M_A
     if ~isempty(B_full), B_idx = map_rows_to_patterns(B_full, B_patterns); end
     if ~isempty(C_full), C_idx = map_rows_to_patterns(C_full, C_patterns); end
 
@@ -225,7 +225,7 @@ for t = 1:max(1, nTimepoints)
     end
 
     %% ---------- Shuffled models (keep full A support) ----------
-    if any(strcmp(reqOutputs,'Psh(A|B)')) || any(strcmp(reqOutputs,'Psh(A)')) || any(strcmp(reqOutputs,'Pind(A|B)'))
+    if any(strcmp(reqOutputs,'Psh(A|B)')) || any(strcmp(reqOutputs,'Psh(A)')) %|| any(strcmp(reqOutputs,'Pind(A|B)'))
         % Shuffle A *within* B (preserving B's distribution)
         shuffled_A = shuffle_core(data_1d_t.B, A_full, 1, [1 0]);  % returns nTrials x KA values
         % Map shuffled rows to A's full support
