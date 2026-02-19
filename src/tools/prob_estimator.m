@@ -528,13 +528,3 @@ function v = tensor_from_pk(pkCell, nAkLocal)
 end
 
 
-function idx1d = reduce_dim_for_time(R) % R: dims x T x N
-    if ndims(R)==2, R = reshape(R, size(R,1), 1, size(R,2)); end
-    [K,T,N] = size(R);
-    idx1d = zeros(N,T);
-    for tt = 1:T
-        X = squeeze(R(:,tt,:)).';   % N x K
-        [levels,~,idx] = unique(X, 'rows','stable');
-        idx1d(:,tt) = idx;          % 1..|levels|
-    end
-end
