@@ -295,11 +295,7 @@ for t = 1:max(1, nTimepoints)
 
     %% ---------- P(A) (full support over A) ----------
     if any(strcmp(reqOutputs,'P(A)')) || any(strcmp(reqOutputs,'Pind(A)'))
-        try
-            p_A = accumarray(A_idx, 1, [size(A_patterns,1), 1]) / nTrials_local;
-        catch 
-            disp('hola')
-        end
+        p_A = accumarray(A_idx, 1, [size(A_patterns,1), 1]) / nTrials_local;
     end
 
     %% ---------- P(A,B) (full support: |A| x |B|) ----------
