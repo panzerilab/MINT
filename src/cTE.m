@@ -227,17 +227,17 @@ if ~opts.recall
             A_delayed(:,tau,:,:) = inputs{1}(:,start_p:end_p,:);
         end
         B_delayed =  zeros(DimsB(1), length(Btau), tPoints, nTrials);
-        B_delayed(:,1,:,:) = inputs{1}(:,(presB-tPoints+1):presB,:);
+        B_delayed(:,1,:,:) = inputs{2}(:,(presB-tPoints+1):presB,:);
         for tau = 2:length(Btau)
             start_p = (presB-Btau(tau))-tPoints+1;
             end_p = (presB-Btau(tau));
-            B_delayed(:,tau,:,:) = inputs{1}(:,start_p:end_p,:);
+            B_delayed(:,tau,:,:) = inputs{2}(:,start_p:end_p,:);
         end
         C_delayed =  zeros(DimsC(1), length(Ctau), tPoints, nTrials);
         for tau = 1:length(Ctau)
             start_p = (presC-Ctau(tau))-tPoints+1;
             end_p = (presC-Ctau(tau));
-            C_delayed(:,tau,:,:) = inputs{1}(:,start_p:end_p,:);
+            C_delayed(:,tau,:,:) = inputs{3}(:,start_p:end_p,:);
         end
         A_pres = A_delayed(:, 1, :);
         B_pres = B_delayed(:, 1, :);
@@ -276,11 +276,6 @@ if ~opts.recall
                 error('cTE:InvalidInput', msg);
             end
         end
-        A_pres = squeeze(A_delayed(:, 1, :));
-        B_pres = squeeze(B_delayed(:, 1, :));
-        B_past = squeeze(B_delayed(:, 2:end, :));
-        A_past = squeeze(A_delayed(:, 2:end, :));
-        S = inputs{end};
         A_pres = reshape(A_delayed(:, 1, :), DimsA(1), DimsA(3));  % Shape [nDims, nTrials]
         B_pres = reshape(B_delayed(:, 1, :), DimsB(1), DimsB(3));  % Shape [nDims, nTrials]
 

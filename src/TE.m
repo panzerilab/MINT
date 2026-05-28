@@ -203,11 +203,11 @@ if ~opts.recall
             A_delayed(:,tau_idx,:,:) = inputs{1}(:,start_p:end_p,:);
         end
         B_delayed =  zeros(DimsB(1), length(Btau), tPoints, nTrials);
-        B_delayed(:,1,:,:) = inputs{1}(:,(presB-tPoints+1):presB,:);
+        B_delayed(:,1,:,:) = inputs{2}(:,(presB-tPoints+1):presB,:);
         for tau = 2:length(Btau)
             start_p = (presB-Btau(tau))-tPoints+1;
             end_p = (presB-Btau(tau));
-            B_delayed(:,tau,:,:) = inputs{1}(:,start_p:end_p,:);
+            B_delayed(:,tau,:,:) = inputs{2}(:,start_p:end_p,:);
         end
         A_pres = A_delayed(:, 1, :);
         B_pres = B_delayed(:, 1, :);
@@ -361,28 +361,10 @@ for i = 1:length(indices)
                 H_Bpres_Bpast = H_values{strcmp(required_entropies, 'H(B_pres|B_past)')};
                 H_Bpres_Bpast_Apast = H_values{strcmp(required_entropies, 'H(B_pres|B_past,A_past)')};                
                 TE_values{i} = H_Bpres_Bpast{1} - H_Bpres_Bpast_Apast{1};                   
-        case 'TE(B->A)'           
+        case 'TE(B->A)'
                 H_Apres_Apast = H_values{strcmp(required_entropies, 'H(A_pres|A_past)')};
                 H_Apres_Apast_Bpast = H_values{strcmp(required_entropies, 'H(A_pres|A_past,B_past)')};
                 TE_values{i} = H_Apres_Apast{1} - H_Apres_Apast_Bpast{1};
-        case 'TEnsb(A->B)'
-                H_xy      = 0;
-                H_yypres  = 0;
-                H_xyypres = 0;
-                H_y       = 0;
-                TE_values{i} = I_bpres_ab - I_bpres_b;                   
-        case 'TEnsb(B->A)'           
-                I_apres_ba = 0;
-                I_apres_a = 0;
-                TE_values{i} = I_apres_ba - I_apres_a;   
-        case 'TEksg(A->B)'         
-                I_bpres_ab = MIxnyn_matlab(B_pres, [A_past; B_past], 6, pwd);
-                I_bpres_b  = MIxnyn_matlab(B_pres, B_past, 6, pwd);
-                TE_values{i} = I_bpres_ab - I_bpres_b;    
-        case 'TEksg(B->A)'           
-                I_apres_ba = MIxnyn_matlab(A_pres, [B_past; A_past], 6, pwd);
-                I_apres_a  = MIxnyn_matlab(A_pres, A_past, 6, pwd);
-                TE_values{i} = I_apres_ba - I_apres_a;   
     end
 end
 end

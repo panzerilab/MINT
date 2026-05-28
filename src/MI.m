@@ -170,7 +170,7 @@ if DimsA(1) > 1 && ~opts.isKSG
         inputs_1d{3} = inputs_b{1};
     end 
 end
-if DimsB(1) > 1 && ~~opts.isKSG
+if DimsB(1) > 1 && ~opts.isKSG
     inputs_1d{2} = reduce_dim(inputs_b{2}, 1);
 end
 if DimsA(2:end) ~= DimsB(2:end)

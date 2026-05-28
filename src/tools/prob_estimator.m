@@ -131,11 +131,6 @@ for var = 1:length(inputs)
 
 end
 
-%% --- Multi-time handling
-if nTimepoints > 1
-    prob_dists_time = cell(nTimepoints, length(reqOutputs));
-end
-
 %% --- Main loop over time
 for t = 1:max(1, nTimepoints)
     clear A_t B_t C_t FullA_t p_A p_B p_AB p_A_B psh_A psh_A_B p_all p_ABC ...
@@ -292,7 +287,7 @@ for t = 1:max(1, nTimepoints)
     end
 
 
-
+  
     %% ---------- P(A) (full support over A) ----------
     if any(strcmp(reqOutputs,'P(A)')) || any(strcmp(reqOutputs,'Pind(A)'))
         p_A = accumarray(A_idx, 1, [size(A_patterns,1), 1]) / nTrials_local;
@@ -484,20 +479,6 @@ function M = normalize_cols(M)
     M = M ./ s;
 end
 
-function v = normvec(v)
-    s = sum(v);
-    if s > 0, v = v / s; end
-end
-
-end
-        % Helper: balanced Kronecker product over a cell array of column vectors
-function v = kronall(vecs)
-    if numel(vecs) == 1
-        v = vecs{1};
-    else
-        mid = floor(numel(vecs) / 2);
-        v = kron(kronall(vecs(1:mid)), kronall(vecs(mid+1:end)));
-    end
 end
 
 function v = tensor_from_pk(pkCell, nAkLocal)

@@ -75,7 +75,7 @@ function [FIT_values, FIT_plugin, FIT_nullDist, atom1, atom2] = FIT(inputs, vara
 %   To compute the Feature-specific Information Transfer from two neural populations X1 and X2 about S,
 %   the function can be called as follows:
 %   inputs = {X1, X2, S};
-%   FIT_values = FIT({X1, X2, S}s, {'FIT(A->B;S)', 'FIT(B->A;S)'}, opts);
+%   FIT_values = FIT({X1, X2, S}, {'FIT(A->B;S)', 'FIT(B->A;S)'}, opts);
 %
 % Here, 'opts' represents additional options you may want to include (see varargin options)
 

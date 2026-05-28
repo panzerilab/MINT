@@ -127,8 +127,8 @@ end
 if ~opts.recall
     nSources = length(inputs)-1;
     if nSources < 3
-        msg = 'Two sources are required.';
-        error('FIT:NotEnoughSources', msg);
+        msg = 'Three sources (A, B, C) are required.';
+        error('cFIT:NotEnoughSources', msg);
     end
     DimsA = size(inputs{1});
     DimsB = size(inputs{2});
@@ -357,9 +357,11 @@ for i = 1:length(indices)
         case 'cFIT(B->A;S|C)'
             Prob_d = prob_dists{strcmp(required_distributions, 'P(A_pres,B_past,A_past,C_past,S)')};
             atoms = cfit_core(Prob_d{1}, opts);
-            cFIT_values{i} = min(atoms);
-            atom1{i} = atoms(1);
-            atom2{i} = atoms(2);
+            atoms1 = min(atoms(1,1), atoms(1,2));
+            atoms2 = min(atoms(2,1), atoms(2,2));
+            cFIT_values{i} = atoms1 - atoms2;
+            atom1{i} = atoms(1,:);
+            atom2{i} = atoms(2,:);
     end
 end
 cFIT_plugin = cFIT_values;
