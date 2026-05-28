@@ -204,7 +204,7 @@ for t = 1:max(1, nTimepoints)
         A_idx = map_rows_to_patterns(A_full, A_patterns);     % nTrials x 1 in 1..M_A
     else
         A_patterns = (1:max(data_1d_t.A))';
-        A_levels = data_1d.A';
+        A_levels = data_1d_t.A;
         A_idx = A_levels;
     end
     % Precompute row -> pattern indices for speed
