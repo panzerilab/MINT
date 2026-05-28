@@ -199,7 +199,7 @@ if ~opts.recall
         B_pres = squeeze(B_delayed(:, 1, :));
         B_past = squeeze(B_delayed(:, 2:end, :));
         A_past = squeeze(A_delayed(:, 2:end, :));
-        S = squeeze(S_delayed(:, 2:end, :));
+        S = squeeze(S_delayed(:, 1, :));
         if size(A_past,1) == nTrials
             A_past = A_past';
         end

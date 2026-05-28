@@ -211,21 +211,29 @@ for t = 1:max(1, nTimepoints)
 
     %% ---------- P(all): joint over ALL inputs (full support) ----------
     if any(strcmp(reqOutputs, 'P(all)'))
-        % Concatenate all variables' full values horizontally
+        % Build support levels freshly for each input (never rely on A_levels,
+        % which is a plain numeric vector when needLin=false).
+        [~, pall_A_levels] = build_support(A_full);
         ALL_full = A_full;
-        sup_all  = A_levels;
-        if ~isempty(B_full), ALL_full = [ALL_full, B_full]; sup_all = [sup_all, B_levels]; end %#ok<AGROW>
+        sup_all  = pall_A_levels;
+        if ~isempty(B_full)
+            [~, pall_B_levels] = build_support(B_full);
+            ALL_full = [ALL_full, B_full];           %#ok<AGROW>
+            sup_all  = [sup_all, pall_B_levels];     %#ok<AGROW>
+        end
         for var = 3:length(inputs)
             letter = char(64 + var);
-            [Xpat, Xlev] = build_support(data_full_t.(letter)); %#ok<ASGLU>
-            ALL_full = [ALL_full, data_full_t.(letter)];        %#ok<AGROW>
-            sup_all  = [sup_all, Xlev];                          %#ok<AGROW>
+            [~, Xlev] = build_support(data_full_t.(letter));
+            ALL_full = [ALL_full, data_full_t.(letter)];  %#ok<AGROW>
+            sup_all  = [sup_all, Xlev];                   %#ok<AGROW>
         end
         [ALL_patterns, ~] = build_support_from_levels(sup_all);
         ALL_idx = map_rows_to_patterns(ALL_full, ALL_patterns);
 
         p_all = accumarray(ALL_idx, 1, [size(ALL_patterns,1), 1]);
         p_all = p_all / sum(p_all);
+        nLevels = cellfun(@numel, sup_all);
+        p_all = reshape(p_all, nLevels);
     end
 
     %% ---------- P(A,B,C) on full support ----------
@@ -233,20 +241,12 @@ for t = 1:max(1, nTimepoints)
         if isempty(B_full) || isempty(C_full)
             error('P(A,B,C) requested but B or C is missing.');
         end
-        % szA = size(A_patterns,1); szB = size(B_patterns,1); szC = size(C_patterns,1);
-        % lin = sub2ind([szA, szB, szC], A_idx, B_idx, C_idx);
-        % counts = accumarray(lin, 1, [szA*szB*szC, 1]);
-        % p_ABC = reshape(counts, szA, szB, szC);
-        % p_ABC = p_ABC / sum(p_ABC(:));
-
         [A,~,ia] = unique(data_1d_t.A);
         [B,~,ib] = unique(data_1d_t.B);
         [C,~,ic] = unique(data_1d_t.C);
         
         P = accumarray([ia ib ic], 1, [length(A) length(B) length(C)]);
         p_ABC = P / sum(P(:));
-
-
     end
 
     %% ---------- P(B) (full support over B) ----------
