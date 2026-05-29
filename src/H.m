@@ -216,9 +216,9 @@ for t = 1:nTimepoints
                     bias = bub(nTrials * P_B);
                 elseif strcmp(opts.bias, 'pt')
                     if nTimepoints==1
-                        bias = pt(inputs_1d{2}, nbinsA, nTrials);
+                        bias = pt(inputs_1d{2}, nbinsB, nTrials);
                     else
-                        bias = pt(inputs_1d{2}(1,t,:), nbinsA, nTrials);
+                        bias = pt(inputs_1d{2}(1,t,:), nbinsB, nTrials);
                     end
                     % bias = (nTimepoints==1) * pt(inputs_1d{2}, nbinsB, nTrials) + ...
                     %        (nTimepoints>1)  * pt(inputs_1d{2}(1,t,:), nbinsB, nTrials);

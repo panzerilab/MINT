@@ -164,11 +164,11 @@ if ~opts.recall
     DimsA = size(inputs{1});
     DimsB = size(inputs{2});
     DimsC = size(inputs{3});
-    if DimsA(3) ~= DimsB(3) || DimsA(3) ~= DimsC(3)
-        msg = sprintf('The number of trials for A (%d), B (%d) and C (%d) are not consistent. Ensure all variables have the same number of trials.', DimsA(3), DimsB(3), DimsC(3));
+    if DimsA(end) ~= DimsB(end) || DimsA(end) ~= DimsC(end)
+        msg = sprintf('The number of trials for A (%d), B (%d) and C (%d) are not consistent. Ensure all variables have the same number of trials.', DimsA(end), DimsB(end), DimsC(end));
         error('cTE:InvalidInput', msg);
     end
-    nTrials = DimsA(3);
+    nTrials = DimsA(end);
 
     nTimepointsA = DimsA(2);
     nTimepointsB = DimsB(2);
@@ -217,7 +217,7 @@ if ~opts.recall
         minA_tp = presA - max(Atau);
         minB_tp = presB - max(Btau);
         minC_tp = presC - max(Ctau);
-        tPoints = min(minA_tp,minB_tp);
+        tPoints = min([minA_tp, minB_tp, minC_tp]);
 
         A_delayed =  zeros(DimsA(1), length(Atau), tPoints, nTrials);
         A_delayed(:,1,:,:) = inputs{1}(:,(presA-tPoints+1):presA,:);
@@ -365,7 +365,7 @@ H_plugin = cell(1, length(required_entropies));
 H_shuff_all = cell(1, length(required_entropies));
 
 opts_entropy = opts;
-opts_entropy.compute_nulldist = false;
+opts_entropy.computeNulldist = false;
 for i = 1:length(required_entropies)
     switch required_entropies{i}
         case 'H(B_pres|B_past,C_past)'

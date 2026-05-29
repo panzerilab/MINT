@@ -133,7 +133,7 @@ if ~opts.recall
     DimsB = size(inputs{2});
     DimsS = size(inputs{3});
     if DimsA(end) ~= DimsB(end) || DimsA(end) ~= DimsS(end)
-        msg = sprintf('The number of trials for A (%d), B (%d) and S (%d) are not consistent. Ensure both variables have the same number of trials.',DimsA(3),DimsB(3),DimsS(3));
+        msg = sprintf('The number of trials for A (%d), B (%d) and S (%d) are not consistent. Ensure both variables have the same number of trials.',DimsA(end),DimsB(end),DimsS(end));
         error('FIT:InvalidInput', msg);
     end
 
@@ -286,6 +286,8 @@ if ~opts.recall
     if ~opts.isBinned
         inputs_b = binning({A_pres,A_past,B_pres,B_past, S} ,opts);
         opts.isBinned = true;
+    else
+        inputs_b = {A_pres, A_past, B_pres, B_past, S};
     end
     inputs_1d = inputs_b;
     % Reduce the Dimensions if necessary

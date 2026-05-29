@@ -173,7 +173,7 @@ end
 if DimsB(1) > 1 && ~opts.isKSG
     inputs_1d{2} = reduce_dim(inputs_b{2}, 1);
 end
-if DimsA(2:end) ~= DimsB(2:end)
+if ~isequal(DimsA(2:end), DimsB(2:end))
     msg = 'Inconsistent sizes of A and B';
     error('H:inconsistentSizes', msg);
 end

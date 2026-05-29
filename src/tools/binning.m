@@ -212,8 +212,8 @@ for var = 1:nVars
                     else
                         range = opts.range;
                         if length(range)==2 && range(1)<range(2)
-                            lftEdg = range(1);
-                            rgtEdg = range(2);
+                            leftEdg = range(1);
+                            rightEdg = range(2);
                         else
                             error('binningEqspace:InvalidRange. Invalid range specified for var (%d) in dimension (%d).', var, dim);
                         end

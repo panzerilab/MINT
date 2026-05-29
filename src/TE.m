@@ -148,10 +148,10 @@ if ~opts.recall
     DimsA = size(inputs{1});
     DimsB = size(inputs{2});
     if DimsA(end) ~= DimsB(end)
-        msg = sprintf('The number of trials for A (%d) and B (%d) are not consistent. Ensure both variables have the same number of trials.',DimsA(3),DimsB(3));
+        msg = sprintf('The number of trials for A (%d) and B (%d) are not consistent. Ensure both variables have the same number of trials.',DimsA(end),DimsB(end));
         error('TE:InvalidInput', msg);
     end
-    nTrials = DimsA(3);
+    nTrials = DimsA(end);
 
     nTimepointsA = DimsA(2);
     nTimepointsB = DimsB(2);
