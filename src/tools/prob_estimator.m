@@ -259,32 +259,28 @@ for t = 1:max(1, nTimepoints)
 
     %% Independent per-dimension probability distributions of A (plin_A)
     % Each row k is P(A_k = i), i over that row's own support.
-     if any(strcmp(reqOutputs,'Plin(A)'))
-        KA = size(A_full,2);                     % #dims in A at this time
-        nbinsA = zeros(1, KA);
-        for k = 1:KA
-            nbinsA(k) = numel(unique(A_nd(:,k)));  % support size for dim k
+    if any(strcmp(reqOutputs,'Plin(A)'))
+            KA = size(A_full,2);                     % #dims in A at this time
+            nbinsA = zeros(1, KA);
+            for k = 1:KA
+                nbinsA(k) = numel(unique(A_full(:,k)));  
+            end
+            maxbins = max(nbinsA);
+            plin_A  = zeros(KA, maxbins);
+    
+            for k = 1:KA
+                lvls = unique(A_full(:,k));         
+                vals = A_full(:,k);                  
+    
+                [~, pos] = ismember(vals, lvls);
+                pos = pos(:);
+                pos = pos(pos > 0);
+    
+                cnt = accumarray(pos, 1, [numel(lvls), 1]);
+                pk  = cnt / numel(vals);             
+                plin_A(k, 1:numel(lvls)) = pk.';
+            end
         end
-        maxbins = max(nbinsA);
-        plin_A  = zeros(KA, maxbins);
-    
-        for k = 1:KA
-            lvls = unique(A_nd(:,k));              % sorted support for dim k
-            vals = A_nd(:,k);                      % 1 x nTrials
-    
-            % Map values to indices on this dim's support
-            [~, pos] = ismember(vals, lvls);       % pos in 1..numel(lvls) or 0 if not found
-            pos = pos(:);                          % <-- ensure column
-            pos = pos(pos > 0);                    % <-- drop any zeros (robustness)
-    
-            % Counts aligned to lvls
-            cnt = accumarray(pos, 1, [numel(lvls), 1]);
-    
-            % Normalize to probabilities
-            pk  = cnt / numel(vals);               % or / nTrials_local if you prefer
-            plin_A(k, 1:numel(lvls)) = pk.';       % row k = P(A_k = i)
-        end
-    end
 
 
 
