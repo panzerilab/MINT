@@ -185,13 +185,13 @@ corr = opts.bias;
 if opts.computeNulldist == true
     nullDist_opts = opts;
     nullDist_opts.computeNulldist = false;
-    MI_nullDist = create_nullDist(inputs_b, reqOutputs, @MI, nullDist_opts);
+    MI_nullDist = create_nullDist(inputs_1d, reqOutputs, @MI, nullDist_opts);
 else
     MI_nullDist = 0;
 end
 
 if ~strcmp(corr, 'plugin') && ~strcmp(corr, 'bub') && ~strcmp(corr, 'pt')
-    [MI_values, MI_plugin] = correction(inputs_b, reqOutputs, corr,  @MI, opts);
+    [MI_values, MI_plugin] = correction(inputs_1d, reqOutputs, corr,  @MI, opts);
     return
 end
 
@@ -246,9 +246,9 @@ opts_entropies = opts;
 opts_entropies.computeNulldist = false;
 required_entropies = unique(required_entropies);
 if strcmp(corr, 'pt')
-    [H_values, H_plugin] = H(inputs_b, required_entropies, opts_entropies);
+    [H_values, H_plugin] = H(inputs_1d, required_entropies, opts_entropies);
 else
-    [H_values] = H(inputs_b, required_entropies, opts_entropies);
+    [H_values] = H(inputs_1d, required_entropies, opts_entropies);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
