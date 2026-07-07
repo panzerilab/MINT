@@ -277,7 +277,7 @@ elseif strcmp(func2str(corefunc), 'FIT') || strcmp(func2str(corefunc), 'cFIT')
     end
     for outIdx = 1:length(outputs)
         atom1_corrected{outIdx} = atom1_plugin{outIdx} - mean(addOut{1,outIdx});
-        atom2_corrected{outIdx} = atom2_plugin{outIdx} - mean(addOut{1,outIdx});
+        atom2_corrected{outIdx} = atom2_plugin{outIdx} - mean(addOut{2,outIdx});
         addOut{1,outIdx} = [addOut{1,outIdx},atom1_corrected{outIdx}];
         addOut{2,outIdx} = [addOut{2,outIdx},atom2_corrected{outIdx}];
         if  strcmp(func2str(corefunc), 'cFIT')
@@ -345,7 +345,7 @@ elseif strcmp(func2str(corefunc), 'II')
          atom1_corrected{outIdx} = atom1_plugin{outIdx} - mean(atom1_shuffall{outIdx},1);
          atom2_corrected{outIdx} = atom2_plugin{outIdx} - mean(atom2_shuffall{outIdx},1);
          addOut{1,outIdx} = atom1_shuffall{outIdx};
-         addOut{1,outIdx} = atom2_shuffall{outIdx};
+         addOut{2,outIdx} = atom2_shuffall{outIdx};
          corrected_v{outIdx} = min(atom1_corrected{outIdx},atom2_corrected{outIdx});
      end
 elseif strcmp(func2str(corefunc), 'MI') || strcmp(func2str(corefunc), 'TE') || strcmp(func2str(corefunc), 'cTE') || strcmp(func2str(corefunc), 'cMI')
