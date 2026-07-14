@@ -166,9 +166,6 @@ end
 inputs_1d = inputs_b;
 if DimsA(1) > 1 && ~opts.isKSG
     inputs_1d{1} = reduce_dim(inputs_b{1}, 1);
-    if  any(strcmp(reqOutputs,'Hlin(A)')) || any(strcmp(reqOutputs,'Hind(A)')) || any(strcmp(reqOutputs, 'Hind(A|B)'))
-        inputs_1d{3} = inputs_b{1};
-    end 
 end
 if DimsB(1) > 1 && ~opts.isKSG
     inputs_1d{2} = reduce_dim(inputs_b{2}, 1);
@@ -185,12 +182,13 @@ corr = opts.bias;
 if opts.computeNulldist == true
     nullDist_opts = opts;
     nullDist_opts.computeNulldist = false;
-    MI_nullDist = create_nullDist(inputs_1d, reqOutputs, @MI, nullDist_opts);
+    MI_nullDist = create_nullDist(inputs_b, reqOutputs, @MI, nullDist_opts);
 else
     MI_nullDist = 0;
 end
 
 if ~strcmp(corr, 'plugin') && ~strcmp(corr, 'bub') && ~strcmp(corr, 'pt')
+    opts.computeNulldist = false;
     [MI_values, MI_plugin] = correction(inputs_1d, reqOutputs, corr,  @MI, opts);
     return
 end

@@ -267,8 +267,10 @@ end
 corr = opts.bias;
 corefunc = @PID;
 if ~strcmp(corr, 'plugin')
+    orig_computeNulldist = opts.computeNulldist;
+    opts.computeNulldist = false;
     [PID_values, PID_plugin, PID_shuff_all] = correction(inputs_b, reqOutputs, corr, corefunc, opts);
-    if ~opts.computeNulldist
+    if ~orig_computeNulldist
         PID_nullDist = PID_shuff_all;
     end
     return
@@ -407,9 +409,4 @@ for t = 1:nTimepoints
     end
 end
 PID_plugin = PID_values;
-if strcmp(opts.bias, 'shuffSub') && ~opts.computeNulldist
-    PID_nullDist = PID_shuff_all;
-else
-    PID_nullDist = 0;
-end
 end

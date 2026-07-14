@@ -163,6 +163,13 @@ else
     nTimepoints = 1;
 end
 
+if ~opts.isBinned
+    inputs_b = binning(inputs, opts);
+    opts.isBinned = true;
+else
+    inputs_b = inputs;
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                    Step 2: Bias correction if requested                     %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -176,7 +183,8 @@ else
 end
 
 if ~strcmp(corr, 'plugin')
-    [cMI_values, cMI_plugin] = correction(inputs, reqOutputs, corr,  @cMI, opts);
+    opts.computeNulldist = false;
+    [cMI_values, cMI_plugin] = correction(inputs_b, reqOutputs, corr,  @cMI, opts);
     return
 end
 
@@ -202,7 +210,7 @@ H_plugin = cell(1, length(required_entropies));
 H_shuff_all = cell(1, length(required_entropies));
 
 opts_entropy = opts;
-opts_entropy.compute_nulldist = false;
+opts_entropy.computeNulldist = false;
 for i = 1:length(required_entropies)
     switch required_entropies{i}
         case 'H(A|C)'

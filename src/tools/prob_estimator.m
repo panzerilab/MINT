@@ -223,9 +223,11 @@ for t = 1:max(1, nTimepoints)
         end
         for var = 3:length(inputs)
             letter = char(64 + var);
-            [~, Xlev] = build_support(data_full_t.(letter));
-            ALL_full = [ALL_full, data_full_t.(letter)];  %#ok<AGROW>
-            sup_all  = [sup_all, Xlev];                   %#ok<AGROW>
+            if size(data_full_t.(letter), 2) > 0  % Only build support for non-empty features
+                [~, Xlev] = build_support(data_full_t.(letter));
+                ALL_full = [ALL_full, data_full_t.(letter)];  %#ok<AGROW>
+                sup_all  = [sup_all, Xlev];                   %#ok<AGROW>
+            end
         end
         [ALL_patterns, ~] = build_support_from_levels(sup_all);
         ALL_idx = map_rows_to_patterns(ALL_full, ALL_patterns);

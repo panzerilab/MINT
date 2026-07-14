@@ -212,28 +212,28 @@ if ~opts.recall
         end
     end
 
-    A_pres = squeeze(A_delayed(:, 1, :));
-    B_pres = squeeze(B_delayed(:, 1, :));
-    B_past = squeeze(B_delayed(:, 2:end, :));
-    A_past = squeeze(A_delayed(:, 2:end, :));
-    C_past = squeeze(C_delayed);
-    S = inputs{end};    
-   
-    if size(A_past,1) == nTrials
-        A_past = A_past';
+    A_pres = reshape(A_delayed(:, 1, :), [DimsA(1), nTrials]);
+    B_pres = reshape(B_delayed(:, 1, :), [DimsB(1), nTrials]);
+
+    n_tau_A_past = length(Atau) - 1;
+    if n_tau_A_past > 0
+        A_past = reshape(A_delayed(:, 2:end, :), [DimsA(1) * n_tau_A_past, nTrials]);
+    else
+        A_past = zeros(0, nTrials);
     end
-    if size(A_pres,1) == nTrials
-        A_pres = A_pres';
+    n_tau_B_past = length(Btau) - 1;
+    if n_tau_B_past > 0
+        B_past = reshape(B_delayed(:, 2:end, :), [DimsB(1) * n_tau_B_past, nTrials]);
+    else
+        B_past = zeros(0, nTrials);
     end
-    if size(B_past,1) == nTrials
-        B_past = B_past';
+    n_tau_C = length(Ctau);
+    if n_tau_C > 0
+        C_past = reshape(C_delayed, [DimsC(1) * n_tau_C, nTrials]);
+    else
+        C_past = zeros(0, nTrials);
     end
-    if size(B_pres,1) == nTrials
-        B_pres = B_pres';
-    end
-    if size(C_past,1) == nTrials
-        C_past = C_past';
-    end
+    S = inputs{end};
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %               Step 3: Binning, reduce dimensions if necessary                 %
@@ -265,7 +265,9 @@ if ~opts.recall
     if ~opts.isBinned
         inputs_b = binning({A_pres,A_past,B_pres,B_past, C_past, S} ,opts);
         opts.isBinned = true;
-    end 
+    else
+        inputs_b = {A_pres, A_past, B_pres, B_past, C_past, S};
+    end
     inputs_1d = inputs_b;
 
     % Reduce the Dimensions if necessary

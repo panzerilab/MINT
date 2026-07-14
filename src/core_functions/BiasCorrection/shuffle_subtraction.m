@@ -293,7 +293,7 @@ elseif strcmp(func2str(corefunc), 'II')
     atom2_corrected = cell(1, length(outputs));
     shuff_all = 0;
     atom1_shuffall = repmat({zeros(opts.shuff, nTimepoints)},1, length(outputs));
-    atom2_shuffall = repmat({zeros(opts.shuff, nTimepoints)},2, length(outputs));
+    atom2_shuffall = repmat({zeros(opts.shuff, nTimepoints)},1, length(outputs));
     [plugin_v,~,~,atom1_plugin, atom2_plugin] = feval(corefunc, inputs, outputs, plugin_opts);
     addOut = cell(2,length(outputs));
     if opts.parallel
@@ -318,8 +318,8 @@ elseif strcmp(func2str(corefunc), 'II')
             end
         end
         for spar=1:noutputs
-            atom1_shuffall{noutputs} = reshape(atom1_shuffall_par(noutputs,:,:),opts.shuff, nTimepoints);
-            atom2_shuffall{noutputs} = reshape(atom2_shuffall_par(noutputs,:,:),opts.shuff, nTimepoints);
+            atom1_shuffall{spar} = reshape(atom1_shuffall_par(spar,:,:),opts.shuff, nTimepoints);
+            atom2_shuffall{spar} = reshape(atom2_shuffall_par(spar,:,:),opts.shuff, nTimepoints);
         end
 
     else
@@ -371,7 +371,7 @@ elseif strcmp(func2str(corefunc), 'MI') || strcmp(func2str(corefunc), 'TE') || s
             end
         end
         for spar=1:noutputs
-            shuff_all{noutputs} = reshape(shuffall_par(noutputs,:,:),opts.shuff, nTimepoints);
+            shuff_all{spar} = reshape(shuffall_par(spar,:,:),opts.shuff, nTimepoints);
         end
     else
         for sIdx = 1:opts.shuff

@@ -92,6 +92,9 @@ elseif isscalar(varargin)
         if ~isfield(opts, 'isKSG')
             opts.isKSG = false;
         end
+        if ~isfield(opts, 'isNSB')
+            opts.isNSB = false;
+        end
         reqOutputs = eval(['defaultOutputs_' corefunc]);
         if ~opts.suppressWarnings
             warning("No reqOutputs list provided in %s. The function will compute the default output.", corefunc)

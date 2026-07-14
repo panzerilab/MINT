@@ -35,7 +35,7 @@ function bias = pt(C_ptr, Rtot, N)
     index = 1;
     for i = 1:Rtot
         if C_ptr(i) > 0
-            PnonZero(index) = C_ptr(i); % / N;
+            PnonZero(index) = C_ptr(i) / N;
             index = index + 1;
         end
     end

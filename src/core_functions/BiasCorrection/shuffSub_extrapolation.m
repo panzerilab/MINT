@@ -126,7 +126,7 @@ if strcmp(func2str(corefunc), 'MI') || strcmp(func2str(corefunc), 'TE')  || strc
                     for shuffIdx = 1:opts.shuff
                         y = [plugin_shuff{outIdx}(shuffIdx,t),  shuff2{outIdx}(shuffIdx,t)];
                         p = polyfit(x_extrap(1:2), y, 1);
-                        correctedSh{outIdx}(shuffIdx,t)  =  correctedSh{outIdx}(t) + (p(2)/xtrp);
+                        correctedSh{outIdx}(shuffIdx,t)  =  correctedSh{outIdx}(shuffIdx,t) + (p(2)/xtrp);
                     end
                 end
             end
@@ -283,7 +283,7 @@ elseif strcmp(func2str(corefunc), 'PID')
                     for shuffIdx = 1:opts.shuff
                         y = [plugin_shuff{outIdx}(shuffIdx,t),  shuff2{outIdx}(shuffIdx,t)];
                         p = polyfit(x_extrap(1:2), y, 1);
-                        correctedSh{outIdx}(shuffIdx,t)  =  correctedSh{outIdx}(t) + p(2)/xtrp;
+                        correctedSh{outIdx}(shuffIdx,t)  =  correctedSh{outIdx}(shuffIdx,t) + p(2)/xtrp;
                     end
                 end
             end
@@ -426,7 +426,7 @@ elseif strcmp(func2str(corefunc), 'PID')
     end
 elseif strcmp(func2str(corefunc), 'cFIT') || strcmp(func2str(corefunc), 'FIT')
     [~,~,~,atom1_plugin, atom2_plugin] = feval(corefunc, inputs, outputs, plugin_opts);
-    numAtoms = length(atom1_plugin);
+    numAtoms = length(atom1_plugin{1});
     pluginSh.atom1 = repmat({zeros(numAtoms,opts.shuff)},1, length(outputs));
     pluginSh.atom2 = repmat({zeros(numAtoms,opts.shuff)},1, length(outputs));
     correctedSh.atom1 = repmat({zeros(numAtoms,opts.shuff)}, 1, length(outputs));
@@ -523,7 +523,7 @@ elseif strcmp(func2str(corefunc), 'cFIT') || strcmp(func2str(corefunc), 'FIT')
                     p = polyfit(x_extrap, [atom2_plugin{outIdx}(idx), part2.atom2{outIdx}(idx), part4.atom2{outIdx}(idx)], 2);
                     correctedQE.atom2{outIdx}(idx) = correctedQE.atom2{outIdx}(idx) +(p(3)/xtrp);
                     for shuffIdx = 1:opts.shuff
-                        y = [pluginSh.atom1{outIdx}(idx,shuffIdx),  shuff2.atom1{outIdx}(idx,shuffIdx),  shuff4.atom2{outIdx}(idx,shuffIdx)];
+                        y = [pluginSh.atom1{outIdx}(idx,shuffIdx),  shuff2.atom1{outIdx}(idx,shuffIdx),  shuff4.atom1{outIdx}(idx,shuffIdx)];
                         p = polyfit(x_extrap, y, 2);
                         correctedSh.atom1{outIdx}(idx,shuffIdx)  =  correctedSh.atom1{outIdx}(idx,shuffIdx) + (p(3)/xtrp);
                         y = [pluginSh.atom2{outIdx}(idx,shuffIdx),  shuff2.atom2{outIdx}(idx,shuffIdx),  shuff4.atom2{outIdx}(idx,shuffIdx)];
@@ -605,11 +605,11 @@ elseif strcmp(func2str(corefunc), 'II')
                 [~,~,~,atom1_tmp, atom2_tmp] = feval(corefunc, inputs_p,outputs, plugin_opts);
                 for outIdx = 1:length(outputs)
                     if npartition(np)==2
-                        part2.atom1{outIdx} = part2.atom1{outIdx} + atom1_plugin{outIdx}/2;
-                        part2.atom2{outIdx} = part2.atom2{outIdx} + atom2_plugin{outIdx}/2;
+                        part2.atom1{outIdx} = part2.atom1{outIdx} + atom1_tmp{outIdx}/2;
+                        part2.atom2{outIdx} = part2.atom2{outIdx} + atom2_tmp{outIdx}/2;
                     elseif npartition(np)==4
-                        part4.atom1{outIdx} = part4.atom1{outIdx} + atom1_plugin{outIdx}/4;
-                        part4.atom2{outIdx} = part4.atom2{outIdx} + atom2_plugin{outIdx}/4;
+                        part4.atom1{outIdx} = part4.atom1{outIdx} + atom1_tmp{outIdx}/4;
+                        part4.atom2{outIdx} = part4.atom2{outIdx} + atom2_tmp{outIdx}/4;
                     end
                 end
                 % shuffle
@@ -647,7 +647,7 @@ elseif strcmp(func2str(corefunc), 'II')
                     p = polyfit(x_extrap, [atom2_plugin{outIdx}(t), part2.atom2{outIdx}(t), part4.atom2{outIdx}(t)], 2);
                     correctedQE.atom2{outIdx}(t) = correctedQE.atom2{outIdx}(t) +(p(3)/xtrp);
                     for shuffIdx = 1:opts.shuff
-                        y = [pluginSh.atom1{outIdx}(shuffIdx,t),  shuff2.atom1{outIdx}(shuffIdx,t),  shuff4.atom2{outIdx}(shuffIdx,t)];
+                        y = [pluginSh.atom1{outIdx}(shuffIdx,t),  shuff2.atom1{outIdx}(shuffIdx,t),  shuff4.atom1{outIdx}(shuffIdx,t)];
                         p = polyfit(x_extrap, y, 2);
                         correctedSh.atom1{outIdx}(shuffIdx,t)  =  correctedSh.atom1{outIdx}(shuffIdx,t) + (p(3)/xtrp);
                         y = [pluginSh.atom2{outIdx}(shuffIdx,t),  shuff2.atom2{outIdx}(shuffIdx,t),  shuff4.atom2{outIdx}(shuffIdx,t)];

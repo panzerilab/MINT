@@ -195,26 +195,21 @@ if ~opts.recall
             end
         end
 
-        A_pres = squeeze(A_delayed(:, 1, :));
-        B_pres = squeeze(B_delayed(:, 1, :));
-        B_past = squeeze(B_delayed(:, 2:end, :));
-        A_past = squeeze(A_delayed(:, 2:end, :));
-        S = squeeze(S_delayed(:, 1, :));
-        if size(A_past,1) == nTrials
-            A_past = A_past';
+        A_pres = reshape(A_delayed(:, 1, :), [DimsA(1), nTrials]);
+        B_pres = reshape(B_delayed(:, 1, :), [DimsB(1), nTrials]);
+        n_tau_B_past = length(Btau) - 1;
+        if n_tau_B_past > 0
+            B_past = reshape(B_delayed(:, 2:end, :), [DimsB(1) * n_tau_B_past, nTrials]);
+        else
+            B_past = zeros(0, nTrials);
         end
-        if size(A_pres,1) == nTrials
-            A_pres = A_pres';
+        n_tau_A_past = length(Atau) - 1;
+        if n_tau_A_past > 0
+            A_past = reshape(A_delayed(:, 2:end, :), [DimsA(1) * n_tau_A_past, nTrials]);
+        else
+            A_past = zeros(0, nTrials);
         end
-        if size(B_past,1) == nTrials
-            B_past = B_past';
-        end
-        if size(B_pres,1) == nTrials
-            B_pres = B_pres';
-        end
-        if size(S,1) == nTrials
-            S = S';
-        end
+        S = reshape(S_delayed(:, 1, :), [DimsS(1), nTrials]);
     else
         nTrials = DimsA(3);
 
@@ -241,24 +236,22 @@ if ~opts.recall
             end
         end
 
-        A_pres = squeeze(A_delayed(:, 1, :));
-        B_pres = squeeze(B_delayed(:, 1, :));
-        B_past = squeeze(B_delayed(:, 2:end, :));
-        A_past = squeeze(A_delayed(:, 2:end, :));
-        S = inputs{end};
+        A_pres = reshape(A_delayed(:, 1, :), [DimsA(1), nTrials]);
+        B_pres = reshape(B_delayed(:, 1, :), [DimsB(1), nTrials]);
 
-        if size(A_past,1) == nTrials
-            A_past = A_past';
+        n_tau_A_past = size(A_delayed, 2) - 1;
+        if n_tau_A_past > 0
+            A_past = reshape(A_delayed(:, 2:end, :), [DimsA(1) * n_tau_A_past, nTrials]);
+        else
+            A_past = zeros(0, nTrials);
         end
-        if size(A_pres,1) == nTrials
-            A_pres = A_pres';
+        n_tau_B_past = size(B_delayed, 2) - 1;
+        if n_tau_B_past > 0
+            B_past = reshape(B_delayed(:, 2:end, :), [DimsB(1) * n_tau_B_past, nTrials]);
+        else
+            B_past = zeros(0, nTrials);
         end
-        if size(B_past,1) == nTrials
-            B_past = B_past';
-        end
-        if size(B_pres,1) == nTrials
-            B_pres = B_pres';
-        end
+        S = inputs{end};
     end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %               Step 3: Binning, reduce dimensions if necessary                 %

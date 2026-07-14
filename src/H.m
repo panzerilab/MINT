@@ -121,6 +121,7 @@ end
 
 % Delegate to correction() for non-plugin/PT/BUB
 if ~strcmp(corr, 'plugin') && ~strcmp(corr, 'bub') && ~strcmp(corr, 'pt')
+    opts.computeNulldist = false;
     [entropies, entropies_plugin, entropies_shuffAll] = correction(inputs_1d, reqOutputs, corr, corefunc, opts);
     if ~iscell(entropies_nullDist)
         entropies_nullDist = entropies_shuffAll;
@@ -193,9 +194,9 @@ for t = 1:nTimepoints
                     bias = bub(nTrials * P_A);
                 elseif strcmp(opts.bias, 'pt')
                     if nTimepoints==1
-                        bias = pt(inputs_1d{1}, nbinsA, nTrials);
+                        bias = pt(pt_counts(inputs_1d{1}, nbinsA), nbinsA, nTrials);
                     else
-                        bias = pt(inputs_1d{1}(1,t,:), nbinsA, nTrials);
+                        bias = pt(pt_counts(inputs_1d{1}(1,t,:), nbinsA), nbinsA, nTrials);
                     end
                 else
                     bias = 0;
@@ -216,13 +217,10 @@ for t = 1:nTimepoints
                     bias = bub(nTrials * P_B);
                 elseif strcmp(opts.bias, 'pt')
                     if nTimepoints==1
-                        bias = pt(inputs_1d{2}, nbinsB, nTrials);
+                        bias = pt(pt_counts(inputs_1d{2}, nbinsB), nbinsB, nTrials);
                     else
-                        bias = pt(inputs_1d{2}(1,t,:), nbinsB, nTrials);
+                        bias = pt(pt_counts(inputs_1d{2}(1,t,:), nbinsB), nbinsB, nTrials);
                     end
-                    % bias = (nTimepoints==1) * pt(inputs_1d{2}, nbinsB, nTrials) + ...
-                    %        (nTimepoints>1)  * pt(inputs_1d{2}(1,t,:), nbinsB, nTrials);
-
                 else
                     bias = 0;
                 end
@@ -250,14 +248,16 @@ for t = 1:nTimepoints
                         uB = unique(inputs_1d{2}); nb = length(uB);
                         for b_i = 1:nb
                             A_tmp = inputs_1d{1}(inputs_1d{2} == uB(b_i));
-                            bias = bias + pt(A_tmp, numel(unique(A_tmp)), nTrials);
+                            RtotA = numel(unique(A_tmp));
+                            bias = bias + pt(pt_counts(A_tmp, RtotA), RtotA, nTrials);
                         end
                     else
                         uB = unique(inputs_1d{2}(1,t,:)); nb = length(uB);
                         for b_i = 1:nb
                             mask = (inputs_1d{2}(1,t,:) == uB(b_i));
                             A_tmp = inputs_1d{1}(1,t,mask);
-                            bias = bias + pt(A_tmp, numel(unique(A_tmp)), nTrials);
+                            RtotA = numel(unique(A_tmp));
+                            bias = bias + pt(pt_counts(A_tmp, RtotA), RtotA, nTrials);
                         end
                     end
                 else
@@ -284,13 +284,13 @@ for t = 1:nTimepoints
                         for r = 1:size(inputs{1},1)
                             Arow  = inputs{1}(r,:);            % 1 x nTrials
                             nArow = numel(unique(Arow(:)));
-                            bias  = bias + pt(Arow, nArow, nTrials);
+                            bias  = bias + pt(pt_counts(Arow, nArow), nArow, nTrials);
                         end
                     else
                         for r = 1:size(inputs{1},1)
                             Arow  = squeeze(inputs{1}(r,t,:)); % nTrials x 1
                             nArow = numel(unique(Arow(:)));
-                            bias  = bias + pt(Arow, nArow, nTrials);
+                            bias  = bias + pt(pt_counts(Arow, nArow), nArow, nTrials);
                         end
                     end
                 else
@@ -314,14 +314,14 @@ for t = 1:nTimepoints
                         uB = unique(inputs_1d{2}); nb = length(uB);
                         for b_i = 1:nb
                             A_tmp = inputs_1d{1}(inputs_1d{2} == uB(b_i));
-                            bias  = bias + pt(A_tmp, nbinsA, nTrials);
+                            bias  = bias + pt(pt_counts(A_tmp, nbinsA), nbinsA, nTrials);
                         end
                     else
                         uB = unique(inputs_1d{2}(1,t,:)); nb = length(uB);
                         for b_i = 1:nb
                             mask = (inputs_1d{2}(1,t,:) == uB(b_i));
                             A_tmp = inputs_1d{1}(1,t,mask);
-                            bias  = bias + pt(A_tmp, nbinsA, nTrials);
+                            bias  = bias + pt(pt_counts(A_tmp, nbinsA), nbinsA, nTrials);
                         end
                     end
                 else
@@ -370,8 +370,11 @@ for t = 1:nTimepoints
                 if strcmp(opts.bias, 'bub')
                     bias = bub(nTrials * P_shA);
                 elseif strcmp(opts.bias, 'pt')
-                    bias = (nTimepoints==1) * pt(inputs_1d{1}, nbinsA, nTrials) + ...
-                           (nTimepoints>1)  * pt(inputs_1d{1}(1,t,:), nbinsA, nTrials);
+                    if nTimepoints==1
+                        bias = pt(pt_counts(inputs_1d{1}, nbinsA), nbinsA, nTrials);
+                    else
+                        bias = pt(pt_counts(inputs_1d{1}(1,t,:), nbinsA), nbinsA, nTrials);
+                    end
                 else
                     bias = 0;
                 end
@@ -399,14 +402,14 @@ for t = 1:nTimepoints
                         uB = unique(inputs_1d{2}); nb = length(uB);
                         for b_i = 1:nb
                             A_tmp = inputs_1d{1}(inputs_1d{2} == uB(b_i));
-                            bias  = bias + pt(A_tmp, nbinsA, nTrials);
+                            bias  = bias + pt(pt_counts(A_tmp, nbinsA), nbinsA, nTrials);
                         end
                     else
                         uB = unique(inputs_1d{2}(1,t,:)); nb = length(uB);
                         for b_i = 1:nb
                             mask = (inputs_1d{2}(1,t,:) == uB(b_i));
                             A_tmp = inputs_1d{1}(1,t,mask);
-                            bias  = bias + pt(A_tmp, nbinsA, nTrials);
+                            bias  = bias + pt(pt_counts(A_tmp, nbinsA), nbinsA, nTrials);
                         end
                     end
                 else
@@ -443,5 +446,18 @@ for t = 1:nTimepoints
 
         end
     end
+end
+
+function counts = pt_counts(vals, Rtot)
+    % Build a length-Rtot per-bin occupancy count vector from raw
+    % per-trial symbol values, as required by pt.m's Panzeri-Treves
+    % correction (which needs to know how many of the Rtot possible bins
+    % are unoccupied, not just the raw per-trial data).
+    vals = vals(:);
+    u = unique(vals);
+    c = histc(vals, u); 
+    k = numel(u);
+    counts = zeros(max(Rtot, k), 1);
+    counts(1:k) = c;
 end
 end

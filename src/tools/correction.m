@@ -88,6 +88,17 @@ if nargin < 5
     error('correction:notEnoughInput', msg);
 end
 
+% Normalize documented capitalization ('ShuffSub', 'qe_ShuffSub', 'le_ShuffSub' --
+% as used in the help text of MI/II/TE/cTE/FIT/cFIT/cMI) to the internal
+% canonical spelling used by the switch/ismember checks below, so that calling
+% with the documented option string actually works instead of falling through
+% to the "undefined function" error.
+switch corr
+    case 'ShuffSub';    corr = 'shuffSub';
+    case 'qe_ShuffSub'; corr = 'qe_shuffSub';
+    case 'le_ShuffSub'; corr = 'le_shuffSub';
+end
+
 opts = varargin{1};
 if ismember(corr, {'shuffSub', 'resample'})
     defaultOpts.shuff = 20;
