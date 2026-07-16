@@ -166,6 +166,11 @@ end
 inputs_1d = inputs_b;
 if DimsA(1) > 1 && ~opts.isKSG
     inputs_1d{1} = reduce_dim(inputs_b{1}, 1);
+    needs_2D_A = any(ismember(reqOutputs, {'Ilin(A;B)', 'RSI(A;B)', 'RSIsh(A;B)', ...
+        'Iss(A)', 'Ic(A;B)', 'Icsh(A;B)', 'Ici(A;B)', 'Icd(A;B)', 'Icdsh(A;B)'}));
+    if needs_2D_A
+        inputs_1d{3} = inputs_b{1};
+    end
 end
 if DimsB(1) > 1 && ~opts.isKSG
     inputs_1d{2} = reduce_dim(inputs_b{2}, 1);

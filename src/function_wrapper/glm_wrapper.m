@@ -334,7 +334,7 @@ for partition = 1:cvPartition.NumTestSets
                 intercept(partition) = FitInfo.Intercept(idxMinDeviance);
                 partition_betaWeights(:, partition) = bestCoef;
             end
-            predictedLabels(test_idx) = glmval([FitInfo.Intercept(idxMinDeviance); bestCoef], dataTest, 'logit');
+            predictedLabels(test_idx) = glmval([intercept(partition); bestCoef], dataTest, 'logit');
             predictedLabels_binom(test_idx) = (predictedLabels(test_idx) >= 0.5);
             if ismember('confusionMatrix', outputs)
                 fig = figure('Visible', 'off'); 

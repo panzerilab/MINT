@@ -80,7 +80,7 @@ if isempty(varargin)
     reqOutputs = {'A'};
     opts = struct();
     cond_input = 0;
-elseif length(varargin)==1
+elseif isscalar(varargin)
     if iscell(varargin{1})
         reqOutputs = varargin{1};
         opts = struct();
@@ -137,14 +137,7 @@ for ruleIdx = 1:length(reqOutputs)
         cond_input_data = [];
     end
 
-    % % Check that dimensions match across all shuffling variables
     dimsA = size(inputs{find(shuffle_var_idxs, 1)});
-    % for varIdx = find(shuffle_var_idxs)
-    %     if ~isequal(size(inputs{varIdx})(2:end), dimsA)
-    %         error('All shuffle variables must have the same dimensions.');
-    %     end
-    % end
-    
     nDims = length(dimsA);
     shuffle_dim = zeros(1, nDims);  
 
@@ -214,18 +207,18 @@ for ruleIdx = 1:length(reqOutputs)
                     shuffled_data{varIdx} = shuffle_core(0, inputs_data, 0, 1)';
                 end
                 if size(shuffled_data{varIdx}, 2) ~= nTrials
-                    shuffled_data{varIdx} = shuffled_data{varIdx}';  % Transponiere, wenn notwendig
+                    shuffled_data{varIdx} = shuffled_data{varIdx}';  
                 end
             else
                 for tP = 1:nTimepoints
                     data_tP = squeeze(inputs_data(:, tP, :));
-                    data_tP = reshape(data_tP, dims(3), dims(1));  % Reshape for shuffling
+                    if size(data_tP,1) ~= nTrials
+                        data_tP = data_tP.';
+                    end
 
                     if ~isempty(cond_input_data)
-                        % Handle conditioned shuffle
                         if length(size(cond_input_data{1})) > 2
                             cond_input_tp = squeeze(cond_input_data{1}(:, tP, :));
-                            cond_input_tp = reshape(cond_input_tp, size(cond_input_data{1}', 3), size(cond_input_data{1}, 1));
                         else
                             cond_input_tp = cond_input_data{1};
                         end
@@ -241,11 +234,9 @@ for ruleIdx = 1:length(reqOutputs)
             end          
         end
     end
-
-    % Store the shuffled data for the current rule
     inputs_sh{ruleIdx} = shuffled_data;
 end
-if length(reqOutputs) == 1
+if isscalar(reqOutputs)
     inputs_sh = inputs_sh{1}; 
 end
 end

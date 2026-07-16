@@ -89,6 +89,10 @@ end
 %                           Step 2: Perform PCA                                 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+if opts.standardize
+    data = data ./ std(data, 0, 1);
+end
+
 if isnan(opts.numComponents)
     [coeff, score, latent, ~, explained, mu] = pca(data, 'Centered', opts.standardize);
 else

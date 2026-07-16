@@ -109,7 +109,7 @@ if ~isfield(opts,'optim_opts')
     optimization_opts.optimize = false;
 else
     optimization_opts = opts.optim_opts;
-    if ~isfield( optimization_opts, 'optimze')
+    if ~isfield( optimization_opts, 'optimize')
         optimization_opts.optimize = true;
     end
 end
