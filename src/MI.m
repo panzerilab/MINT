@@ -148,6 +148,8 @@ if (length(DimsA) > 2 || length(DimsB) > 2)
         inputs{1} = reshape(inputs{1}, [DimsA(1), 1, DimsA(2)]);
         inputs{1} = repmat(inputs{1}, [1, DimsB(2), 1]);
     end
+    DimsA = size(inputs{1});
+    DimsB = size(inputs{2});
     opts.timeseries = true;
     nTimepoints = size(inputs{1},2);
 else
