@@ -275,9 +275,9 @@ classdef pid_lattice < handle
 
         function atom = calculate_atom(obj, p_distr, target, sources)
             if obj.is_gaussian | strcmp(obj.redundancy_measure, 'IMMI')
-                atom = obj.Imin(p_distr, target, sources);
-            else
                 atom = obj.MMI(p_distr, target, sources);
+            else
+                atom = obj.Imin(p_distr, target, sources);
             end
             down_nodes = obj.get_strict_down(sources);
             % atom = imin;
