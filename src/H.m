@@ -80,7 +80,7 @@ inputs_1d = inputs_b;
 if DimsA(1) > 1
     inputs_1d{1} = reduce_dim(inputs_b{1}, 1);             % 1D index of A patterns
     % Keep full A for per-dim marginals / independent models
-    multivarA_reqs = {'Hlin(A)', 'Hind(A)', 'Hind(A|B)', 'Chi(A)', 'Hsh(A)', 'Hsh(A|B)'};
+    multivarA_reqs = {'Hlin(A)', 'Hind(A)', 'Hind(A|B)'};     %, 'Chi(A)', 'Hsh(A)', 'Hsh(A|B)'};
     if any(ismember(reqOutputs, multivarA_reqs))
         inputs_1d{3} = inputs_b{1};                         % stash full A in slot 3 (as used by prob_estimator)
     end
