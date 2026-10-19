@@ -142,7 +142,7 @@ for t = 1:max(1, nTimepoints)
 
         if nTimepoints_data.(letter) > 1
             % trials x dims (full), trials x 1 (1d)
-            Full_t  = data_full.(letter)(:, t, :);     % nTrials x nDimsVar
+            Full_t  = reshape(data_full.(letter)(:, t, :), nTrials, []);     % nTrials x nDimsVar
             Index_t = data_1d.(letter)(:, t);          % nTrials x 1
         else
             Full_t  = squeeze(data_full.(letter));

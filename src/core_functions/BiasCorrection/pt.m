@@ -28,20 +28,14 @@ function bias = pt(C_ptr, Rtot, N)
     C_ptr = C_ptr(:);
     NnonZeroCvalues = nnz(C_ptr);
     
-    % Initialize PnonZero array
-    PnonZero = zeros(1, NnonZeroCvalues);
-    
     % Read non-zero probability values and compute Rplugin
-    index = 1;
-    for i = 1:Rtot
-        if C_ptr(i) > 0
-            PnonZero(index) = C_ptr(i) / N;
-            index = index + 1;
-        end
-    end
+    PnonZero = C_ptr(C_ptr > 0).' / N;
     
     % Rplugin is the number of non-null probability values
     Rplugin = NnonZeroCvalues;
+    if Rplugin > Rtot
+        Rtot = Rplugin;
+    end 
     
     if Rplugin < Rtot
         % Initial value for Rexpected

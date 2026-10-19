@@ -80,7 +80,7 @@ inputs_1d = inputs_b;
 if DimsA(1) > 1
     inputs_1d{1} = reduce_dim(inputs_b{1}, 1);             % 1D index of A patterns
     % Keep full A for per-dim marginals / independent models
-    multivarA_reqs = {'Hlin(A)', 'Hind(A)', 'Hind(A|B)'};     %, 'Chi(A)', 'Hsh(A)', 'Hsh(A|B)'};
+    multivarA_reqs = {'Hlin(A)', 'Hind(A)', 'Hind(A|B)', 'Hsh(A)', 'Hsh(A|B)'};     %, 'Chi(A)'};
     if any(ismember(reqOutputs, multivarA_reqs))
         inputs_1d{3} = inputs_b{1};                         % stash full A in slot 3 (as used by prob_estimator)
     end
@@ -96,12 +96,12 @@ end
 
 % Effective bin counts (used by bias corrections)
 if ~strcmp(opts.bin_method{1}, 'none')
-    nbinsA = DimsA(1) * opts.n_bins{1};
+    nbinsA = opts.n_bins{1}^DimsA(1);
 else
     nbinsA = numel(unique(inputs_1d{1}(:)));
 end
 if ~strcmp(opts.bin_method{2}, 'none')
-    nbinsB = DimsB(1) * opts.n_bins{2};
+    nbinsB = opts.n_bins{2}^DimsB(1);
 else
     nbinsB = numel(unique(inputs_1d{2}(:)));
 end
@@ -242,23 +242,23 @@ for t = 1:nTimepoints
                 if strcmp(opts.bias, 'bub')
                     P_A  = prob_dists{t, strcmp(required_distributions, 'P(A)')};
                     pAB  = P_A_given_B .* P_B.';   % joint
-                    bias = bub(nTrials*pAB(:)) - bub(nTrials*P_A(:));
+                    bias = bub(nTrials*pAB(:)) - bub(nTrials*P_B(:));
                 elseif strcmp(opts.bias, 'pt')
                     bias = 0;
                     if nTimepoints == 1
                         uB = unique(inputs_1d{2}); nb = length(uB);
                         for b_i = 1:nb
                             A_tmp = inputs_1d{1}(inputs_1d{2} == uB(b_i));
-                            RtotA = numel(unique(A_tmp));
-                            bias = bias + pt(pt_counts(A_tmp, RtotA), RtotA, nTrials);
+                            Nb = numel(A_tmp);
+                            bias = bias + (Nb/nTrials) * pt(pt_counts(A_tmp, nbinsA), nbinsA, Nb);
                         end
                     else
                         uB = unique(inputs_1d{2}(1,t,:)); nb = length(uB);
                         for b_i = 1:nb
                             mask = (inputs_1d{2}(1,t,:) == uB(b_i));
                             A_tmp = inputs_1d{1}(1,t,mask);
-                            RtotA = numel(unique(A_tmp));
-                            bias = bias + pt(pt_counts(A_tmp, RtotA), RtotA, nTrials);
+                            Nb = numel(A_tmp);
+                            bias = bias + (Nb/nTrials) * pt(pt_counts(A_tmp, nbinsA), nbinsA, Nb);
                         end
                     end
                 else
@@ -283,14 +283,14 @@ for t = 1:nTimepoints
                     bias = 0;
                     if nTimepoints == 1
                         for r = 1:size(inputs{1},1)
-                            Arow  = inputs{1}(r,:);            % 1 x nTrials
-                            nArow = numel(unique(Arow(:)));
+                            Arow  = inputs_b{1}(r,:);            % 1 x nTrials
+                            nArow = opts.n_bins{1};
                             bias  = bias + pt(pt_counts(Arow, nArow), nArow, nTrials);
                         end
                     else
                         for r = 1:size(inputs{1},1)
-                            Arow  = squeeze(inputs{1}(r,t,:)); % nTrials x 1
-                            nArow = numel(unique(Arow(:)));
+                            Arow  = squeeze(inputs_b{1}(r,t,:)); % nTrials x 1
+                            nArow = opts.n_bins{1};
                             bias  = bias + pt(pt_counts(Arow, nArow), nArow, nTrials);
                         end
                     end
@@ -299,7 +299,7 @@ for t = 1:nTimepoints
                 end
                 entropies{i}(1,t) = entropies_plugin{i}(1,t) - bias;
 
-            case 'Hind(A)'
+              case 'Hind(A)'
                 P_indA = prob_dists{t, strcmp(required_distributions, 'Pind(A)')};
                 if symtoolbox
                     P_indA = vpa(P_indA); P_lin_log = P_indA .* log(P_indA) / log(vpa(2));
@@ -371,11 +371,7 @@ for t = 1:nTimepoints
                 if strcmp(opts.bias, 'bub')
                     bias = bub(nTrials * P_shA);
                 elseif strcmp(opts.bias, 'pt')
-                    if nTimepoints==1
-                        bias = pt(pt_counts(inputs_1d{1}, nbinsA), nbinsA, nTrials);
-                    else
-                        bias = pt(pt_counts(inputs_1d{1}(1,t,:), nbinsA), nbinsA, nTrials);
-                    end
+                        bias = pt(nTrials * P_shA(:), max(nbinsA, numel(P_shA)), nTrials);
                 else
                     bias = 0;
                 end
@@ -396,23 +392,14 @@ for t = 1:nTimepoints
                 if strcmp(opts.bias, 'bub')
                     P_shA  = prob_dists{t, strcmp(required_distributions, 'Psh(A)')};
                     PshAB  = P_shA_given_B .* P_B.';  % joint
-                    bias   = bub(nTrials*PshAB(:)) - bub(nTrials*P_shA(:));
+                    bias   = bub(nTrials*PshAB(:)) - bub(nTrials*P_B(:));
                 elseif strcmp(opts.bias, 'pt')
                     bias = 0;
-                    if nTimepoints == 1
-                        uB = unique(inputs_1d{2}); nb = length(uB);
-                        for b_i = 1:nb
-                            A_tmp = inputs_1d{1}(inputs_1d{2} == uB(b_i));
-                            bias  = bias + pt(pt_counts(A_tmp, nbinsA), nbinsA, nTrials);
-                        end
-                    else
-                        uB = unique(inputs_1d{2}(1,t,:)); nb = length(uB);
-                        for b_i = 1:nb
-                            mask = (inputs_1d{2}(1,t,:) == uB(b_i));
-                            A_tmp = inputs_1d{1}(1,t,mask);
-                            bias  = bias + pt(pt_counts(A_tmp, nbinsA), nbinsA, nTrials);
-                        end
-                    end
+                    for b_i = 1:numel(P_B)
+		       Nb = round(nTrials * P_B(b_i));
+		       if Nb == 0, continue; end
+		       bias = bias + (Nb/nTrials) * pt(Nb * P_shA_given_B(:,b_i), max(nbinsA, size(P_shA_given_B,1)), Nb);
+		    end
                 else
                     bias = 0;
                 end
